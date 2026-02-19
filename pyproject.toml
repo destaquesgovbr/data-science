@@ -1,13 +1,13 @@
 [tool.poetry]
-name = "news-enrichment-system"
+name = "data-science"
 version = "1.0.0"
-description = "Sistema de enriquecimento e classificação automática de notícias usando LLMs"
+description = "Workspace de projetos de Data Science e Machine Learning"
 authors = ["Luis Felipe de Moraes <seu-email@exemplo.com>"]
 readme = "README.md"
 license = "MIT"
-homepage = "https://github.com/seu-usuario/news-enrichment-system"
-repository = "https://github.com/seu-usuario/news-enrichment-system"
-keywords = ["llm", "news", "classification", "nlp", "data-science"]
+homepage = "https://github.com/seu-usuario/data-science"
+repository = "https://github.com/seu-usuario/data-science"
+keywords = ["data-science", "machine-learning", "llm", "nlp", "analytics"]
 classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
@@ -21,7 +21,9 @@ classifiers = [
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
     "Topic :: Text Processing :: Linguistic",
 ]
-packages = [{include = "news_enrichment"}]
+packages = [
+    {include = "news_enrichment", from = "source/news-enrichment"}
+]
 
 [tool.poetry.dependencies]
 python = "^3.9"
@@ -99,11 +101,11 @@ multi_line_output = 3
 
 # pytest configuration
 [tool.pytest.ini_options]
-testpaths = ["tests"]
+testpaths = ["source/news-enrichment/tests", "tests"]
 python_files = "test_*.py"
 python_classes = "Test*"
 python_functions = "test_*"
-addopts = "-v --cov=news_enrichment --cov-report=html --cov-report=term"
+addopts = "-v --cov=source.news_enrichment --cov-report=html --cov-report=term"
 
 # mypy configuration
 [tool.mypy]

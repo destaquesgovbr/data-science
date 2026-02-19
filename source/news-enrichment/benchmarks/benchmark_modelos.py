@@ -9,6 +9,10 @@ import time
 from datetime import datetime
 from pathlib import Path
 
+# Configuração de paths (independente de onde o script é executado)
+PROJECT_ROOT = Path(__file__).parent.parent.parent.parent
+DATA_DIR = PROJECT_ROOT / "data"
+
 
 def filtrar_noticias_recentes(dataset_manager, n=25):
     """Filtra as N notícias mais recentes com data válida."""
@@ -48,7 +52,7 @@ def testar_modelo(model_id, model_name, sample_df, batch_size=4, sleep=0.5):
     start_time = time.time()
 
     # Setup
-    dataset_manager = NewsDatasetManager(cache_dir="./data")
+    dataset_manager = NewsDatasetManager(cache_dir=str(DATA_DIR))
 
     llm_client = BedrockLLMClient(
         model_id=model_id,
@@ -253,7 +257,7 @@ def main():
     print("="*80 + "\n")
 
     # 1. Filtrar notícias mais recentes
-    dataset_manager = NewsDatasetManager(cache_dir="./data")
+    dataset_manager = NewsDatasetManager(cache_dir=str(DATA_DIR))
     sample = filtrar_noticias_recentes(dataset_manager, n=25)
 
     # 2. Testar ambos os modelos
@@ -305,13 +309,13 @@ def main():
 
     combined = pl.concat([haiku_df, sonnet_df])
 
-    output_path = "./data/benchmark_haiku_vs_sonnet.parquet"
-    combined.write_parquet(output_path)
+    output_path = DATA_DIR / "benchmark_haiku_vs_sonnet.parquet"
+    combined.write_parquet(str(output_path))
     print(f"✓ Resultados salvos: {output_path}")
     print(f"  Total: {len(combined)} notícias ({len(haiku_df)} Haiku + {len(sonnet_df)} Sonnet)")
 
     # Salvar também CSV para fácil inspeção
-    csv_path = "./data/benchmark_haiku_vs_sonnet.csv"
+    csv_path = DATA_DIR / "benchmark_haiku_vs_sonnet.csv"
 
     # Selecionar colunas relevantes para CSV
     compare_cols = [
@@ -321,7 +325,7 @@ def main():
         'model_name', 'benchmark_timestamp'
     ]
 
-    combined.select(compare_cols).write_csv(csv_path)
+    combined.select(compare_cols).write_csv(str(csv_path))
     print(f"✓ CSV comparativo salvo: {csv_path}")
 
     # Salvar metadados do benchmark
@@ -345,9 +349,10 @@ def main():
         }
     }
 
-    with open("./data/benchmark_metadata.json", "w") as f:
+    metadata_path = DATA_DIR / "benchmark_metadata.json"
+    with open(metadata_path, "w") as f:
         json.dump(metadata, f, indent=2)
-    print(f"✓ Metadados salvos: ./data/benchmark_metadata.json")
+    print(f"✓ Metadados salvos: {metadata_path}")
 
     print("\n" + "="*80)
     print("BENCHMARK CONCLUÍDO!")
@@ -356,7 +361,7 @@ def main():
     print("Arquivos gerados:")
     print(f"  • {output_path} (dados completos)")
     print(f"  • {csv_path} (comparação lado-a-lado)")
-    print(f"  • ./data/benchmark_metadata.json (estatísticas)")
+    print(f"  • {metadata_path} (estatísticas)")
     print()
 
 

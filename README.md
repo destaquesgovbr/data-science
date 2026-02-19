@@ -1,224 +1,215 @@
-# News Enrichment System
+# Data Science Workspace
 
-Sistema de enriquecimento e classificação automática de notícias usando Large Language Models (LLMs), desenvolvido para processar notícias do Portal Gov.br.
+Repositório centralizado de projetos de Data Science e Machine Learning desenvolvidos por Luis Felipe de Moraes.
 
 [![Python 3.9+](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
 [![Poetry](https://img.shields.io/badge/Poetry-managed-blue)](https://python-poetry.org/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Anthropic Claude](https://img.shields.io/badge/Powered%20by-Claude%20Haiku-orange)](https://www.anthropic.com)
 
-## Funcionalidades
 
-- **Classificação Hierárquica**: Classifica notícias em 3 níveis de taxonomia (410 categorias)
-- **Classificador Standalone**: API independente de banco de dados
-- **Processamento em Batch**: Suporte para processar múltiplas notícias simultaneamente
-- **Multi-Provider**: Suporta Anthropic Claude, OpenAI, Groq e Ollama (local)
-- **Otimizado para Performance**: Processamento paralelo com ThreadPoolExecutor
-- **Taxonomia Rica**: Sistema hierárquico com 10 temas principais e centenas de subtemas
+## 🎯 Sobre
 
-## Arquitetura
+Este workspace utiliza **Poetry** como gerenciador de dependências unificado, permitindo que múltiplos projetos compartilhem o mesmo ambiente virtual enquanto mantêm suas estruturas independentes.
+
+## 📁 Estrutura
 
 ```
-news_enrichment/
-├── classifier.py          # Classificador standalone (sem DB)
-├── enricher.py           # Enriquecedor com persistência
-├── llm_client.py         # Cliente LLM base
-├── llm_client_optimized.py  # Cliente otimizado para batch
-├── local_llm_client.py   # Cliente para LLMs locais (Ollama)
-├── dataset_manager.py    # Gerenciamento de datasets
-└── postgres_exporter.py  # Exportação para PostgreSQL
+data-science/
+├── README.md                  # Este arquivo
+├── pyproject.toml             # Configuração Poetry (ambiente compartilhado)
+├── poetry.lock                # Lock file das dependências
+├── .venv/                     # Ambiente virtual (não versionado)
+├── .gitignore                 # Arquivos ignorados
+├── LICENSE                    # Licença MIT
+│
+└── source/                    # Projetos organizados
+    └── news-enrichment/       # Sistema de classificação de notícias
+        ├── news_enrichment/   # Código fonte
+        ├── examples/          # Exemplos de uso
+        ├── docs/              # Documentação
+        ├── tests/             # Testes
+        └── README.md          # Documentação específica
 ```
 
-## Instalação
+## 🚀 Projetos
+
+### [News Enrichment System](source/news-enrichment/)
+
+Sistema de enriquecimento e classificação automática de notícias usando Large Language Models (LLMs).
+
+**Tecnologias:**
+- AWS Bedrock (Claude Haiku)
+- Polars / Pandas
+- PostgreSQL
+- Python 3.9+
+
+**Features:**
+- Classificação hierárquica em 3 níveis (410 categorias)
+- Processamento em batch otimizado
+- Suporte a múltiplos provedores LLM
+- API standalone
+
+[📖 Ver documentação completa](source/news-enrichment/README.md)
+
+---
+
+## 💻 Setup do Ambiente
 
 ### Pré-requisitos
 
 - Python 3.9 ou superior
 - Poetry (gerenciador de dependências)
 
-### 1. Instale o Poetry
+### Instalação
 
 ```bash
-# Linux/Mac/WSL
+# 1. Instalar Poetry (se necessário)
 curl -sSL https://install.python-poetry.org | python3 -
 
-# Ou via pip
-pip install poetry
-```
+# 2. Clonar repositório
+git clone https://github.com/seu-usuario/data-science.git
+cd data-science
 
-### 2. Clone o repositório
-
-```bash
-git clone https://github.com/seu-usuario/news-enrichment-system.git
-cd news-enrichment-system
-```
-
-### 3. Instale as dependências com Poetry
-
-```bash
-# Instalação básica
+# 3. Instalar dependências
 poetry install
+
+# 4. Ativar ambiente
+poetry shell
+
+# 5. Configurar variáveis (copiar .env.example se existir)
+cp .env.example .env
+# Editar .env com suas credenciais
+```
+
+### Instalação Personalizada
+
+```bash
+# Apenas dependências de produção
+poetry install --only main
 
 # Com dependências de desenvolvimento
 poetry install --with dev
 
-# Com suporte a Machine Learning (PyTorch)
+# Com Machine Learning (PyTorch)
 poetry install --extras ml
 
-# Completo (dev + ML)
+# Completo
 poetry install --with dev --extras ml
 ```
 
-### 4. Ative o ambiente virtual
+## 🛠️ Uso
+
+### Executar Scripts
 
 ```bash
-# Poetry cria e gerencia o ambiente automaticamente
+# Dentro do ambiente Poetry
 poetry shell
+python source/news-enrichment/examples/classificacao_simples.py
 
-# Ou execute comandos diretamente
-poetry run python exemplo_classificacao.py
+# Ou diretamente
+poetry run python source/news-enrichment/examples/classificacao_simples.py
 ```
 
-### 5. Configure as variáveis de ambiente
+### Adicionar Dependências
 
 ```bash
-cp .env.example .env
-# Edite .env e adicione suas API keys
+# Adicionar nova biblioteca
+poetry add nome-da-biblioteca
+
+# Adicionar como dev dependency
+poetry add --group dev pytest-mock
+
+# Remover
+poetry remove nome-da-biblioteca
 ```
 
-## Uso Rápido
-
-### Classificação Simples (Standalone)
-
-```python
-from news_enrichment import NewsClassifier
-
-# Inicializar classificador
-classifier = NewsClassifier(
-    provider="anthropic",
-    model="claude-3-haiku-20240307"
-)
-
-# Classificar uma notícia
-news = {
-    "title": "Governo anuncia reforma tributária",
-    "content": "O governo federal apresentou hoje..."
-}
-
-result = classifier.classify_single(news)
-print(result)  # JSON com classificações
-```
-
-### Processamento em Batch
-
-```python
-# Classificar múltiplas notícias
-news_list = [news1, news2, news3, ...]
-results = classifier.classify_batch(news_list)
-```
-
-### Enriquecimento com Dataset
-
-```python
-from news_enrichment import NewsEnricher
-
-enricher = NewsEnricher(
-    dataset_path="data/news.parquet",
-    provider="anthropic"
-)
-
-# Enriquecer todas as notícias
-enricher.enrich_all()
-
-# Salvar resultados
-enricher.save("data/news_enriched.parquet")
-```
-
-## Documentação
-
-A documentação completa está disponível em:
-
-- **[Classifier README](docs/CLASSIFIER_README.qmd)** - Documentação do classificador standalone
-- **[Documentação de Prompts](docs/DOCUMENTACAO_PROMPTS.qmd)** - Benchmarks e análise de prompts
-- **[Guia de Documentação](docs/DOCS_README.md)** - Índice geral da documentação
-
-### Gerar documentação HTML/PDF
+### Testes
 
 ```bash
-cd docs
-make html  # Gera HTMLs
-make pdf   # Gera PDFs
+# Rodar testes de todos os projetos
+poetry run pytest
+
+# Rodar testes de um projeto específico
+poetry run pytest source/news-enrichment/tests/
+
+# Com coverage
+poetry run pytest --cov
 ```
 
-## Exemplos
+### Qualidade de Código
 
-Veja a pasta [examples/](examples/) para exemplos completos:
+```bash
+# Formatar código
+poetry run black .
 
-- **[classificacao_simples.py](examples/classificacao_simples.py)** - Uso básico do classificador
-- **[classificacao_api.py](examples/classificacao_api.py)** - Integração com FastAPI/Flask
-- **[enriquecimento_basico.py](examples/enriquecimento_basico.py)** - Enriquecimento de dataset
-- **[enriquecimento_otimizado.py](examples/enriquecimento_otimizado.py)** - Versão otimizada para alto volume
+# Lint
+poetry run flake8 source/
 
-## Benchmarks
-
-Performance com Claude Haiku (110 notícias):
-
-| Métrica | Valor |
-|---------|-------|
-| Tempo médio por notícia | 4.3s |
-| Custo por notícia | $0.0024 |
-| Acurácia (validação manual) | 92% |
-| Taxa de sucesso | 100% |
-
-Veja [benchmarks/](benchmarks/) para análises detalhadas.
-
-## Taxonomia
-
-A taxonomia hierárquica possui 3 níveis:
-
-- **Nível 1**: 10 temas principais (Economia, Política, Saúde, etc.)
-- **Nível 2**: ~50 subtemas
-- **Nível 3**: ~410 categorias específicas
-
-Arquivo: [data/arvore.yaml](data/arvore.yaml)
-
-## Configuração Avançada
-
-### Usando LLM Local (Ollama)
-
-```python
-classifier = NewsClassifier(
-    provider="ollama",
-    model="llama3:70b",
-    api_base="http://localhost:11434"
-)
+# Type checking
+poetry run mypy source/
 ```
 
-### Ajustando Paralelismo
+## 📚 Estrutura de Dependências
 
-```python
-from news_enrichment.llm_client_optimized import LLMClientOptimized
+As dependências são organizadas em grupos:
 
-client = LLMClientOptimized(
-    provider="anthropic",
-    max_workers=8  # Aumentar paralelismo
-)
-```
+**Main (Produção):**
+- `polars`, `pandas` - Manipulação de dados
+- `boto3` - AWS SDK
+- `psycopg2-binary` - PostgreSQL
+- `requests`, `tqdm`, `pyyaml`
 
-## Contribuindo
+**Dev (Desenvolvimento):**
+- `pytest`, `pytest-cov` - Testes
+- `black`, `flake8`, `mypy`, `isort` - Qualidade
+- `jupyter`, `ipykernel` - Notebooks
 
-Contribuições são bem-vindas! Por favor:
+**Docs (Documentação):**
+- `mkdocs`, `mkdocs-material`
 
-1. Faça fork do projeto
-2. Crie uma branch para sua feature (`git checkout -b feature/AmazingFeature`)
-3. Commit suas mudanças (`git commit -m 'Add some AmazingFeature'`)
-4. Push para a branch (`git push origin feature/AmazingFeature`)
+**ML (Machine Learning - Opcional):**
+- `torch` - PyTorch
+
+## 🤝 Contribuindo
+
+Para contribuir:
+
+1. Fork o projeto
+2. Crie uma branch para sua feature (`git checkout -b feature/NovaFeature`)
+3. Commit suas mudanças (`git commit -m 'Add: nova feature'`)
+4. Push para a branch (`git push origin feature/NovaFeature`)
 5. Abra um Pull Request
+6. Tudo documentado e apontado de acordo com a Issue de origem.
+
+## 📋 Convenções
+
+### Organização de Projetos
+
+Novos projetos devem seguir a estrutura:
+
+```
+source/
+└── nome-do-projeto/
+    ├── nome_do_projeto/    # Código fonte (snake_case)
+    │   ├── __init__.py
+    │   └── ...
+    ├── examples/           # Exemplos de uso
+    ├── tests/              # Testes unitários
+    ├── docs/               # Documentação específica
+    └── README.md           # Documentação do projeto
+```
+
 
 ## 👤 Autor
 
 **Luis Felipe de Moraes**
-- Cientista de Dados
+- Cientista de Dados - CPQD
 
+## 🔗 Links Úteis
+
+- [Poetry Documentation](https://python-poetry.org/docs/)
+- [News Enrichment System](source/news-enrichment/)
+- [Python Best Practices](https://docs.python-guide.org/)
 
 ---
+
+**Workspace mantido com ☕**

@@ -25,6 +25,11 @@ import logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+# Configuração de paths (independente de onde o script é executado)
+PROJECT_ROOT = Path(__file__).parent.parent.parent.parent
+ARVORE_PATH = PROJECT_ROOT / "arvore.yaml"
+DATA_DIR = PROJECT_ROOT / "data"
+
 
 def carregar_taxonomia_yaml():
     """Carrega e formata a árvore temática do YAML."""
@@ -32,7 +37,7 @@ def carregar_taxonomia_yaml():
     print("CARREGANDO TAXONOMIA")
     print("="*80 + "\n")
 
-    with open("arvore.yaml", "r", encoding="utf-8") as f:
+    with open(ARVORE_PATH, "r", encoding="utf-8") as f:
         taxonomia_raw = yaml.safe_load(f)
 
     # Formatar para uso no prompt
@@ -57,7 +62,7 @@ def filtrar_noticias_recentes(n=10):
     print("FILTRANDO NOTÍCIAS PARA TESTE")
     print("="*80 + "\n")
 
-    dataset_manager = NewsDatasetManager(cache_dir="./data")
+    dataset_manager = NewsDatasetManager(cache_dir=str(DATA_DIR))
     df = dataset_manager.load_cached()
 
     # Filtrar apenas com data válida
@@ -496,8 +501,8 @@ def main():
 
     # Salvar parquet
     df_final = pl.DataFrame(all_results)
-    output_path = "./data/benchmark_prompts_completo.parquet"
-    df_final.write_parquet(output_path)
+    output_path = DATA_DIR / "benchmark_prompts_completo.parquet"
+    df_final.write_parquet(str(output_path))
     print(f"✓ Parquet salvo: {output_path}")
 
     # Salvar CSV comparativo
@@ -510,8 +515,8 @@ def main():
         'most_specific_theme_label', 'summary'
     ]
 
-    csv_path = "./data/benchmark_prompts_comparativo.csv"
-    df_pandas[cols_compare].to_csv(csv_path, index=False)
+    csv_path = DATA_DIR / "benchmark_prompts_comparativo.csv"
+    df_pandas[cols_compare].to_csv(str(csv_path), index=False)
     print(f"✓ CSV salvo: {csv_path}")
 
     # Salvar metadados
@@ -528,9 +533,10 @@ def main():
         ]
     }
 
-    with open("./data/benchmark_prompts_metadata.json", "w") as f:
+    metadata_path = DATA_DIR / "benchmark_prompts_metadata.json"
+    with open(metadata_path, "w") as f:
         json.dump(metadata, f, indent=2)
-    print(f"✓ Metadados salvos: ./data/benchmark_prompts_metadata.json")
+    print(f"✓ Metadados salvos: {metadata_path}")
 
     print("\n" + "="*80)
     print("BENCHMARK CONCLUÍDO!")
