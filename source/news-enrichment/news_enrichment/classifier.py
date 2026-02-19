@@ -42,8 +42,8 @@ class NewsClassifier:
         model_id: str = "anthropic.claude-3-haiku-20240307-v1:0",
         region: str = "us-east-1",
         taxonomy: Optional[Dict] = None,
-        batch_size: int = 4,
-        sleep_between_batches: float = 0.5,
+        batch_size: int = 4, # recomendo manter pequeno para evitar timeouts e erros de rate limit
+        sleep_between_batches: float = 0.5, # recomendo 0.5s para balancear velocidade e evitar rate limit
         aws_access_key_id: Optional[str] = None,
         aws_secret_access_key: Optional[str] = None,
         aws_session_token: Optional[str] = None,
