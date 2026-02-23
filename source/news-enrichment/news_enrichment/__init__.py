@@ -11,6 +11,24 @@ from .enricher import NewsEnricher
 from .postgres_exporter import PostgresExporter
 from .classifier import NewsClassifier
 
+# RAG modules (opcional - requer: poetry install --extras rag)
+try:
+    from .rag_retriever import TaxonomyRAGRetriever
+    from .classifier_rag import NewsClassifierRAG
+    _RAG_AVAILABLE = True
+except ImportError:
+    TaxonomyRAGRetriever = None
+    NewsClassifierRAG = None
+    _RAG_AVAILABLE = False
+
+# BERT modules (opcional - requer: poetry install --extras ml)
+try:
+    from .classifier_bert import NewsClassifierBERT
+    _BERT_AVAILABLE = True
+except ImportError:
+    NewsClassifierBERT = None
+    _BERT_AVAILABLE = False
+
 __all__ = [
     'NewsDatasetManager',
     'BedrockLLMClient',
@@ -18,7 +36,12 @@ __all__ = [
     'LocalLLMClient',
     'NewsEnricher',
     'PostgresExporter',
-    'NewsClassifier'
+    'NewsClassifier',
+    # RAG (opcional)
+    'TaxonomyRAGRetriever',
+    'NewsClassifierRAG',
+    # BERT (opcional)
+    'NewsClassifierBERT',
 ]
 
-__version__ = '0.3.0'
+__version__ = '0.5.0'  # Bump: Added BERT fine-tuned support
