@@ -2,9 +2,9 @@
 
 Este documento apresenta análise comparativa científica de **3 abordagens** para classificar notícias em 410 categorias.
 
-## 🎯 As 3 Abordagens
+## As 3 Abordagens
 
-### 1. Claude Zero-shot (Abordagem Direta) ⭐ **ATUAL**
+### 1. Claude Zero-shot (Abordagem Direta) **ATUAL**
 
 ```python
 # Passa toda taxonomia ao LLM
@@ -18,11 +18,11 @@ resultado = claude(prompt)
 ```
 
 **Características:**
-- ✅ Zero-shot - sem dados de treino
-- ✅ Simples (~300 linhas de código)
-- ✅ Flexível - adapta a mudanças
-- ⚠️ Custo de API: $0.0024/notícia
-- ⚠️ Latência: ~4s/notícia
+- Zero-shot - sem dados de treino
+- Simples (~300 linhas de código)
+- Flexível - adapta a mudanças
+- Custo de API: $0.0024/notícia
+- Latência: ~4s/notícia
 
 ### 2. RAG (Retrieval-Augmented Generation)
 
@@ -42,11 +42,11 @@ resultado = claude(prompt)
 ```
 
 **Características:**
-- ⚠️ Overhead de embeddings
-- ⚠️ Complexo (~1200 linhas)
-- ⚠️ Custo: API + infra adicional
-- ⚠️ Latência: ~4.6s/notícia
-- ✅ Explicabilidade via scores
+- Overhead de embeddings
+- Complexo (~1200 linhas)
+- Custo: API + infra adicional
+- Latência: ~4.6s/notícia
+- Explicabilidade via scores
 
 ### 3. BERT Fine-tuned (Aprendizado Supervisionado)
 
@@ -57,22 +57,22 @@ resultado = modelo(noticia)  # Direto, sem LLM
 ```
 
 **Características:**
-- ✅ Inferência rápida (~0.05-0.1s)
-- ✅ Custo zero após treino
-- ✅ Roda 100% local
-- ⚠️ Precisa > 20k exemplos rotulados
-- ⚠️ Re-treino se taxonomia mudar
-- ⚠️ Menos flexível
+- Inferência rápida (~0.05-0.1s)
+- Custo zero após treino
+- Roda 100% local
+- Precisa > 20k exemplos rotulados
+- Re-treino se taxonomia mudar
+- Menos flexível
 
-## 📊 Comparação Quantitativa
+## Comparação Quantitativa
 
 ### Performance
 
 | Métrica | Claude | RAG | BERT |
 |---------|--------|-----|------|
 | **Init** | 0.5s | 30s (BERT load) | 2s |
-| **Classificação** | 4.0s | 4.6s | **0.08s** 🏆 |
-| **Total (100 notícias)** | 400s | 460s | **8s** 🏆 |
+| **Classificação** | 4.0s | 4.6s | **0.08s** |
+| **Total (100 notícias)** | 400s | 460s | **8s** |
 
 **Vencedor:** BERT (50x mais rápido)
 
@@ -80,7 +80,7 @@ resultado = modelo(noticia)  # Direto, sem LLM
 
 | Métrica | Claude | RAG | BERT |
 |---------|--------|-----|------|
-| **Acurácia** | ~92-95% 🏆 | ~92-95% | ~85-90% |
+| **Acurácia** | ~92-95% | ~92-95% | ~85-90% |
 | **Concordância** | Baseline | 85-95% vs Claude | 80-90% vs Claude |
 
 **Vencedor:** Claude (melhor zero-shot)
@@ -89,10 +89,10 @@ resultado = modelo(noticia)  # Direto, sem LLM
 
 | Aspecto | Claude | RAG | BERT |
 |---------|--------|-----|------|
-| **API (por notícia)** | $0.0024 | $0.0024 | **$0** 🏆 |
-| **API (100k/mês)** | $240/mês | $240/mês | **$0** 🏆 |
-| **Infra adicional** | Nenhuma 🏆 | +2GB RAM, +CPU | Padrão 🏆 |
-| **Custo inicial** | $0 🏆 | $0 🏆 | $100-500 (treino) |
+| **API (por notícia)** | $0.0024 | $0.0024 | **$0** |
+| **API (100k/mês)** | $240/mês | $240/mês | **$0** |
+| **Infra adicional** | Nenhuma | +2GB RAM, +CPU | Padrão |
+| **Custo inicial** | $0 | $0 | $100-500 (treino) |
 
 **Vencedor:** BERT (longo prazo) ou Claude (curto prazo)
 
@@ -100,11 +100,11 @@ resultado = modelo(noticia)  # Direto, sem LLM
 
 | Aspecto | Claude | RAG | BERT |
 |---------|--------|-----|------|
-| **Linhas de código** | **300** 🏆 | 1200 | 800 |
-| **Dependências** | boto3 🏆 | boto3 + sentence-transformers + faiss | transformers + torch |
-| **Dados necessários** | **Nenhum** 🏆 | **Nenhum** 🏆 | > 20k rotulados |
-| **Setup** | Credenciais AWS 🏆 | AWS + modelo BERT | Treinar (horas) |
-| **Manutenção** | **Baixa** 🏆 | Alta | Média |
+| **Linhas de código** | **300** | 1200 | 800 |
+| **Dependências** | boto3 | boto3 + sentence-transformers + faiss | transformers + torch |
+| **Dados necessários** | **Nenhum** | **Nenhum** | > 20k rotulados |
+| **Setup** | Credenciais AWS | AWS + modelo BERT | Treinar (horas) |
+| **Manutenção** | **Baixa** | Alta | Média |
 
 **Vencedor:** Claude (mais simples)
 
@@ -112,16 +112,16 @@ resultado = modelo(noticia)  # Direto, sem LLM
 
 | Cenário | Claude | RAG | BERT |
 |---------|--------|-----|------|
-| **Nova categoria** | Atualiza prompt 🏆 | Atualiza prompt 🏆 | Re-treinar (horas) |
-| **Mudança de regra** | Atualiza prompt 🏆 | Atualiza prompt 🏆 | Re-treinar |
-| **Explicar decisão** | Possível | Scores de similaridade 🏆 | Scores de confiança |
-| **Funciona offline** | ❌ | ❌ | ✅ 🏆 |
+| **Nova categoria** | Atualiza prompt | Atualiza prompt | Re-treinar (horas) |
+| **Mudança de regra** | Atualiza prompt | Atualiza prompt | Re-treinar |
+| **Explicar decisão** | Possível | Scores de similaridade | Scores de confiança |
+| **Funciona offline** | ❌ | ❌ | ✅ |
 
 **Vencedor:** Claude/RAG (mais flexíveis)
 
-## 🎯 Quando Usar Cada Abordagem
+## Quando Usar Cada Abordagem
 
-### ✅ Use CLAUDE se:
+### Use CLAUDE se:
 
 1. **Não tem dados de treino** (principal!)
    - Zero-shot funciona imediatamente
@@ -145,7 +145,7 @@ resultado = modelo(noticia)  # Direto, sem LLM
 
 **Contexto ideal:** Projeto em fase inicial, taxonomia em evolução, volume moderado.
 
-### ✅ Use BERT se:
+### Use BERT se:
 
 1. **Tem dados de treino** (requisito!)
    - > 20.000 notícias rotuladas
@@ -169,7 +169,7 @@ resultado = modelo(noticia)  # Direto, sem LLM
 
 **Contexto ideal:** Produção em larga escala, taxonomia estável, dados disponíveis.
 
-### ❌ NÃO use RAG:
+### NÃO use RAG:
 
 RAG **não faz sentido** neste caso porque:
 
@@ -212,7 +212,7 @@ RAG **não faz sentido** neste caso porque:
 4. **Custo:** API + infra + treino
 5. **Complexidade:** LOC, dependências, setup
 
-## 📈 Resultados Empíricos
+## Resultados Empíricos
 
 ### Experimento 1: Performance (50 notícias)
 
@@ -246,7 +246,7 @@ Quando as abordagens discordam:
 - **Ambiguidade legítima:** Notícia poderia ser classificada em múltiplas
 - **Sem padrão claro:** Nenhuma abordagem é consistentemente melhor
 
-## 💰 Análise de Custo (12 meses)
+## Análise de Custo (12 meses)
 
 ### Cenário 1: 10.000 notícias/mês
 
@@ -280,11 +280,11 @@ Quando as abordagens discordam:
 
 **Vencedor:** BERT (economiza $27.800/ano!)
 
-## 🎓 Recomendação Final
+## Recomendação Final
 
 ### Para o Projeto Atual
 
-**✅ RECOMENDAÇÃO: Manter Claude (Abordagem Direta)**
+* RECOMENDAÇÃO: Manter Claude (Abordagem Direta)**
 
 **Justificativas:**
 
@@ -355,7 +355,7 @@ Sem benefícios mensuráveis:
 
 **RAG só faria sentido com > 10.000 categorias.**
 
-## 📚 Referências
+## Referências
 
 ### Papers
 
@@ -384,7 +384,7 @@ Sem benefícios mensuráveis:
 - **Taxonomia em tokens:** ~8k tokens (~2.5k palavras)
 - **Overhead:** 4% do contexto total
 
-## 🚀 Executando os Benchmarks
+## Executando os Benchmarks
 
 ### 1. Benchmark Triplo (Recomendado)
 

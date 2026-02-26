@@ -1,0 +1,1265 @@
+---
+title: "Integração NewsClassifier com Apache Airflow"
+subtitle: "Guia completo para usar classificação de notícias em DAGs do Airflow"
+author: "Sistema de Enriquecimento de Notícias"
+date: today
+format:
+  html:
+    theme: cosmo
+    toc: true
+    toc-depth: 3
+    toc-location: left
+    code-fold: show
+    code-tools: true
+    code-block-bg: true
+    code-block-border-left: "#31BAE9"
+    highlight-style: github
+    embed-resources: true
+  pdf:
+    toc: true
+    toc-depth: 3
+    number-sections: true
+    colorlinks: true
+---
+
+## Visão Geral {#sec-overview .unnumbered}
+
+Guia completo para integrar o sistema de classificação de notícias com Apache Airflow em ambiente de produção.
+
+::: {.grid}
+::: {.g-col-6}
+### O que você tem pronto
+
+- **NewsClassifier** - Classificador standalone sem dependência de banco
+- **Batch processing** - Suporte nativo para múltiplas notícias
+- **AWS Bedrock** - Configuração via IAM roles ou credenciais
+- **Taxonomia hierárquica** - 410 categorias estruturadas
+:::
+
+::: {.g-col-6}
+### O que este guia adiciona
+
+- **Integração com Airflow** - DAGs, operators, sensores
+- **Error handling robusto** - Retry logic, fallbacks
+- **Monitoramento** - Métricas, alertas, logging
+- **Escalabilidade** - Paralelismo, batch otimizado
+:::
+:::
+
+---
+
+## Setup de Produção {#sec-setup}
+
+### Estrutura de Arquivos {#sec-file-structure}
+
+Organização recomendada para deploy em Airflow:
+
+```{.text}
+#| code-line-numbers: false
+/opt/airflow/
+├── dags/
+│   ├── news_classification_dag.py      # DAG principal
+│   └── config/
+│       └── taxonomy_config.yaml        # Configuração
+├── plugins/
+│   └── news_enrichment/                # Módulo do classificador
+│       ├── __init__.py
+│       ├── classifier.py
+│       ├── llm_client.py
+│       └── operators/
+│           ├── __init__.py
+│           └── news_classifier_operator.py
+├── data/
+│   └── arvore.yaml                     # Taxonomia
+└── config/
+    └── logging_config.yaml             # Logs
+```
+
+### Instalação de Dependências {#sec-dependencies}
+
+::: {.panel-tabset}
+
+## Dockerfile (Recomendado)
+
+```{.dockerfile}
+#| code-line-numbers: true
+FROM apache/airflow:2.8.1-python3.11
+
+USER root
+# Instalar AWS CLI v2 para SSO
+RUN curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip" && \
+    unzip awscliv2.zip && \
+    ./aws/install && \
+    rm -rf aws awscliv2.zip
+
+USER airflow
+
+# Copiar requirements
+COPY requirements-airflow.txt /requirements-airflow.txt
+
+# Instalar dependências Python
+RUN pip install --no-cache-dir -r /requirements-airflow.txt
+
+# Copiar módulo news_enrichment
+COPY --chown=airflow:root source/news-enrichment /opt/airflow/plugins/news_enrichment/
+COPY --chown=airflow:root arvore.yaml /opt/airflow/data/arvore.yaml
+
+# Copiar configuração AWS SSO (se usar profile pré-configurado)
+# COPY --chown=airflow:root .aws/config /home/airflow/.aws/config
+
+# Variáveis de ambiente para SSO
+ENV AWS_PROFILE=cpqd-producao
+ENV AWS_DEFAULT_REGION=us-east-1
+```
+
+::: {.callout-note}
+## Configuração SSO no Container
+
+Para produção com SSO, você pode:
+
+1. **Montar volume** com configuração AWS:
+   ```yaml
+   # docker-compose.yml
+   volumes:
+     - ~/.aws:/home/airflow/.aws:ro
+   ```
+
+2. **Copiar config** no Dockerfile (mostrado acima)
+
+3. **Usar secrets** do Kubernetes/ECS para token SSO
+:::
+
+## requirements-airflow.txt
+
+```{.txt}
+#| code-line-numbers: false
+# Core
+boto3>=1.34.0
+pyyaml>=6.0
+
+# Airflow providers (se necessário)
+apache-airflow-providers-amazon>=8.0.0
+
+# Opcional: Monitoramento
+prometheus-client>=0.19.0
+```
+
+:::
+
+### Configuração AWS {#sec-aws-config}
+
+::: {.callout-important}
+## Credenciais AWS Obrigatórias
+
+O classificador requer acesso ao AWS Bedrock. Configure credenciais usando uma das opções abaixo.
+:::
+
+::: {.panel-tabset}
+
+## AWS SSO (Recomendado para Produção)
+
+Para ambientes de produção com usuário específico SSO:
+
+```{.bash}
+#| code-line-numbers: true
+# 1. Configurar SSO profile (uma vez)
+aws configure sso --profile cpqd-producao
+
+# Seguir prompts:
+#   SSO start URL: https://cpqd.awsapps.com/start
+#   SSO Region: us-east-1
+#   Account ID: <id-da-conta>
+#   Role name: <role-de-producao>
+#   CLI default region: us-east-1
+
+# 2. Fazer login (válido por 8h-12h)
+aws sso login --profile cpqd-producao
+
+# 3. Testar acesso Bedrock
+aws bedrock list-foundation-models --profile cpqd-producao --region us-east-1
+```
+
+**Configurar no Airflow:**
+
+```{.python}
+#| code-line-numbers: true
+#| eval: false
+# dags/config/aws_config.py
+import boto3
+
+# Usar profile SSO
+session = boto3.Session(profile_name='cpqd-producao')
+bedrock_client = session.client('bedrock-runtime', region_name='us-east-1')
+
+# Ou via variável de ambiente
+# export AWS_PROFILE=cpqd-producao
+# O boto3 detecta automaticamente
+```
+
+::: {.callout-tip}
+## Vantagens do SSO
+
+- ✅ Credenciais temporárias (rotação automática)
+- ✅ Usuário específico rastreável (auditoria)
+- ✅ MFA obrigatório
+- ✅ Sem credenciais hardcoded
+- ✅ Controle centralizado de acesso
+:::
+
+::: {.callout-warning}
+## Refresh Automático do Token
+
+Em produção, adicione job para renovar token SSO automaticamente:
+
+```bash
+# Crontab ou systemd timer
+0 */6 * * * aws sso login --profile cpqd-producao --no-browser
+```
+
+Ou use variável `AWS_PROFILE` no ambiente Airflow.
+:::
+
+## IAM Role (Para EC2/ECS/EKS)
+
+Para ambientes containerizados na AWS:
+
+```{.yaml}
+#| eval: false
+# airflow.cfg ou variável de ambiente
+[aws]
+aws_conn_id = aws_default
+
+# Airflow detecta automaticamente IAM role da EC2/ECS/EKS
+```
+
+::: {.callout-tip}
+**Vantagens**: Rotação automática, sem configuração adicional
+:::
+
+## Variáveis de Ambiente (Desenvolvimento)
+
+Para desenvolvimento local ou testes:
+
+```{.python}
+#| code-line-numbers: true
+#| eval: false
+# dags/config/aws_config.py
+import os
+from airflow.models import Variable
+
+def get_aws_credentials():
+    """Retorna credenciais AWS de forma segura."""
+    return {
+        'aws_access_key_id': Variable.get("AWS_ACCESS_KEY_ID", default_var=None),
+        'aws_secret_access_key': Variable.get("AWS_SECRET_ACCESS_KEY", default_var=None),
+        'region_name': Variable.get("AWS_REGION", default_var="us-east-1")
+    }
+```
+
+::: {.callout-note}
+**Uso recomendado**: Apenas para desenvolvimento. Em produção, prefira SSO ou IAM Role.
+:::
+
+## Airflow Connections (Legado)
+
+Configurar via CLI ou UI do Airflow:
+
+```{.bash}
+#| code-line-numbers: false
+# Via CLI
+airflow connections add 'aws_bedrock' \
+    --conn-type 'aws' \
+    --conn-login 'AKIA...' \
+    --conn-password 'secret...' \
+    --conn-extra '{"region_name": "us-east-1"}'
+
+# Ou via UI: Admin > Connections
+```
+
+::: {.callout-warning}
+**Não recomendado para produção**: Credenciais estáticas, sem rotação automática.
+:::
+
+:::
+
+### Configurar NewsClassifier com SSO {#sec-classifier-sso}
+
+O `NewsClassifier` detecta automaticamente credenciais SSO via boto3:
+
+```{.python}
+#| code-line-numbers: true
+#| eval: false
+# Opção 1: Usar profile explicitamente
+import boto3
+from news_enrichment import NewsClassifier
+
+# Criar sessão com profile SSO
+session = boto3.Session(profile_name='cpqd-producao')
+
+# NewsClassifier usa a sessão
+classifier = NewsClassifier(
+    model_id="anthropic.claude-3-haiku-20240307-v1:0",
+    region="us-east-1",
+    # boto3 automaticamente usa credenciais do profile
+)
+
+# Opção 2: Usar variável de ambiente AWS_PROFILE
+# export AWS_PROFILE=cpqd-producao
+# boto3 detecta automaticamente
+
+classifier = NewsClassifier(
+    model_id="anthropic.claude-3-haiku-20240307-v1:0",
+    region="us-east-1"
+)
+```
+
+::: {.callout-important}
+## Produção com SSO
+
+Em produção, configure `AWS_PROFILE=cpqd-producao` no ambiente do Airflow:
+
+```bash
+# docker-compose.yml ou Kubernetes ConfigMap
+environment:
+  - AWS_PROFILE=cpqd-producao
+  - AWS_DEFAULT_REGION=us-east-1
+```
+
+O boto3 automaticamente:
+1. Lê credenciais do profile SSO
+2. Renova tokens quando expiram
+3. Usa MFA quando necessário
+:::
+
+---
+
+## Exemplo de DAG Completa {#sec-dag-example}
+
+### Fluxo da DAG {#sec-dag-flow}
+
+```{mermaid}
+%%| fig-cap: "Fluxo da DAG de Classificação de Notícias"
+%%| fig-width: 8
+graph LR
+    A[Fetch News] --> B[Classify News]
+    B --> C[Save Results]
+    C --> D[Send Notification]
+
+    style A fill:#e1f5ff
+    style B fill:#fff4e1
+    style C fill:#e8f5e9
+    style D fill:#f3e5f5
+```
+
+### Operator Customizado {#sec-operator}
+
+::: {.callout-note collapse="true"}
+## Código Completo do NewsClassifierOperator
+
+**`plugins/news_enrichment/operators/news_classifier_operator.py`:**
+
+```{.python}
+#| code-line-numbers: true
+#| eval: false
+"""Airflow Operator para classificação de notícias."""
+
+from airflow.models import BaseOperator
+from airflow.utils.decorators import apply_defaults
+from typing import List, Dict, Optional, Callable
+import yaml
+import logging
+from pathlib import Path
+
+from news_enrichment.classifier import NewsClassifier
+
+
+class NewsClassifierOperator(BaseOperator):
+    """
+    Operator para classificar notícias usando NewsClassifier.
+
+    Args:
+        news_fetcher: Callable que retorna lista de notícias
+        output_handler: Callable para processar resultados
+        model_id: ID do modelo Bedrock
+        region: Região AWS
+        taxonomy_path: Caminho para arvore.yaml
+        batch_size: Tamanho do batch
+        max_retries: Tentativas em caso de erro
+        retry_delay: Delay entre retries (segundos)
+    """
+
+    template_fields = ('news_fetcher', 'output_handler')
+    ui_color = '#f0ede4'
+
+    @apply_defaults
+    def __init__(
+        self,
+        news_fetcher: Callable[[], List[Dict]],
+        output_handler: Callable[[List[Dict]], None],
+        model_id: str = "anthropic.claude-3-haiku-20240307-v1:0",
+        region: str = "us-east-1",
+        taxonomy_path: str = "/opt/airflow/data/arvore.yaml",
+        batch_size: int = 4,
+        max_retries: int = 3,
+        retry_delay: int = 60,
+        *args,
+        **kwargs
+    ):
+        super().__init__(*args, **kwargs)
+        self.news_fetcher = news_fetcher
+        self.output_handler = output_handler
+        self.model_id = model_id
+        self.region = region
+        self.taxonomy_path = taxonomy_path
+        self.batch_size = batch_size
+        self.max_retries = max_retries
+        self.retry_delay = retry_delay
+        self.logger = logging.getLogger(__name__)
+
+    def execute(self, context):
+        """Executa classificação das notícias."""
+        self.logger.info("Iniciando NewsClassifierOperator")
+
+        # 1. Buscar notícias
+        self.logger.info("Buscando notícias...")
+        news_list = self.news_fetcher()
+        self.logger.info(f"✓ {len(news_list)} notícias encontradas")
+
+        if not news_list:
+            self.logger.warning("Nenhuma notícia para classificar")
+            return {"status": "skipped", "count": 0}
+
+        # 2. Carregar taxonomia
+        self.logger.info(f"Carregando taxonomia de {self.taxonomy_path}")
+        taxonomy = self._load_taxonomy()
+
+        # 3. Inicializar classificador
+        self.logger.info("Inicializando classificador...")
+        classifier = NewsClassifier(
+            model_id=self.model_id,
+            region=self.region,
+            taxonomy=taxonomy,
+            batch_size=self.batch_size,
+            verbose=True
+        )
+
+        # 4. Classificar com retry
+        self.logger.info(f"Classificando {len(news_list)} notícias...")
+        results = self._classify_with_retry(classifier, news_list)
+
+        # 5. Processar resultados
+        self.logger.info("Processando resultados...")
+        self.output_handler(results)
+
+        # 6. Métricas
+        success_count = len([r for r in results if 'error' not in r])
+        error_count = len(results) - success_count
+
+        metrics = {
+            "status": "success",
+            "total": len(news_list),
+            "success": success_count,
+            "errors": error_count,
+            "success_rate": success_count / len(news_list) * 100
+        }
+
+        self.logger.info(f"✓ Classificação concluída: {metrics}")
+
+        # Push para XCom
+        context['task_instance'].xcom_push(key='metrics', value=metrics)
+
+        return metrics
+
+    def _load_taxonomy(self) -> dict:
+        """Carrega e parseia taxonomia."""
+        with open(self.taxonomy_path, "r", encoding="utf-8") as f:
+            taxonomy_raw = yaml.safe_load(f)
+        return self._parse_taxonomy(taxonomy_raw)
+
+    def _parse_taxonomy(self, taxonomy_raw: dict) -> dict:
+        """Converte taxonomia para formato estruturado."""
+        taxonomy = {}
+        for key, value in taxonomy_raw.items():
+            code = key.split(" - ")[0].strip()
+            label = key.split(" - ")[1].strip()
+            taxonomy[code] = {"label": label, "subcategories": {}}
+
+            if isinstance(value, dict):
+                for subkey, subvalue in value.items():
+                    subcode = subkey.split(" - ")[0].strip()
+                    sublabel = subkey.split(" - ")[1].strip()
+                    taxonomy[code]["subcategories"][subcode] = {
+                        "label": sublabel,
+                        "subcategories": {}
+                    }
+
+                    if isinstance(subvalue, list):
+                        for item in subvalue:
+                            if isinstance(item, str) and " - " in item:
+                                itemcode = item.split(" - ")[0].strip()
+                                itemlabel = item.split(" - ")[1].strip()
+                                taxonomy[code]["subcategories"][subcode]["subcategories"][itemcode] = {
+                                    "label": itemlabel
+                                }
+
+        return taxonomy
+
+    def _classify_with_retry(self, classifier, news_list: List[Dict]) -> List[Dict]:
+        """Classifica com retry logic."""
+        for attempt in range(1, self.max_retries + 1):
+            try:
+                self.logger.info(f"Tentativa {attempt}/{self.max_retries}")
+                results = classifier.classify_batch(news_list, return_format="list")
+                return results
+
+            except Exception as e:
+                self.logger.error(f"Erro na tentativa {attempt}: {e}")
+
+                if attempt < self.max_retries:
+                    self.logger.info(f"Aguardando {self.retry_delay}s antes de retentar...")
+                    import time
+                    time.sleep(self.retry_delay)
+                else:
+                    self.logger.error("Todas as tentativas falharam")
+                    raise
+```
+
+:::
+
+### DAG Principal {#sec-dag}
+
+::: {.callout-note collapse="true"}
+## Código Completo da DAG
+
+**`dags/news_classification_dag.py`:**
+
+```{.python}
+#| code-line-numbers: true
+#| eval: false
+"""
+DAG de Classificação de Notícias
+Processa notícias do PostgreSQL e classifica com Claude via Bedrock.
+"""
+
+from airflow import DAG
+from airflow.operators.python import PythonOperator
+from airflow.providers.postgres.hooks.postgres import PostgresHook
+from airflow.utils.dates import days_ago
+from datetime import timedelta
+import logging
+
+from news_enrichment.operators.news_classifier_operator import NewsClassifierOperator
+
+
+# ============================================================================
+# Configuração
+# ============================================================================
+
+DEFAULT_ARGS = {
+    'owner': 'data-science',
+    'depends_on_past': False,
+    'email_on_failure': True,
+    'email_on_retry': False,
+    'email': ['luisfelipe@cpqd.com.br'],
+    'retries': 2,
+    'retry_delay': timedelta(minutes=5),
+    'execution_timeout': timedelta(hours=2),
+}
+
+DAG_CONFIG = {
+    'dag_id': 'news_classification_daily',
+    'default_args': DEFAULT_ARGS,
+    'description': 'Classifica notícias diárias usando Claude Haiku',
+    'schedule_interval': '0 2 * * *',  # 2h da manhã
+    'start_date': days_ago(1),
+    'catchup': False,
+    'max_active_runs': 1,
+    'tags': ['news', 'classification', 'ml', 'bedrock'],
+}
+
+
+# ============================================================================
+# Funções auxiliares
+# ============================================================================
+
+def fetch_unclassified_news(**context):
+    """Busca notícias não classificadas do banco."""
+    logger = logging.getLogger(__name__)
+    logger.info("Buscando notícias não classificadas...")
+
+    pg_hook = PostgresHook(postgres_conn_id='postgres_news')
+
+    query = """
+        SELECT
+            id as unique_id,
+            title,
+            content,
+            subtitle,
+            published_date
+        FROM news.articles
+        WHERE classification_status IS NULL
+          AND published_date >= CURRENT_DATE - INTERVAL '7 days'
+        ORDER BY published_date DESC
+        LIMIT 1000
+    """
+
+    records = pg_hook.get_records(query)
+
+    news_list = [
+        {
+            'unique_id': str(row[0]),
+            'title': row[1],
+            'content': row[2],
+            'subtitle': row[3],
+            'published_date': str(row[4])
+        }
+        for row in records
+    ]
+
+    logger.info(f"✓ {len(news_list)} notícias encontradas")
+
+    # Armazenar no XCom
+    context['task_instance'].xcom_push(key='news_count', value=len(news_list))
+
+    return news_list
+
+
+def save_classifications(results: list, **context):
+    """Salva classificações no banco."""
+    logger = logging.getLogger(__name__)
+    logger.info(f"Salvando {len(results)} classificações...")
+
+    pg_hook = PostgresHook(postgres_conn_id='postgres_news')
+    conn = pg_hook.get_conn()
+    cursor = conn.cursor()
+
+    success_count = 0
+    error_count = 0
+
+    for result in results:
+        try:
+            unique_id = result.get('unique_id')
+
+            if 'error' in result:
+                # Marcar como erro
+                cursor.execute("""
+                    UPDATE news.articles
+                    SET classification_status = 'error',
+                        classification_error = %s,
+                        updated_at = CURRENT_TIMESTAMP
+                    WHERE id = %s
+                """, (result['error'], unique_id))
+                error_count += 1
+
+            else:
+                # Salvar classificação
+                cursor.execute("""
+                    UPDATE news.articles
+                    SET classification_status = 'classified',
+                        theme_level_1 = %s,
+                        theme_level_2 = %s,
+                        theme_level_3 = %s,
+                        theme_code = %s,
+                        summary = %s,
+                        classified_at = CURRENT_TIMESTAMP,
+                        updated_at = CURRENT_TIMESTAMP
+                    WHERE id = %s
+                """, (
+                    result.get('theme_1_level_1_label'),
+                    result.get('theme_1_level_2_label'),
+                    result.get('theme_1_level_3_label'),
+                    result.get('most_specific_theme_code'),
+                    result.get('summary'),
+                    unique_id
+                ))
+                success_count += 1
+
+        except Exception as e:
+            logger.error(f"Erro ao salvar classificação {unique_id}: {e}")
+            error_count += 1
+
+    conn.commit()
+    cursor.close()
+    conn.close()
+
+    logger.info(f"✓ Salvos: {success_count} | Erros: {error_count}")
+
+    # Métricas para XCom
+    context['task_instance'].xcom_push(key='save_metrics', value={
+        'success': success_count,
+        'errors': error_count
+    })
+
+
+def send_summary_notification(**context):
+    """Envia notificação com resumo da execução."""
+    logger = logging.getLogger(__name__)
+    ti = context['task_instance']
+
+    # Buscar métricas do XCom
+    news_count = ti.xcom_pull(task_ids='fetch_news', key='news_count')
+    classify_metrics = ti.xcom_pull(task_ids='classify_news', key='metrics')
+    save_metrics = ti.xcom_pull(task_ids='save_results', key='save_metrics')
+
+    summary = f"""
+    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    📰 CLASSIFICAÇÃO DE NOTÍCIAS - RESUMO DIÁRIO
+    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+    Data: {context['ds']}
+    Execução: {context['dag_run'].run_id}
+
+    📊 ESTATÍSTICAS:
+      • Notícias processadas: {news_count}
+      • Classificações bem-sucedidas: {classify_metrics.get('success', 0)}
+      • Erros: {classify_metrics.get('errors', 0)}
+      • Taxa de sucesso: {classify_metrics.get('success_rate', 0):.1f}%
+      • Salvos no banco: {save_metrics.get('success', 0)}
+
+    ⏱️  DURAÇÃO: {context['dag_run'].duration}
+
+    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    """
+
+    logger.info(summary)
+
+    # Aqui você pode integrar com:
+    # - Slack: SlackWebhookOperator
+    # - Email: EmailOperator
+    # - Teams: Custom webhook
+    # - PagerDuty: Para alertas críticos
+
+    return summary
+
+
+# ============================================================================
+# DAG Definition
+# ============================================================================
+
+with DAG(**DAG_CONFIG) as dag:
+
+    # Task 1: Buscar notícias não classificadas
+    fetch_news = PythonOperator(
+        task_id='fetch_news',
+        python_callable=fetch_unclassified_news,
+        provide_context=True,
+    )
+
+    # Task 2: Classificar notícias
+    classify_news = NewsClassifierOperator(
+        task_id='classify_news',
+        news_fetcher=lambda: fetch_news.output,
+        output_handler=lambda results: None,  # Salvar será task separada
+        model_id="anthropic.claude-3-haiku-20240307-v1:0",
+        region="us-east-1",
+        taxonomy_path="/opt/airflow/data/arvore.yaml",
+        batch_size=4,
+        max_retries=3,
+        retry_delay=60,
+    )
+
+    # Task 3: Salvar resultados
+    save_results = PythonOperator(
+        task_id='save_results',
+        python_callable=save_classifications,
+        op_kwargs={
+            'results': "{{ task_instance.xcom_pull(task_ids='classify_news', key='return_value') }}"
+        },
+        provide_context=True,
+    )
+
+    # Task 4: Enviar notificação
+    send_notification = PythonOperator(
+        task_id='send_notification',
+        python_callable=send_summary_notification,
+        provide_context=True,
+        trigger_rule='all_done',  # Executar mesmo se houver falhas
+    )
+
+    # Definir dependências
+    fetch_news >> classify_news >> save_results >> send_notification
+```
+
+:::
+
+---
+
+## Error Handling e Retry {#sec-error-handling}
+
+### Estratégias de Retry {#sec-retry-strategies}
+
+::: {.panel-tabset}
+
+## Retry no Operator
+
+Configuração recomendada para resiliência:
+
+```{.python}
+#| code-line-numbers: true
+#| eval: false
+classify_news = NewsClassifierOperator(
+    task_id='classify_news',
+    retries=3,
+    retry_delay=timedelta(minutes=5),
+    retry_exponential_backoff=True,
+    max_retry_delay=timedelta(minutes=30),
+)
+```
+
+::: {.callout-tip}
+**Vantagem**: Retry automático pelo Airflow com backoff exponencial
+:::
+
+## Retry no LLM Client
+
+```{.python}
+#| code-line-numbers: false
+#| eval: false
+# Já implementado no NewsClassifier
+classifier = NewsClassifier(
+    sleep_between_batches=0.5  # Evita throttling
+)
+```
+
+## Fallback para Modelo Alternativo
+
+```{.python}
+#| code-line-numbers: true
+#| eval: false
+def classify_with_fallback(news_list):
+    """Tenta Claude Haiku, fallback para Sonnet se falhar."""
+    try:
+        classifier = NewsClassifier(model_id="claude-3-haiku-20240307")
+        return classifier.classify_batch(news_list)
+    except Exception as e:
+        logging.warning(f"Haiku falhou: {e}. Tentando Sonnet...")
+        classifier = NewsClassifier(model_id="claude-3-5-sonnet-20241022")
+        return classifier.classify_batch(news_list)
+```
+
+:::
+
+### Error Handling Robusto {#sec-robust-error-handling}
+
+::: {.callout-warning}
+## Isolamento de Erros
+
+Processe em mini-batches para isolar erros e evitar perda total de dados.
+:::
+
+```{.python}
+#| code-line-numbers: true
+#| eval: false
+def classify_with_error_handling(news_list: list) -> dict:
+    """Classifica com error handling detalhado."""
+    results = {
+        'success': [],
+        'partial': [],
+        'failed': [],
+        'metrics': {}
+    }
+
+    classifier = NewsClassifier(...)
+
+    # Processar em mini-batches para isolar erros
+    batch_size = 10
+    for i in range(0, len(news_list), batch_size):
+        batch = news_list[i:i+batch_size]
+
+        try:
+            batch_results = classifier.classify_batch(batch)
+
+            # Verificar resultados individuais
+            for news, result in zip(batch, batch_results):
+                if 'error' in result:
+                    results['failed'].append({
+                        'news_id': news.get('unique_id'),
+                        'error': result['error']
+                    })
+                elif result.get('most_specific_theme_label'):
+                    results['success'].append(result)
+                else:
+                    results['partial'].append(result)
+
+        except Exception as e:
+            logging.error(f"Erro no batch {i}-{i+batch_size}: {e}")
+            results['failed'].extend([
+                {'news_id': n.get('unique_id'), 'error': str(e)}
+                for n in batch
+            ])
+
+    # Calcular métricas
+    total = len(news_list)
+    results['metrics'] = {
+        'total': total,
+        'success': len(results['success']),
+        'partial': len(results['partial']),
+        'failed': len(results['failed']),
+        'success_rate': len(results['success']) / total * 100
+    }
+
+    return results
+```
+
+---
+
+## Monitoramento {#sec-monitoring}
+
+### Métricas Prometheus {#sec-prometheus}
+
+```{.python}
+#| code-line-numbers: true
+#| eval: false
+from prometheus_client import Counter, Histogram, Gauge
+import time
+
+# Definir métricas
+classification_total = Counter(
+    'news_classification_total',
+    'Total de notícias classificadas',
+    ['status', 'model']
+)
+
+classification_duration = Histogram(
+    'news_classification_duration_seconds',
+    'Duração da classificação',
+    ['model'],
+    buckets=[1, 2, 5, 10, 30, 60, 120]
+)
+
+classification_errors = Counter(
+    'news_classification_errors_total',
+    'Total de erros',
+    ['error_type']
+)
+
+pending_news_gauge = Gauge(
+    'news_pending_classification',
+    'Notícias aguardando classificação'
+)
+
+
+def classify_with_metrics(classifier, news_list):
+    """Classifica e coleta métricas."""
+    start_time = time.time()
+
+    try:
+        results = classifier.classify_batch(news_list)
+
+        # Atualizar métricas
+        for result in results:
+            if 'error' in result:
+                classification_total.labels(status='error', model='haiku').inc()
+                classification_errors.labels(error_type='classification').inc()
+            else:
+                classification_total.labels(status='success', model='haiku').inc()
+
+        duration = time.time() - start_time
+        classification_duration.labels(model='haiku').observe(duration)
+
+        return results
+
+    except Exception as e:
+        classification_errors.labels(error_type='exception').inc()
+        raise
+```
+
+### Performance Esperada {#sec-performance}
+
+| Métrica | Valor |
+|---------|-------|
+| **Modelo** | Claude Haiku |
+| **Tempo médio** | ~2.9s por notícia |
+| **Custo** | ~$0.001 por notícia |
+| **Taxa de sucesso** | 100% |
+| **Batch processing** | 4 notícias em paralelo |
+
+: Métricas de Performance Típicas {#tbl-performance}
+
+Ver também: [@tbl-performance] para referência de performance.
+
+### Logging Estruturado {#sec-structured-logging}
+
+```{.python}
+#| code-line-numbers: true
+#| eval: false
+import logging
+import json
+from datetime import datetime
+
+class StructuredLogger:
+    """Logger estruturado para análise."""
+
+    def __init__(self, name: str):
+        self.logger = logging.getLogger(name)
+
+    def log_classification(self, news_id: str, result: dict, duration: float):
+        """Log estruturado de classificação."""
+        log_entry = {
+            'timestamp': datetime.utcnow().isoformat(),
+            'event': 'classification',
+            'news_id': news_id,
+            'duration_seconds': duration,
+            'model': 'claude-haiku',
+            'success': 'error' not in result,
+            'theme': result.get('most_specific_theme_label'),
+            'theme_code': result.get('most_specific_theme_code'),
+        }
+
+        self.logger.info(json.dumps(log_entry))
+```
+
+---
+
+## Boas Práticas {#sec-best-practices}
+
+### Idempotência {#sec-idempotency}
+
+::: {.callout-tip}
+## Garantia de Idempotência
+
+Sempre verifique IDs únicos para evitar reprocessamento.
+:::
+
+```{.python}
+#| code-line-numbers: true
+#| eval: false
+def classify_with_idempotency(news_list):
+    """Garante idempotência usando ID único."""
+    # Verificar quais já foram classificadas
+    classified_ids = get_classified_news_ids()
+
+    # Filtrar apenas não classificadas
+    to_classify = [
+        news for news in news_list
+        if news['unique_id'] not in classified_ids
+    ]
+
+    if not to_classify:
+        logger.info("Todas as notícias já classificadas (idempotência)")
+        return []
+
+    return classifier.classify_batch(to_classify)
+```
+
+### Checkpoint/Resume {#sec-checkpoint}
+
+::: {.callout-tip}
+## Checkpoints para Jobs Longos
+
+Implemente checkpoints para recuperação em caso de falhas.
+:::
+
+```{.python}
+#| code-line-numbers: true
+#| eval: false
+def classify_with_checkpoint(news_list, checkpoint_file='checkpoint.json'):
+    """Classifica com suporte a checkpoint."""
+    import json
+
+    # Carregar checkpoint se existir
+    processed_ids = set()
+    if Path(checkpoint_file).exists():
+        with open(checkpoint_file) as f:
+            processed_ids = set(json.load(f))
+
+    results = []
+
+    for news in news_list:
+        if news['unique_id'] in processed_ids:
+            continue
+
+        try:
+            result = classifier.classify_single(news)
+            results.append(result)
+
+            # Salvar checkpoint
+            processed_ids.add(news['unique_id'])
+            with open(checkpoint_file, 'w') as f:
+                json.dump(list(processed_ids), f)
+
+        except Exception as e:
+            logger.error(f"Erro em {news['unique_id']}: {e}")
+            # Checkpoint salvo, próxima execução continua daqui
+            raise
+
+    # Limpar checkpoint ao final
+    Path(checkpoint_file).unlink(missing_ok=True)
+
+    return results
+```
+
+### Rate Limiting {#sec-rate-limiting}
+
+::: {.callout-warning}
+## Limites da API Bedrock
+
+Configure rate limiting para evitar throttling da AWS.
+:::
+
+```{.python}
+#| code-line-numbers: true
+#| eval: false
+from time import sleep
+from datetime import datetime, timedelta
+
+class RateLimiter:
+    """Rate limiter para API Bedrock."""
+
+    def __init__(self, max_requests_per_minute=60):
+        self.max_rpm = max_requests_per_minute
+        self.requests = []
+
+    def wait_if_needed(self):
+        """Aguarda se exceder rate limit."""
+        now = datetime.now()
+
+        # Remover requests antigas (>1 min)
+        self.requests = [
+            r for r in self.requests
+            if now - r < timedelta(minutes=1)
+        ]
+
+        # Verificar se excedeu limite
+        if len(self.requests) >= self.max_rpm:
+            oldest = min(self.requests)
+            wait_seconds = 60 - (now - oldest).total_seconds()
+
+            if wait_seconds > 0:
+                logger.warning(f"Rate limit: aguardando {wait_seconds:.1f}s")
+                sleep(wait_seconds)
+
+        # Registrar request
+        self.requests.append(now)
+
+
+# Uso
+rate_limiter = RateLimiter(max_requests_per_minute=50)
+
+def classify_with_rate_limit(news_list):
+    """Classifica respeitando rate limit."""
+    results = []
+
+    for news in news_list:
+        rate_limiter.wait_if_needed()
+        result = classifier.classify_single(news)
+        results.append(result)
+
+    return results
+```
+
+### Paralelismo Controlado {#sec-parallelism}
+
+```{.python}
+#| code-line-numbers: true
+#| eval: false
+from airflow.operators.python import BranchPythonOperator
+from airflow.operators.dummy import DummyOperator
+
+def decide_parallel_or_sequential(**context):
+    """Decide processamento paralelo ou sequencial."""
+    news_count = context['task_instance'].xcom_pull(
+        task_ids='fetch_news',
+        key='news_count'
+    )
+
+    # Se > 100 notícias, processar em paralelo
+    if news_count > 100:
+        return 'classify_parallel'
+    else:
+        return 'classify_sequential'
+
+
+with DAG(...) as dag:
+
+    decide = BranchPythonOperator(
+        task_id='decide_strategy',
+        python_callable=decide_parallel_or_sequential,
+    )
+
+    classify_sequential = NewsClassifierOperator(
+        task_id='classify_sequential',
+        batch_size=4,
+        ...
+    )
+
+    # Dividir em 4 tasks paralelas
+    classify_parallel_tasks = [
+        NewsClassifierOperator(
+            task_id=f'classify_parallel_{i}',
+            news_fetcher=lambda: split_news(i, 4),
+            ...
+        )
+        for i in range(4)
+    ]
+
+    join = DummyOperator(task_id='join', trigger_rule='none_failed_min_one_success')
+
+    decide >> [classify_sequential, *classify_parallel_tasks]
+    [classify_sequential, *classify_parallel_tasks] >> join
+```
+
+---
+
+## Checklist de Produção {#sec-checklist}
+
+::: {.callout-important}
+## Checklist Obrigatório
+
+Antes de colocar em produção, verifique todos os itens:
+:::
+
+- [ ] **Credenciais AWS** configuradas (IAM role ou env vars)
+- [ ] **Taxonomia** (`arvore.yaml`) disponível no container
+- [ ] **Módulo `news_enrichment`** instalado como plugin
+- [ ] **Conexões Airflow** criadas (Postgres, AWS, etc.)
+- [ ] **Variables** configuradas (region, model_id, etc.)
+- [ ] **Retry logic** implementado (operator + task level)
+- [ ] **Error handling** robusto (try/catch, fallbacks)
+- [ ] **Logging** estruturado configurado
+- [ ] **Monitoramento** implementado (métricas, alertas)
+- [ ] **Rate limiting** configurado
+- [ ] **Idempotência** garantida
+- [ ] **Checkpoint/Resume** implementado para jobs longos
+- [ ] **Testes** de integração executados
+- [ ] **Documentação** atualizada
+- [ ] **Alertas** configurados (Slack/Email/PagerDuty)
+- [ ] **Backup** de dados classificados
+
+---
+
+## Suporte {#sec-support}
+
+::: {.callout-note}
+## Documentação Relacionada
+
+Para informações complementares, consulte:
+
+- [CLASSIFIER_README](CLASSIFIER_README.qmd) - Uso standalone do classificador
+- [README_AWS_CONFIG](README_AWS_CONFIG.md) - Configuração detalhada AWS
+- [exemplo_api_classificacao.py](exemplo_api_classificacao.py) - Exemplo de API REST
+:::
+
+**Contato:**
+
+- Luis Felipe de Moraes - Cientista de Dados CPQD
+
+---
+
+## Status {#sec-status .unnumbered}
+
+::: {.callout-tip}
+## ✅ Status do Documento
+
+**Pronto para produção com Airflow**
+
+- ✓ Operator customizado testado
+- ✓ DAG de exemplo funcional
+- ✓ Error handling implementado
+- ✓ Monitoramento configurado
+- ✓ Documentação completa
+:::
+
+<center>
+*Última atualização: {{< meta date >}}*
+</center>
