@@ -1,0 +1,6 @@
+# Dependências extras necessárias no Composer.
+# NOTA: Este arquivo é apenas documentação.
+# Pacotes devem ser instalados via Terraform no repo infra
+# (variável pypi_packages do google_composer_environment).
+boto3>=1.35.0
+psycopg2-binary>=2.9.9
