@@ -136,6 +136,38 @@ def update_news_enrichment(
     return stats
 
 
+def _generate_mock_classifications(
+    news: List[Dict],
+    code_to_id: Dict[str, int],
+) -> List[Dict]:
+    """
+    Gera classificações mock para teste local sem chamar LLM.
+
+    Atribui o primeiro tema L1 disponível a todas as notícias.
+    """
+    # Pegar primeiro code L1 disponível
+    l1_codes = [code for code in code_to_id if "." not in code]
+    default_l1 = l1_codes[0] if l1_codes else "01"
+
+    mock_results = []
+    for item in news:
+        mock_results.append({
+            "unique_id": item.get("unique_id"),
+            "theme_1_level_1_code": default_l1,
+            "theme_1_level_1_label": f"Mock L1 ({default_l1})",
+            "theme_1_level_2_code": None,
+            "theme_1_level_2_label": None,
+            "theme_1_level_3_code": None,
+            "theme_1_level_3_label": None,
+            "most_specific_theme_code": default_l1,
+            "most_specific_theme_label": f"Mock L1 ({default_l1})",
+            "summary": f"[MOCK] Resumo gerado para teste local — {item.get('title', '')[:80]}",
+        })
+
+    logger.info(f"Mock: geradas {len(mock_results)} classificações sintéticas")
+    return mock_results
+
+
 def run_enrichment(
     database_url: str,
     aws_access_key_id: Optional[str] = None,
@@ -146,6 +178,7 @@ def run_enrichment(
     batch_limit: int = DEFAULT_BATCH_LIMIT,
     batch_size: int = 4,
     sleep_between_batches: float = 0.5,
+    mock: bool = False,
 ) -> Dict:
     """
     Executa o pipeline completo de enriquecimento.
@@ -160,6 +193,7 @@ def run_enrichment(
         batch_limit: Máximo de notícias por execução
         batch_size: Tamanho do batch para o LLM
         sleep_between_batches: Delay entre batches
+        mock: Se True, gera classificações sintéticas sem chamar LLM
 
     Returns:
         Dict com estatísticas da execução
@@ -171,27 +205,31 @@ def run_enrichment(
         logger.info("Nenhuma notícia pendente de classificação")
         return {"total": 0, "enriched": 0, "skipped": 0, "failed": 0}
 
-    # 2. Carregar taxonomia
-    taxonomy = load_taxonomy_from_postgres(database_url)
-
-    # 3. Carregar mapeamento code → id
+    # 2. Carregar mapeamento code → id
     code_to_id = build_theme_code_to_id_map(database_url)
 
-    # 4. Classificar via LLM
-    classifier = NewsClassifier(
-        model_id=model_id,
-        region=region,
-        taxonomy=taxonomy,
-        batch_size=batch_size,
-        sleep_between_batches=sleep_between_batches,
-        aws_access_key_id=aws_access_key_id,
-        aws_secret_access_key=aws_secret_access_key,
-        aws_session_token=aws_session_token,
-    )
+    # 3. Classificar
+    if mock:
+        logger.info("MODO MOCK ativo — classificações sintéticas, sem chamada LLM")
+        enriched = _generate_mock_classifications(news, code_to_id)
+    else:
+        # Carregar taxonomia para prompt do LLM
+        taxonomy = load_taxonomy_from_postgres(database_url)
 
-    enriched = classifier.classify_batch(news, return_format="list")
+        classifier = NewsClassifier(
+            model_id=model_id,
+            region=region,
+            taxonomy=taxonomy,
+            batch_size=batch_size,
+            sleep_between_batches=sleep_between_batches,
+            aws_access_key_id=aws_access_key_id,
+            aws_secret_access_key=aws_secret_access_key,
+            aws_session_token=aws_session_token,
+        )
 
-    # 5. Atualizar PostgreSQL
+        enriched = classifier.classify_batch(news, return_format="list")
+
+    # 4. Atualizar PostgreSQL
     stats = update_news_enrichment(database_url, enriched, code_to_id)
 
     result = {
@@ -199,6 +237,7 @@ def run_enrichment(
         "enriched": stats["updated"],
         "skipped": stats["skipped"],
         "failed": stats["failed"],
+        "mock": mock,
     }
 
     logger.info("=" * 60)

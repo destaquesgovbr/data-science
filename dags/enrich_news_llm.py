@@ -8,6 +8,7 @@ Roda a cada 10 minutos, processando notícias pendentes.
 
 from datetime import datetime, timedelta
 import logging
+import os
 
 from airflow.decorators import dag, task
 from airflow.hooks.base import BaseHook
@@ -61,6 +62,11 @@ def enrich_news_llm_dag():
             region = "us-east-1"
             logging.info("Connection 'aws_bedrock' não encontrada, usando credenciais do ambiente")
 
+        # Mock mode: classificação sintética sem chamar LLM
+        mock_llm = os.getenv("MOCK_LLM", "false").lower() == "true"
+        if mock_llm:
+            logging.info("MOCK_LLM=true — executando com classificações sintéticas")
+
         # Executar enriquecimento
         result = run_enrichment(
             database_url=database_url,
@@ -70,6 +76,7 @@ def enrich_news_llm_dag():
             batch_limit=200,
             batch_size=4,
             sleep_between_batches=0.5,
+            mock=mock_llm,
         )
 
         logging.info("=" * 60)
