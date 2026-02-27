@@ -233,13 +233,17 @@ Analise a notícia abaixo e retorne APENAS um JSON válido (sem markdown, sem ex
 
 {taxonomy_instructions}
 
+TAREFAS OBRIGATÓRIAS:
+1. Classifique a notícia em 3 níveis hierárquicos (theme_1_level_1/2/3).
+2. Gere um campo "summary" com um resumo conciso da notícia em 1-2 frases. O summary é OBRIGATÓRIO.
+
 NOTÍCIA:
 Título: {title}
 Subtítulo: {subtitle}
 Lead: {editorial_lead}
 Conteúdo: {content_preview}
 
-FORMATO DE SAÍDA (JSON VÁLIDO):
+FORMATO DE SAÍDA (JSON VÁLIDO — todos os campos são obrigatórios):
 {{
   "theme_1_level_1": "Política",
   "theme_1_level_1_code": "01",
