@@ -7,7 +7,7 @@ cd airflow/
 
 # Criar .env a partir do template
 cp .env.example .env
-# Editar .env com credenciais reais do PostgreSQL
+# Editar .env com credenciais reais
 
 # Subir (sem TTY, usa .env)
 astro dev start --no-browser --settings-file ""
@@ -26,8 +26,7 @@ astro dev stop
 
 | Componente | Versão |
 |-----------|--------|
-| Astro CLI | 1.39.0 |
-| Astro Runtime | 3.0-14 (Airflow 3.0.6) |
+| Astro Runtime | 3.0-14 |
 | Docker image | `astrocrpublic.azurecr.io/runtime:3.0-14` |
 
 ## Estrutura
@@ -35,35 +34,17 @@ astro dev stop
 ```
 airflow/
 ├── Dockerfile              # FROM astrocrpublic.azurecr.io/runtime:3.0-14
-├── requirements.txt        # Python deps (boto3, psycopg2)
+├── requirements.txt        # Python deps
 ├── packages.txt            # OS deps (vazio)
 ├── .env                    # Connections + variables (gitignored)
 ├── .env.example            # Template das env vars
 ├── .airflowignore          # Ignora __pycache__, .git, tests
 ├── .dockerignore           # Ignora .git, .env, logs
 ├── dags -> ../dags         # Symlink para dags/ na raiz
-├── plugins/
-│   └── news_enrichment -> ../../src/news_enrichment  # Plugin
+├── plugins/                # Plugins custom
 ├── include/                # Assets compartilhados (vazio)
-└── tests/                  # Testes DAG (vazio)
+└── tests/                  # Testes DAG
 ```
-
-## Mock LLM
-
-Para testar sem chamar AWS Bedrock, definir no `.env`:
-
-```
-MOCK_LLM=true
-```
-
-Isso ativa classificações sintéticas — o pipeline completo roda (fetch PG → classify → update PG) mas sem custo AWS.
-
-## Connections
-
-| Connection | Host | Descrição |
-|-----------|------|-----------|
-| `postgres_default` | `34.39.145.55` (Cloud SQL) | govbrnews — notícias |
-| `aws_bedrock` | N/A | Credenciais AWS para Bedrock (opcional com mock) |
 
 ## Comandos úteis
 
@@ -71,7 +52,6 @@ Isso ativa classificações sintéticas — o pipeline completo roda (fetch PG �
 astro dev ps                    # Ver containers
 astro dev logs --follow         # Logs
 astro dev run dags list         # Listar DAGs
-astro dev run dags trigger enrich_news_llm  # Trigger manual
 astro dev restart               # Rebuild após mudar requirements.txt
 astro dev kill                  # Parar + remover volumes
 ```
@@ -83,3 +63,8 @@ O `astro dev start` precisa de TTY para importar `airflow_settings.yaml`. No Cla
 ```bash
 script -q /dev/null astro dev start --no-browser --wait 5m
 ```
+
+## Template
+
+Este diretório é gerido pelo template [airflow-dgb](https://github.com/destaquesgovbr/airflow-dgb).
+Para atualizar: `copier update` na raiz do repo.
