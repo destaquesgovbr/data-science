@@ -174,7 +174,7 @@ def run_enrichment(
     aws_secret_access_key: Optional[str] = None,
     aws_session_token: Optional[str] = None,
     region: str = "us-east-1",
-    model_id: str = "anthropic.claude-3-5-haiku-20241022-v1:0",
+    model_id: str = "anthropic.claude-3-haiku-20240307-v1:0",
     batch_limit: int = DEFAULT_BATCH_LIMIT,
     batch_size: int = 4,
     sleep_between_batches: float = 0.5,
