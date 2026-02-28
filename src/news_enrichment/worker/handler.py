@@ -12,7 +12,7 @@ import os
 import uuid
 from datetime import datetime, timezone
 from typing import Any
-from urllib.parse import urlparse, parse_qs
+from urllib.parse import parse_qs, unquote, urlparse
 
 import psycopg2
 
@@ -52,8 +52,8 @@ def _parse_aws_credentials() -> tuple[str | None, str | None, str | None]:
     conn_uri = os.environ.get("AWS_BEDROCK_CONNECTION_URI", "")
     if conn_uri:
         parsed = urlparse(conn_uri)
-        access_key = parsed.username or None
-        secret_key = parsed.password or None
+        access_key = unquote(parsed.username) if parsed.username else None
+        secret_key = unquote(parsed.password) if parsed.password else None
         qs = parse_qs(parsed.query)
         region = qs.get("region_name", [region])[0]
         logger.info("Parsed AWS credentials from AWS_BEDROCK_CONNECTION_URI")
