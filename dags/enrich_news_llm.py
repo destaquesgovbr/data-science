@@ -67,7 +67,7 @@ def enrich_news_llm_dag():
         if mock_llm:
             logging.info("MOCK_LLM=true — executando com classificações sintéticas")
 
-        # Executar enriquecimento
+        # Executar enriquecimento (apenas notícias dos últimos 2 dias)
         result = run_enrichment(
             database_url=database_url,
             aws_access_key_id=aws_access_key_id,
@@ -77,6 +77,7 @@ def enrich_news_llm_dag():
             batch_size=4,
             sleep_between_batches=0.5,
             mock=mock_llm,
+            lookback_days=2,
         )
 
         logging.info("=" * 60)

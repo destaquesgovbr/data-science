@@ -23,6 +23,7 @@ DEFAULT_BATCH_LIMIT = 200
 def fetch_unenriched_news(
     database_url: str,
     limit: int = DEFAULT_BATCH_LIMIT,
+    lookback_days: Optional[int] = None,
 ) -> List[Dict]:
     """
     Busca notícias sem classificação temática do PostgreSQL.
@@ -30,29 +31,43 @@ def fetch_unenriched_news(
     Args:
         database_url: Connection string PostgreSQL
         limit: Máximo de notícias a processar por execução
+        lookback_days: Se definido, filtra apenas notícias publicadas nos últimos N dias
 
     Returns:
         Lista de dicts com campos necessários para classificação
     """
-    query = """
-        SELECT unique_id, title, subtitle, editorial_lead, content
-        FROM news
-        WHERE most_specific_theme_id IS NULL
-        ORDER BY published_at DESC
-        LIMIT %s
-    """
+    if lookback_days is not None:
+        query = """
+            SELECT unique_id, title, subtitle, editorial_lead, content
+            FROM news
+            WHERE most_specific_theme_id IS NULL
+              AND published_at >= NOW() - INTERVAL '%s days'
+            ORDER BY published_at DESC
+            LIMIT %s
+        """
+        params = (lookback_days, limit)
+    else:
+        query = """
+            SELECT unique_id, title, subtitle, editorial_lead, content
+            FROM news
+            WHERE most_specific_theme_id IS NULL
+            ORDER BY published_at DESC
+            LIMIT %s
+        """
+        params = (limit,)
 
     conn = psycopg2.connect(database_url)
     try:
         cursor = conn.cursor()
-        cursor.execute(query, (limit,))
+        cursor.execute(query, params)
         columns = [desc[0] for desc in cursor.description]
         rows = [dict(zip(columns, row)) for row in cursor.fetchall()]
         cursor.close()
     finally:
         conn.close()
 
-    logger.info(f"Encontradas {len(rows)} notícias sem classificação")
+    logger.info(f"Encontradas {len(rows)} notícias sem classificação" +
+                (f" (últimos {lookback_days} dias)" if lookback_days else ""))
     return rows
 
 
@@ -179,6 +194,7 @@ def run_enrichment(
     batch_size: int = 4,
     sleep_between_batches: float = 0.5,
     mock: bool = False,
+    lookback_days: Optional[int] = None,
 ) -> Dict:
     """
     Executa o pipeline completo de enriquecimento.
@@ -194,12 +210,13 @@ def run_enrichment(
         batch_size: Tamanho do batch para o LLM
         sleep_between_batches: Delay entre batches
         mock: Se True, gera classificações sintéticas sem chamar LLM
+        lookback_days: Se definido, filtra notícias dos últimos N dias
 
     Returns:
         Dict com estatísticas da execução
     """
     # 1. Buscar notícias sem classificação
-    news = fetch_unenriched_news(database_url, limit=batch_limit)
+    news = fetch_unenriched_news(database_url, limit=batch_limit, lookback_days=lookback_days)
 
     if not news:
         logger.info("Nenhuma notícia pendente de classificação")
