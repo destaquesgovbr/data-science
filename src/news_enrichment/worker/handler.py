@@ -12,6 +12,7 @@ import os
 import uuid
 from datetime import datetime, timezone
 from typing import Any
+from urllib.parse import urlparse, parse_qs
 
 import psycopg2
 
@@ -33,21 +34,49 @@ def _get_database_url() -> str:
     return url
 
 
+def _parse_aws_credentials() -> tuple[str | None, str | None, str | None]:
+    """Extract AWS credentials from env vars or Airflow-style connection URI.
+
+    Supports:
+      - Individual env vars: AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY
+      - Airflow URI: aws://ACCESS_KEY:SECRET_KEY@/?region_name=us-east-1
+    """
+    access_key = os.environ.get("AWS_ACCESS_KEY_ID")
+    secret_key = os.environ.get("AWS_SECRET_ACCESS_KEY")
+    region = os.environ.get("AWS_REGION", "us-east-1")
+
+    if access_key and secret_key:
+        return access_key, secret_key, region
+
+    # Fallback: parse Airflow connection URI
+    conn_uri = os.environ.get("AWS_BEDROCK_CONNECTION_URI", "")
+    if conn_uri:
+        parsed = urlparse(conn_uri)
+        access_key = parsed.username or None
+        secret_key = parsed.password or None
+        qs = parse_qs(parsed.query)
+        region = qs.get("region_name", [region])[0]
+        logger.info("Parsed AWS credentials from AWS_BEDROCK_CONNECTION_URI")
+
+    return access_key, secret_key, region
+
+
 def _get_classifier() -> NewsClassifier:
     """Lazy-init classifier with taxonomy from PG."""
     global _classifier
     if _classifier is None:
         database_url = _get_database_url()
         taxonomy = load_taxonomy_from_postgres(database_url)
+        aws_access_key, aws_secret_key, aws_region = _parse_aws_credentials()
         _classifier = NewsClassifier(
             model_id=os.environ.get(
                 "BEDROCK_MODEL_ID", "anthropic.claude-3-haiku-20240307-v1:0"
             ),
-            region=os.environ.get("AWS_REGION", "us-east-1"),
+            region=aws_region,
             taxonomy=taxonomy,
             batch_size=1,
-            aws_access_key_id=os.environ.get("AWS_ACCESS_KEY_ID"),
-            aws_secret_access_key=os.environ.get("AWS_SECRET_ACCESS_KEY"),
+            aws_access_key_id=aws_access_key,
+            aws_secret_access_key=aws_secret_key,
             aws_session_token=os.environ.get("AWS_SESSION_TOKEN"),
         )
         logger.info("NewsClassifier initialized")
@@ -150,7 +179,7 @@ def enrich_article(unique_id: str) -> dict[str, Any]:
 
     # Classify
     classifier = _get_classifier()
-    result = classifier.classify_single(article)
+    result = classifier.classify_single(article, return_format="dict")
 
     if not result:
         logger.warning(f"Classification failed for {unique_id}")
