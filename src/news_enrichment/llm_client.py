@@ -236,6 +236,8 @@ Analise a notícia abaixo e retorne APENAS um JSON válido (sem markdown, sem ex
 TAREFAS OBRIGATÓRIAS:
 1. Classifique a notícia em 3 níveis hierárquicos (theme_1_level_1/2/3).
 2. Gere um campo "summary" com um resumo conciso da notícia em 1-2 frases. O summary é OBRIGATÓRIO.
+3. Analise o sentimento da notícia (positive, neutral ou negative) e atribua um score entre -1.0 e 1.0.
+4. Extraia as entidades mencionadas (organizações, pessoas, locais, outros) com contagem de ocorrências.
 
 NOTÍCIA:
 Título: {title}
@@ -254,7 +256,14 @@ FORMATO DE SAÍDA (JSON VÁLIDO — todos os campos são obrigatórios):
   "theme_1_level_3_label": "Reforma Tributária",
   "most_specific_theme_code": "01.02.03",
   "most_specific_theme_label": "Reforma Tributária",
-  "summary": "Governo federal anuncia proposta de reforma tributária. Medida visa simplificar sistema e reduzir carga sobre empresas."
+  "summary": "Governo federal anuncia proposta de reforma tributária. Medida visa simplificar sistema e reduzir carga sobre empresas.",
+  "sentiment": {{
+    "label": "positive" | "neutral" | "negative",
+    "score": <float entre -1.0 e 1.0>
+  }},
+  "entities": [
+    {{"text": "<nome da entidade>", "type": "ORG|PER|LOC|MISC", "count": <int>}}
+  ]
 }}"""
 
         return prompt
@@ -364,7 +373,9 @@ FORMATO DE SAÍDA (JSON VÁLIDO — todos os campos são obrigatórios):
             'theme_1_level_3_label': None,
             'most_specific_theme_code': None,
             'most_specific_theme_label': None,
-            'summary': None
+            'summary': None,
+            'sentiment': None,
+            'entities': []
         }
 
         return {**row, **fallback_fields}
