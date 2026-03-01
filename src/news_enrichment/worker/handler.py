@@ -192,6 +192,9 @@ def enrich_article(unique_id: str) -> dict[str, Any]:
     code_to_id = _get_code_to_id()
     stats = update_news_enrichment(_get_database_url(), [result], code_to_id)
 
+    # Upsert sentiment + entities to news_features
+    _upsert_ai_features(unique_id, result)
+
     if stats["updated"] == 0:
         logger.warning(f"No update for {unique_id}: {stats}")
         return {"status": "update_failed", "stats": stats}
@@ -204,3 +207,41 @@ def enrich_article(unique_id: str) -> dict[str, Any]:
     )
 
     return {"status": "enriched", "stats": stats}
+
+
+def _upsert_ai_features(unique_id: str, enrichment_result: dict) -> None:
+    """Upsert AI-computed features (sentiment, entities) to news_features table."""
+    from psycopg2.extras import Json
+
+    features = {}
+    sentiment = enrichment_result.get("sentiment")
+    if sentiment and sentiment.get("label"):
+        features["sentiment"] = sentiment
+    entities = enrichment_result.get("entities")
+    if entities:
+        features["entities"] = entities
+
+    if not features:
+        return
+
+    db_url = _get_database_url()
+    conn = psycopg2.connect(db_url)
+    try:
+        cursor = conn.cursor()
+        cursor.execute(
+            """
+            INSERT INTO news_features (unique_id, features)
+            VALUES (%s, %s)
+            ON CONFLICT (unique_id) DO UPDATE SET
+                features = news_features.features || EXCLUDED.features
+            """,
+            (unique_id, Json(features)),
+        )
+        conn.commit()
+        cursor.close()
+        logger.info(f"Upserted AI features for {unique_id}: {list(features.keys())}")
+    except Exception as e:
+        conn.rollback()
+        logger.error(f"Failed to upsert AI features for {unique_id}: {e}")
+    finally:
+        conn.close()

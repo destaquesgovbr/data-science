@@ -228,7 +228,9 @@ class NewsClassifier:
             'theme_1_level_3_label',
             'most_specific_theme_code',
             'most_specific_theme_label',
-            'summary'
+            'summary',
+            'sentiment',
+            'entities'
         ]
 
         # Incluir unique_id se existir (útil para rastreabilidade)
