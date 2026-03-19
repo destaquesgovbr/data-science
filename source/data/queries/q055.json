@@ -1,0 +1,7 @@
+{
+  "id": "q055",
+  "text": "exemplo query doc longo 5",
+  "query_type": "doc_longo",
+  "expected_category": "Segurança Pública",
+  "metadata": {}
+}

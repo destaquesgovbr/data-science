@@ -1,0 +1,11 @@
+# Ignorar resultados intermediários
+embeddings/**/*.npy
+embeddings/**/*.pkl
+*.h5
+*.hdf5
+
+# Manter apenas métricas finais e visualizações
+!metrics/*.json
+!metrics/*.csv
+!visualizations/*.png
+!visualizations/*.pdf

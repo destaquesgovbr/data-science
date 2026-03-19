@@ -1,0 +1,7 @@
+{
+  "id": "q001",
+  "text": "exemplo query geral 1",
+  "query_type": "geral",
+  "expected_category": "Saúde",
+  "metadata": {}
+}

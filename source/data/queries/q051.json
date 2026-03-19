@@ -1,0 +1,7 @@
+{
+  "id": "q051",
+  "text": "exemplo query doc longo 1",
+  "query_type": "doc_longo",
+  "expected_category": "Saúde",
+  "metadata": {}
+}

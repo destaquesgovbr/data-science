@@ -1,0 +1,7 @@
+{
+  "id": "q054",
+  "text": "exemplo query doc longo 4",
+  "query_type": "doc_longo",
+  "expected_category": "Meio Ambiente",
+  "metadata": {}
+}

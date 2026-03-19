@@ -1,0 +1,28 @@
+[
+  {
+    "model_name": "BGE-M3",
+    "ndcg_at_10_general": 0.42259253094698185,
+    "ndcg_at_10_jargon": 0.0,
+    "ndcg_at_10_long_docs": NaN,
+    "map_score": 0.1527777777777778,
+    "mrr_score": 0.25,
+    "throughput_docs_per_sec": 6.664863403217463,
+    "latency_p50_ms": 14335.413455963135,
+    "latency_p95_ms": 16674.364948272705,
+    "latency_p99_ms": 16882.27174758911,
+    "total_evaluation_time_sec": 88.8453049659729
+  },
+  {
+    "model_name": "BERTimbau-Base",
+    "ndcg_at_10_general": 0.17575945781580216,
+    "ndcg_at_10_jargon": 0.0,
+    "ndcg_at_10_long_docs": NaN,
+    "map_score": 0.040625,
+    "mrr_score": 0.03125,
+    "throughput_docs_per_sec": 21.98947203193265,
+    "latency_p50_ms": 4532.618284225464,
+    "latency_p95_ms": 4650.902843475342,
+    "latency_p99_ms": 4661.417026519775,
+    "total_evaluation_time_sec": 31.67035436630249
+  }
+]

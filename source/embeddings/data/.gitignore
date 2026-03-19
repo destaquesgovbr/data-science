@@ -1,0 +1,10 @@
+# Ignorar dados grandes
+*.csv
+*.parquet
+*.pkl
+*.json
+*.txt
+
+# Exceto exemplos pequenos
+!example_*.json
+!sample_*.csv

@@ -1,0 +1,7 @@
+{
+  "id": "q053",
+  "text": "exemplo query doc longo 3",
+  "query_type": "doc_longo",
+  "expected_category": "Economia",
+  "metadata": {}
+}

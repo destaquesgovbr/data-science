@@ -1,0 +1,7 @@
+{
+  "id": "q057",
+  "text": "exemplo query doc longo 7",
+  "query_type": "doc_longo",
+  "expected_category": "Infraestrutura",
+  "metadata": {}
+}

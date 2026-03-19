@@ -1,0 +1,7 @@
+{
+  "id": "q059",
+  "text": "exemplo query doc longo 9",
+  "query_type": "doc_longo",
+  "expected_category": "Ciência e Tecnologia",
+  "metadata": {}
+}

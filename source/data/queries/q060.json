@@ -1,0 +1,7 @@
+{
+  "id": "q060",
+  "text": "exemplo query doc longo 10",
+  "query_type": "doc_longo",
+  "expected_category": "Agricultura",
+  "metadata": {}
+}

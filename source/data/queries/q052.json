@@ -1,0 +1,7 @@
+{
+  "id": "q052",
+  "text": "exemplo query doc longo 2",
+  "query_type": "doc_longo",
+  "expected_category": "Educação",
+  "metadata": {}
+}
