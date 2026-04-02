@@ -1,10 +1,10 @@
-# 📚 Lista de Leitura - Embeddings PT-BR
+# Lista de Leitura - Embeddings PT-BR
 
 > Papers, artigos e recursos para pesquisa de modelos de embedding
 
 ---
 
-## 🎯 Papers Essenciais (Prioridade Alta)
+## Papers Essenciais (Prioridade Alta)
 
 ### 1. Fundamentos de Sentence Embeddings
 
@@ -56,7 +56,7 @@
 
 ---
 
-## 📊 Papers de Avaliação e Benchmarks
+## Papers de Avaliação e Benchmarks
 
 - [ ] **MTEB: Massive Text Embedding Benchmark**
   - Autores: Muennighoff et al. (2022)
@@ -72,7 +72,7 @@
 
 ---
 
-## 🔧 Papers Técnicos (Métodos)
+## Papers Técnicos (Métodos)
 
 - [ ] **Efficient Natural Language Response Suggestion for Smart Reply**
   - Autores: Henderson et al. (2017)
@@ -88,7 +88,7 @@
 
 ---
 
-## 🌐 Recursos Online
+## Recursos Online
 
 ### Tutoriais e Guias
 
@@ -112,7 +112,7 @@
 
 ---
 
-## 📝 Papers Complementares (Leitura Opcional)
+## Papers Complementares (Leitura Opcional)
 
 ### Arquiteturas e Variações
 
@@ -136,41 +136,35 @@
 
 ---
 
-## 🎯 Estratégia de Leitura
+### Estudos sobre Tamanho de Queries
 
-### Semana 1 (Fundamentos)
-1. Sentence-BERT (essencial)
-2. BERTimbau (contexto PT-BR)
-3. MTEB (avaliação)
+1. **Jansen, B. J., Spink, A., & Saracevic, T. (2000)**
+   *"Real life, real users, and real needs: a study and analysis of user queries on the web"*
+   Information Processing & Management, 36(2), 207-227.
+   **Principais achados:** Média de 2.35 palavras por query em 51.473 queries analisadas.
 
-### Durante Experimentação
-4. BGE M3 (modelo atual)
-5. Serafim PT (PT específico)
-6. ASSIN 2 (benchmark PT)
+2. **Spink, A., Wolfram, D., Jansen, M. B., & Saracevic, T. (2001)**
+   *"Searching the Web: The public and their queries"*
+   Journal of the American Society for Information Science and Technology, 52(3), 226-234.
+   **Principais achados:** Média de 2.6 palavras; distribuição: 1 palavra (20%), 2 palavras (32%), 3 palavras (26%).
 
-### Opcional (Conforme Necessidade)
-7. DPR (se focar em RAG)
-8. ColBERT (se precisar late interaction)
-9. SimCSE (técnicas alternativas)
+3. **Google Search Research (2015-2020)**
+   Tendências atuais mostram aumento para 3-4 palavras em média, impulsionado por:
+   - Busca em dispositivos móveis (queries mais conversacionais)
+   - Busca por voz em geral (frases mais naturais)
+   - Maior familiaridade com motores de busca
 
----
+### Justificativa do Design
 
-## 📌 Notas e Insights
+Nosso design de queries reflete **dois perfis de usuários reais**:
 
-> Use esta seção para anotar insights importantes durante as leituras
+1. **Público Geral (~40%)**: Queries curtas (2-3 palavras), linguagem natural
+   - Ex: cidadãos buscando informações sobre serviços públicos
 
-### Sentence-BERT
-- [ ] Insights principais:
-- [ ] Aplicação ao projeto:
+2. **Profissionais/Especialistas (~40%)**: Queries técnicas (3-4 palavras), com jargões
+   - Ex: servidores públicos, jornalistas, gestores buscando informações específicas
 
-### BGE M3
-- [ ] Insights principais:
-- [ ] Aplicação ao projeto:
+3. **Pesquisas Complexas (~20%)**: Queries longas (4-5 palavras), múltiplos conceitos
+   - Ex: pesquisadores, analistas buscando contexto detalhado
 
-### Serafim PT
-- [ ] Insights principais:
-- [ ] Aplicação ao projeto:
-
----
-
-**Última Atualização**: 2026-03-05
+Esta distribuição permite avaliar a capacidade dos embeddings em **ambos os cenários de uso real**.

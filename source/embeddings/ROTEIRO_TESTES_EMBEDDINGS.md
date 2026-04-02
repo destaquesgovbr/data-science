@@ -1160,6 +1160,39 @@ Domain-specific tokenizer
 3. Pandas/Polars (data manipulation)
 4. Matplotlib/Seaborn (visualização)
 
+### Estudos sobre Tamanho de Queries
+
+1. **Jansen, B. J., Spink, A., & Saracevic, T. (2000)**
+   *"Real life, real users, and real needs: a study and analysis of user queries on the web"*
+   Information Processing & Management, 36(2), 207-227.
+   **Principais achados:** Média de 2.35 palavras por query em 51.473 queries analisadas.
+
+2. **Spink, A., Wolfram, D., Jansen, M. B., & Saracevic, T. (2001)**
+   *"Searching the Web: The public and their queries"*
+   Journal of the American Society for Information Science and Technology, 52(3), 226-234.
+   **Principais achados:** Média de 2.6 palavras; distribuição: 1 palavra (20%), 2 palavras (32%), 3 palavras (26%).
+
+3. **Google Search Research (2015-2020)**
+   Tendências atuais mostram aumento para 3-4 palavras em média, impulsionado por:
+   - Busca em dispositivos móveis (queries mais conversacionais)
+   - Busca por voz em geral (frases mais naturais)
+   - Maior familiaridade com motores de busca
+
+### Justificativa do Design
+
+Nosso design de queries reflete **dois perfis de usuários reais**:
+
+1. **Público Geral (~40%)**: Queries curtas (2-3 palavras), linguagem natural
+   - Ex: cidadãos buscando informações sobre serviços públicos
+
+2. **Profissionais/Especialistas (~40%)**: Queries técnicas (3-4 palavras), com jargões
+   - Ex: servidores públicos, jornalistas, gestores buscando informações específicas
+
+3. **Pesquisas Complexas (~20%)**: Queries longas (4-5 palavras), múltiplos conceitos
+   - Ex: pesquisadores, analistas buscando contexto detalhado
+
+Esta distribuição permite avaliar a capacidade dos embeddings em **ambos os cenários de uso real**.
+
 ---
 
 **Última atualização:** 2026-03-12
