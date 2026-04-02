@@ -246,6 +246,7 @@ def evaluate_model(
     query_metrics = {}
     by_category = defaultdict(list)
     by_type = defaultdict(list)
+    by_variant_type = defaultdict(list)
 
     for query_id, query_data in search_results.items():
         # Check if query has ground truth
@@ -274,6 +275,10 @@ def evaluate_model(
         # Group by type
         query_type = query_data['suggested_type']
         by_type[query_type].append(metrics)
+
+        # Group by variant type (if available)
+        variant_type = query_data.get('variant_type', 'unknown')
+        by_variant_type[variant_type].append(metrics)
 
     # Aggregate metrics
     all_metrics = list(query_metrics.values())
@@ -310,17 +315,34 @@ def evaluate_model(
             values = [m[key] for m in metrics_list]
             by_type_agg[qtype][key] = np.mean(values)
 
+    # By variant type
+    by_variant_type_agg = {}
+    for vtype, metrics_list in by_variant_type.items():
+        by_variant_type_agg[vtype] = {}
+        for metric in k_values:
+            key = f'ndcg@{metric}'
+            values = [m[key] for m in metrics_list]
+            by_variant_type_agg[vtype][key] = np.mean(values)
+
     # Print summary
     print(f"\n📊 Resultados Gerais:")
     print(f"   NDCG@10: {overall['ndcg@10']['mean']:.4f} (±{overall['ndcg@10']['std']:.4f})")
     print(f"   MAP:     {overall['map']['mean']:.4f} (±{overall['map']['std']:.4f})")
     print(f"   MRR:     {overall['mrr']['mean']:.4f} (±{overall['mrr']['std']:.4f})")
 
+    # Print variant type breakdown if available
+    if by_variant_type_agg:
+        print(f"\n📊 Por Tipo de Variante:")
+        for vtype, metrics in by_variant_type_agg.items():
+            if 'ndcg@10' in metrics:
+                print(f"   {vtype:20} NDCG@10: {metrics['ndcg@10']:.4f}")
+
     return {
         'model_id': model_id,
         'overall': overall,
         'by_category': by_category_agg,
         'by_type': by_type_agg,
+        'by_variant_type': by_variant_type_agg,
         'per_query': query_metrics
     }
 

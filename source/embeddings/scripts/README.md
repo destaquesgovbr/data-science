@@ -9,11 +9,14 @@ Pipeline completo de avaliação:
 ```
 1. setup_models.py          → Valida os 8 modelos
 2. generate_embeddings.py   → Gera embeddings do corpus (250 docs)
-3. semantic_search.py       → Executa busca semântica (85 queries)
-4. create_ground_truth.py   → Cria anotações de relevância
-5. evaluate_metrics.py      → Calcula NDCG, MAP, MRR
-6. benchmark_performance.py → Mede throughput, latência, memória
+3. semantic_search.py       → Executa busca semântica (259 queries expandidas)
+4. evaluate_consistency.py  → Avalia consistência entre variantes
+5. create_ground_truth.py   → Cria anotações de relevância
+6. evaluate_metrics.py      → Calcula NDCG, MAP, MRR
+7. benchmark_performance.py → Mede throughput, latência, memória
 ```
+
+**Nota:** As 259 queries são expandidas de 85 documentos âncora × ~3 variantes cada.
 
 ## 🚀 Quick Start
 
@@ -124,6 +127,8 @@ results/embeddings/
 
 Executa busca por similaridade para todas as queries.
 
+**Queries expandidas:** Usa TODAS as variantes (259 queries de 85 documentos âncora).
+
 **Uso:**
 ```bash
 # Buscar com todos os modelos
@@ -166,7 +171,80 @@ results/search_results/
 
 ---
 
-### 4. `create_ground_truth.py` - Anotação de Relevância
+### 4. `evaluate_consistency.py` - Consistência Entre Variantes
+
+Avalia quão consistentemente um modelo retorna o documento âncora para diferentes formulações da mesma query.
+
+**⚠️ Requer:** Resultados de busca (semantic_search.py)
+
+**Uso:**
+```bash
+# Avaliar todos os modelos
+python evaluate_consistency.py
+
+# Modelos específicos
+python evaluate_consistency.py --models bge-m3 serafim
+
+# Ajustar K
+python evaluate_consistency.py --k 20
+```
+
+**Métrica Chave: Consistency@K**
+
+Para cada base query (ex: q001):
+- Verifica se documento âncora está no top-K da variante 1
+- Verifica se documento âncora está no top-K da variante 2
+- Verifica se documento âncora está no top-K da variante 3
+- **Consistency@K** = (variantes com âncora no top-K) / (total variantes)
+
+**Interpretação:**
+```
+Consistência alta (>0.8)  → Modelo robusto a reformulações
+Consistência média (0.5-0.8) → Sensível a palavras exatas
+Consistência baixa (<0.5) → Frágil, depende muito da formulação
+```
+
+**Exemplo:**
+```
+Query q001 (3 variantes):
+  v1: "tilápia açude ema"
+  v2: "alevinos dnocs iracema"
+  v3: "piscicultura alevinos tilápia Iracema"
+
+Modelo A:
+  v1: doc_01_08 em posição 1  ✓
+  v2: doc_01_08 em posição 3  ✓
+  v3: doc_01_08 em posição 1  ✓
+  Consistency@10 = 3/3 = 1.0  (perfeito!)
+
+Modelo B:
+  v1: doc_01_08 em posição 2  ✓
+  v2: doc_01_08 NÃO aparece   ✗
+  v3: doc_01_08 em posição 15 ✗
+  Consistency@10 = 1/3 = 0.33 (frágil)
+```
+
+**Output:**
+```
+results/consistency/
+├── consistency_results.json  # Resultados detalhados
+└── consistency_summary.csv   # Ranking por modelo
+```
+
+**⏱️ Tempo estimado:** ~1-2 min
+
+**💡 Por que isso importa:**
+
+Em produção, usuários formulam queries de formas diferentes:
+- Público geral: "tilápia açude"
+- Profissional: "alevinos dnocs"
+- Técnico: "piscicultura tilápia"
+
+Um bom modelo deve retornar **resultados similares** independente da formulação!
+
+---
+
+### 5. `create_ground_truth.py` - Anotação de Relevância
 
 Cria ground truth para avaliação de métricas.
 
@@ -230,7 +308,7 @@ data/annotations/
 
 ---
 
-### 5. `evaluate_metrics.py` - Cálculo de Métricas
+### 6. `evaluate_metrics.py` - Cálculo de Métricas
 
 Calcula métricas de retrieval (NDCG, MAP, MRR, Recall).
 
@@ -292,7 +370,7 @@ results/metrics/
 
 ---
 
-### 6. `benchmark_performance.py` - Performance
+### 7. `benchmark_performance.py` - Performance
 
 Mede throughput, latência e uso de memória.
 
@@ -348,7 +426,7 @@ serafim                     98.7/s        450.3ms   3560MB
 
 ---
 
-### 7. `run_evaluation.py` - Pipeline Completo
+### 8. `run_evaluation.py` - Pipeline Completo
 
 Orquestra todo o workflow de avaliação.
 

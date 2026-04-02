@@ -22,31 +22,67 @@ from setup_models import MODELS
 
 
 def load_queries():
-    """Load queries from query_template_85.json."""
+    """Load queries from query_template_85.json.
+
+    Expands all variants, creating one query entry per variant.
+    Total: ~259 queries (85 docs × ~3 variants each)
+    """
     query_file = Path(__file__).parent.parent / "data" / "query_template_85.json"
 
     with open(query_file) as f:
         queries_data = json.load(f)
 
-    # Extract only filled queries (non-empty query_text)
+    # Expand all variants into individual queries
     queries = []
+
     for q in queries_data:
-        # Check if query has manual text OR recommended_query
-        query_text = q.get('query_text', '').strip()
-        if not query_text:
-            # Fallback to recommended_query if query_text is empty
+        base_query_id = q['query_id']
+        anchor_doc_id = q['anchor_doc_id']
+        category = q['category']
+        suggested_type = q.get('suggested_type', 'geral')
+
+        # Get all variants
+        variants = q.get('variants', [])
+
+        if not variants:
+            # Fallback: use recommended_query if no variants
             query_text = q.get('recommended_query', '').strip()
+            if query_text:
+                queries.append({
+                    'query_id': f"{base_query_id}_v1",
+                    'base_query_id': base_query_id,
+                    'variant_num': 1,
+                    'variant_type': 'recommended',
+                    'text': query_text,
+                    'category': category,
+                    'anchor_doc_id': anchor_doc_id,
+                    'suggested_type': suggested_type
+                })
+        else:
+            # Create one query entry per variant
+            for i, variant in enumerate(variants, 1):
+                variant_text = variant.get('text', '').strip()
+                variant_type = variant.get('type', 'unknown')
 
-        if query_text:
-            queries.append({
-                'query_id': q['query_id'],
-                'text': query_text,
-                'category': q['category'],
-                'anchor_doc_id': q['anchor_doc_id'],
-                'suggested_type': q.get('suggested_type', 'geral')
-            })
+                if variant_text:
+                    queries.append({
+                        'query_id': f"{base_query_id}_v{i}",
+                        'base_query_id': base_query_id,
+                        'variant_num': i,
+                        'variant_type': variant_type,
+                        'text': variant_text,
+                        'category': category,
+                        'anchor_doc_id': anchor_doc_id,
+                        'suggested_type': suggested_type
+                    })
 
-    print(f"✅ {len(queries)} queries carregadas")
+    print(f"✅ {len(queries)} queries carregadas (expandidas de {len(queries_data)} documentos âncora)")
+
+    # Show breakdown by variant type
+    from collections import Counter
+    variant_types = Counter(q['variant_type'] for q in queries)
+    print(f"   Breakdown: {dict(variant_types)}")
+
     return queries
 
 

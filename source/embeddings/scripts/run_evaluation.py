@@ -127,6 +127,8 @@ Examples:
                         help="Skip performance benchmarks")
     parser.add_argument("--skip-metrics", action="store_true",
                         help="Skip metrics calculation (requires ground truth)")
+    parser.add_argument("--skip-consistency", action="store_true",
+                        help="Skip consistency evaluation")
     parser.add_argument("--device", default=None,
                         choices=["cuda", "cpu"],
                         help="Device to use (default: auto-detect)")
@@ -197,14 +199,25 @@ Examples:
             print("\n❌ Busca semântica falhou!")
             return 1
 
-    # Step 4: Calculate metrics (only if ground truth exists)
+    # Step 4: Evaluate consistency (queries with variants)
+    if not args.skip_consistency:
+        success = run_command(
+            ["python", "evaluate_consistency.py"] + models_arg,
+            "PASSO 4: Avaliação de Consistência (Variantes de Queries)"
+        )
+        steps_run.append("Consistency")
+        if not success:
+            steps_failed.append("Consistency")
+            print("\n⚠️  Avaliação de consistência falhou")
+
+    # Step 5: Calculate metrics (only if ground truth exists)
     if not args.skip_metrics:
         gt_file = Path(__file__).parent.parent / "data" / "annotations" / "ground_truth.json"
 
         if gt_file.exists():
             success = run_command(
                 ["python", "evaluate_metrics.py"] + models_arg,
-                "PASSO 4: Cálculo de Métricas (NDCG, MAP, MRR)"
+                "PASSO 5: Cálculo de Métricas (NDCG, MAP, MRR)"
             )
             steps_run.append("Metrics")
             if not success:
@@ -212,16 +225,16 @@ Examples:
                 print("\n⚠️  Cálculo de métricas falhou")
         else:
             print(f"\n{'='*70}")
-            print("⚠️  PASSO 4: Métricas - PULADO")
+            print("⚠️  PASSO 5: Métricas - PULADO")
             print(f"{'='*70}")
             print("\nGround truth não encontrado!")
             print("Execute o script de anotação primeiro para calcular métricas.")
 
-    # Step 5: Performance benchmarks
+    # Step 6: Performance benchmarks
     if not args.skip_bench:
         success = run_command(
             ["python", "benchmark_performance.py"] + models_arg + device_arg,
-            "PASSO 5: Benchmark de Performance"
+            "PASSO 6: Benchmark de Performance"
         )
         steps_run.append("Benchmark")
         if not success:

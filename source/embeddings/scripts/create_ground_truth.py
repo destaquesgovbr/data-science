@@ -41,24 +41,48 @@ from collections import defaultdict
 
 
 def load_queries():
-    """Load queries from template."""
+    """Load queries from template.
+
+    Expands all variants into individual queries (~259 total).
+    """
     query_file = Path(__file__).parent.parent / "data" / "query_template_85.json"
 
     with open(query_file) as f:
         queries_data = json.load(f)
 
     queries = {}
-    for q in queries_data:
-        query_text = q.get('query_text', '').strip()
-        if not query_text:
-            query_text = q.get('recommended_query', '').strip()
 
-        if query_text:
-            queries[q['query_id']] = {
-                'text': query_text,
-                'anchor_doc_id': q['anchor_doc_id'],
-                'category': q['category']
-            }
+    for q in queries_data:
+        base_query_id = q['query_id']
+        anchor_doc_id = q['anchor_doc_id']
+        category = q['category']
+
+        # Get all variants
+        variants = q.get('variants', [])
+
+        if not variants:
+            # Fallback to recommended_query
+            query_text = q.get('recommended_query', '').strip()
+            if query_text:
+                queries[f"{base_query_id}_v1"] = {
+                    'text': query_text,
+                    'anchor_doc_id': anchor_doc_id,
+                    'category': category,
+                    'base_query_id': base_query_id
+                }
+        else:
+            # Expand variants
+            for i, variant in enumerate(variants, 1):
+                variant_text = variant.get('text', '').strip()
+                if variant_text:
+                    queries[f"{base_query_id}_v{i}"] = {
+                        'text': variant_text,
+                        'anchor_doc_id': anchor_doc_id,
+                        'category': category,
+                        'base_query_id': base_query_id,
+                        'variant_num': i,
+                        'variant_type': variant.get('type', 'unknown')
+                    }
 
     return queries
 
@@ -88,26 +112,36 @@ def create_anchor_only(queries: Dict, documents: Dict) -> Dict:
     Anchor docs get relevance=3 (perfect match).
     All others are left unannotated (to be filled later).
 
-    This is a good starting point.
+    Note: With variants expanded, multiple queries (q001_v1, q001_v2, q001_v3)
+    will all point to the same anchor document. This is correct - all variants
+    of the same base query should return the same anchor document as most relevant.
     """
 
     print("📝 Criando ground truth com apenas documentos âncora...\n")
 
     ground_truth = {}
+    base_query_count = {}
 
     for query_id, query_info in queries.items():
         anchor_doc_id = query_info['anchor_doc_id']
+        base_query_id = query_info.get('base_query_id', query_id)
 
         # Start with anchor doc = 3 (very relevant)
         ground_truth[query_id] = {
             anchor_doc_id: 3
         }
 
-        print(f"   {query_id}: '{query_info['text'][:50]}...'")
-        print(f"      Âncora: {anchor_doc_id} (score=3)")
+        # Track base queries
+        if base_query_id not in base_query_count:
+            base_query_count[base_query_id] = 0
+            print(f"   {base_query_id}: '{query_info['text'][:50]}...'")
+            print(f"      Âncora: {anchor_doc_id} (score=3)")
+
+        base_query_count[base_query_id] += 1
 
     print(f"\n✅ Ground truth criado para {len(ground_truth)} queries")
-    print("   (apenas documentos âncora anotados)")
+    print(f"   ({len(base_query_count)} documentos âncora únicos)")
+    print(f"   (~{len(ground_truth) / len(base_query_count):.1f} variantes por documento em média)")
 
     return ground_truth
 
