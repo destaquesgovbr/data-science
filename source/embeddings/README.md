@@ -78,15 +78,23 @@ embeddings/
 - **Recall@K** (K=5, 10, 20)
 
 ### Dataset de Teste
-- 500+ queries reais
-- 300k documentos (corpus notícias)
-- Anotação manual de relevância (escala 0-3)
+- **Corpus:** 250 documentos (25 por categoria, 10 categorias)
+- **Queries:** 259 queries (85 base × ~3 variantes)
+- **Anotações:** 2.591 pares query-documento anotados manualmente
+- **Escala de relevância:** 0 (irrelevante) a 3 (muito relevante)
+
+**Validação metodológica:** O corpus de 250 documentos foi validado como adequado para comparação de modelos através de análise empírica (99.6% de taxa de recuperação de documentos âncora com BGE-M3) e fundamentação teórica (Voorhees & Harman, 2005; Sanderson & Zobel, 2005). Consulte [docs/METODOLOGIA_METRICAS.md](docs/METODOLOGIA_METRICAS.md) para detalhes completos sobre representatividade do corpus e validade dos resultados.
 
 ### Dimensões de Análise
 1. **Qualitativa**: Jargão gov, siglas, sinônimos, contexto temporal
-2. **Quantitativa**: Métricas de retrieval
+2. **Quantitativa**: Métricas de retrieval (NDCG, MAP, MRR)
 3. **Técnica**: Velocidade, dimensionalidade, facilidade de uso
 4. **Domínio**: Compreensão de termos governamentais brasileiros
+
+**Documentação metodológica:**
+- [METODOLOGIA_QUERIES.md](docs/METODOLOGIA_QUERIES.md) - Justificativa das 85 queries de teste
+- [METODOLOGIA_METRICAS.md](docs/METODOLOGIA_METRICAS.md) - Validação do corpus e escolha de métricas
+- [ANALISE_CORPUS.md](docs/ANALISE_CORPUS.md) - Estatísticas do corpus de notícias
 
 ---
 

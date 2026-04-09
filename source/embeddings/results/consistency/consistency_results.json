@@ -1,0 +1,8472 @@
+{
+  "multilingual-e5-large": {
+    "aggregate": {
+      "model_id": "multilingual-e5-large",
+      "k": 10,
+      "num_base_queries": 85,
+      "mean_consistency": 0.9921568627450982,
+      "median_consistency": 1.0,
+      "std_consistency": 0.050525877359706386,
+      "min_consistency": 0.6666666666666666,
+      "max_consistency": 1.0,
+      "perfect_consistency": 83,
+      "zero_consistency": 0
+    },
+    "per_base_query": [
+      {
+        "base_query_id": "q001",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q002",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.6666666666666667,
+        "best_rank": 1,
+        "worst_rank": 3,
+        "all_ranks": [
+          1,
+          1,
+          3
+        ]
+      },
+      {
+        "base_query_id": "q003",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q004",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q005",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 2.3333333333333335,
+        "best_rank": 1,
+        "worst_rank": 5,
+        "all_ranks": [
+          5,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q006",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q007",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.6666666666666667,
+        "best_rank": 1,
+        "worst_rank": 3,
+        "all_ranks": [
+          1,
+          3,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q008",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 2.6666666666666665,
+        "best_rank": 1,
+        "worst_rank": 5,
+        "all_ranks": [
+          5,
+          2,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q009",
+        "num_variants": 4,
+        "variants_found": 4,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q010",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.3333333333333333,
+        "best_rank": 1,
+        "worst_rank": 2,
+        "all_ranks": [
+          1,
+          1,
+          2
+        ]
+      },
+      {
+        "base_query_id": "q011",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q012",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.3333333333333333,
+        "best_rank": 1,
+        "worst_rank": 2,
+        "all_ranks": [
+          1,
+          2,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q013",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q014",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q015",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q016",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q017",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q018",
+        "num_variants": 4,
+        "variants_found": 4,
+        "consistency": 1.0,
+        "avg_rank": 1.25,
+        "best_rank": 1,
+        "worst_rank": 2,
+        "all_ranks": [
+          1,
+          2,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q019",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q020",
+        "num_variants": 2,
+        "variants_found": 2,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q021",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q022",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.6666666666666667,
+        "best_rank": 1,
+        "worst_rank": 3,
+        "all_ranks": [
+          1,
+          1,
+          3
+        ]
+      },
+      {
+        "base_query_id": "q023",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 6.333333333333333,
+        "best_rank": 3,
+        "worst_rank": 10,
+        "all_ranks": [
+          10,
+          3,
+          6
+        ]
+      },
+      {
+        "base_query_id": "q024",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q025",
+        "num_variants": 4,
+        "variants_found": 4,
+        "consistency": 1.0,
+        "avg_rank": 3.5,
+        "best_rank": 1,
+        "worst_rank": 5,
+        "all_ranks": [
+          5,
+          3,
+          1,
+          5
+        ]
+      },
+      {
+        "base_query_id": "q026",
+        "num_variants": 4,
+        "variants_found": 4,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q027",
+        "num_variants": 4,
+        "variants_found": 4,
+        "consistency": 1.0,
+        "avg_rank": 1.75,
+        "best_rank": 1,
+        "worst_rank": 3,
+        "all_ranks": [
+          3,
+          1,
+          2,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q028",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q029",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q030",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q031",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q032",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.3333333333333333,
+        "best_rank": 1,
+        "worst_rank": 2,
+        "all_ranks": [
+          2,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q033",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q034",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q035",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q036",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q037",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.3333333333333333,
+        "best_rank": 1,
+        "worst_rank": 2,
+        "all_ranks": [
+          2,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q038",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q039",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.3333333333333333,
+        "best_rank": 1,
+        "worst_rank": 2,
+        "all_ranks": [
+          2,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q040",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.3333333333333333,
+        "best_rank": 1,
+        "worst_rank": 2,
+        "all_ranks": [
+          1,
+          2,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q041",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 2.3333333333333335,
+        "best_rank": 1,
+        "worst_rank": 4,
+        "all_ranks": [
+          4,
+          1,
+          2
+        ]
+      },
+      {
+        "base_query_id": "q042",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q043",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q044",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.6666666666666667,
+        "best_rank": 1,
+        "worst_rank": 2,
+        "all_ranks": [
+          2,
+          1,
+          2
+        ]
+      },
+      {
+        "base_query_id": "q045",
+        "num_variants": 3,
+        "variants_found": 2,
+        "consistency": 0.6666666666666666,
+        "avg_rank": 1.5,
+        "best_rank": 1,
+        "worst_rank": 11,
+        "all_ranks": [
+          2,
+          1,
+          11
+        ]
+      },
+      {
+        "base_query_id": "q046",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.3333333333333333,
+        "best_rank": 1,
+        "worst_rank": 2,
+        "all_ranks": [
+          1,
+          2,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q047",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q048",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q049",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q050",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q051",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q052",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.3333333333333333,
+        "best_rank": 1,
+        "worst_rank": 2,
+        "all_ranks": [
+          2,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q053",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q054",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q055",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q056",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q057",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q058",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q059",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q060",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q061",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 2.3333333333333335,
+        "best_rank": 1,
+        "worst_rank": 4,
+        "all_ranks": [
+          4,
+          1,
+          2
+        ]
+      },
+      {
+        "base_query_id": "q062",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q063",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.3333333333333333,
+        "best_rank": 1,
+        "worst_rank": 2,
+        "all_ranks": [
+          1,
+          1,
+          2
+        ]
+      },
+      {
+        "base_query_id": "q064",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q065",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q066",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q067",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.6666666666666667,
+        "best_rank": 1,
+        "worst_rank": 2,
+        "all_ranks": [
+          2,
+          1,
+          2
+        ]
+      },
+      {
+        "base_query_id": "q068",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q069",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q070",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q071",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q072",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.3333333333333333,
+        "best_rank": 1,
+        "worst_rank": 2,
+        "all_ranks": [
+          2,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q073",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q074",
+        "num_variants": 3,
+        "variants_found": 2,
+        "consistency": 0.6666666666666666,
+        "avg_rank": 2.5,
+        "best_rank": 2,
+        "worst_rank": 11,
+        "all_ranks": [
+          11,
+          2,
+          3
+        ]
+      },
+      {
+        "base_query_id": "q075",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q076",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q077",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 2.0,
+        "best_rank": 1,
+        "worst_rank": 4,
+        "all_ranks": [
+          1,
+          1,
+          4
+        ]
+      },
+      {
+        "base_query_id": "q078",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q079",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.3333333333333333,
+        "best_rank": 1,
+        "worst_rank": 2,
+        "all_ranks": [
+          2,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q080",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q081",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q082",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.6666666666666667,
+        "best_rank": 1,
+        "worst_rank": 3,
+        "all_ranks": [
+          3,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q083",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q084",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.3333333333333333,
+        "best_rank": 1,
+        "worst_rank": 2,
+        "all_ranks": [
+          1,
+          2,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q085",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1
+        ]
+      }
+    ]
+  },
+  "multilingual-e5-base": {
+    "aggregate": {
+      "model_id": "multilingual-e5-base",
+      "k": 10,
+      "num_base_queries": 85,
+      "mean_consistency": 0.9852941176470589,
+      "median_consistency": 1.0,
+      "std_consistency": 0.06663782536457423,
+      "min_consistency": 0.6666666666666666,
+      "max_consistency": 1.0,
+      "perfect_consistency": 81,
+      "zero_consistency": 0
+    },
+    "per_base_query": [
+      {
+        "base_query_id": "q001",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.3333333333333333,
+        "best_rank": 1,
+        "worst_rank": 2,
+        "all_ranks": [
+          2,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q002",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.3333333333333333,
+        "best_rank": 1,
+        "worst_rank": 2,
+        "all_ranks": [
+          1,
+          1,
+          2
+        ]
+      },
+      {
+        "base_query_id": "q003",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q004",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 2.6666666666666665,
+        "best_rank": 1,
+        "worst_rank": 5,
+        "all_ranks": [
+          5,
+          2,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q005",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 3.3333333333333335,
+        "best_rank": 1,
+        "worst_rank": 8,
+        "all_ranks": [
+          8,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q006",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 2.0,
+        "best_rank": 1,
+        "worst_rank": 3,
+        "all_ranks": [
+          3,
+          1,
+          2
+        ]
+      },
+      {
+        "base_query_id": "q007",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.6666666666666667,
+        "best_rank": 1,
+        "worst_rank": 2,
+        "all_ranks": [
+          2,
+          2,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q008",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.6666666666666667,
+        "best_rank": 1,
+        "worst_rank": 3,
+        "all_ranks": [
+          3,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q009",
+        "num_variants": 4,
+        "variants_found": 4,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q010",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 2.0,
+        "best_rank": 1,
+        "worst_rank": 4,
+        "all_ranks": [
+          1,
+          1,
+          4
+        ]
+      },
+      {
+        "base_query_id": "q011",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 3.0,
+        "best_rank": 1,
+        "worst_rank": 7,
+        "all_ranks": [
+          7,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q012",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.3333333333333333,
+        "best_rank": 1,
+        "worst_rank": 2,
+        "all_ranks": [
+          2,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q013",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q014",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q015",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q016",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q017",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q018",
+        "num_variants": 4,
+        "variants_found": 4,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q019",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q020",
+        "num_variants": 2,
+        "variants_found": 2,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q021",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.3333333333333333,
+        "best_rank": 1,
+        "worst_rank": 2,
+        "all_ranks": [
+          2,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q022",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 2.6666666666666665,
+        "best_rank": 1,
+        "worst_rank": 4,
+        "all_ranks": [
+          3,
+          1,
+          4
+        ]
+      },
+      {
+        "base_query_id": "q023",
+        "num_variants": 3,
+        "variants_found": 2,
+        "consistency": 0.6666666666666666,
+        "avg_rank": 3.5,
+        "best_rank": 3,
+        "worst_rank": 11,
+        "all_ranks": [
+          11,
+          3,
+          4
+        ]
+      },
+      {
+        "base_query_id": "q024",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q025",
+        "num_variants": 4,
+        "variants_found": 4,
+        "consistency": 1.0,
+        "avg_rank": 1.25,
+        "best_rank": 1,
+        "worst_rank": 2,
+        "all_ranks": [
+          1,
+          2,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q026",
+        "num_variants": 4,
+        "variants_found": 4,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q027",
+        "num_variants": 4,
+        "variants_found": 3,
+        "consistency": 0.75,
+        "avg_rank": 1.6666666666666667,
+        "best_rank": 1,
+        "worst_rank": 11,
+        "all_ranks": [
+          11,
+          1,
+          3,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q028",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q029",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q030",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.6666666666666667,
+        "best_rank": 1,
+        "worst_rank": 3,
+        "all_ranks": [
+          1,
+          1,
+          3
+        ]
+      },
+      {
+        "base_query_id": "q031",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q032",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 2.3333333333333335,
+        "best_rank": 1,
+        "worst_rank": 5,
+        "all_ranks": [
+          5,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q033",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q034",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q035",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q036",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q037",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q038",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q039",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q040",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.3333333333333333,
+        "best_rank": 1,
+        "worst_rank": 2,
+        "all_ranks": [
+          1,
+          2,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q041",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.3333333333333333,
+        "best_rank": 1,
+        "worst_rank": 2,
+        "all_ranks": [
+          2,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q042",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q043",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q044",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q045",
+        "num_variants": 3,
+        "variants_found": 2,
+        "consistency": 0.6666666666666666,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 11,
+        "all_ranks": [
+          1,
+          1,
+          11
+        ]
+      },
+      {
+        "base_query_id": "q046",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.3333333333333333,
+        "best_rank": 1,
+        "worst_rank": 2,
+        "all_ranks": [
+          1,
+          2,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q047",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q048",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q049",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q050",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q051",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q052",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.3333333333333333,
+        "best_rank": 1,
+        "worst_rank": 2,
+        "all_ranks": [
+          2,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q053",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q054",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q055",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q056",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q057",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q058",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q059",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q060",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q061",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q062",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q063",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q064",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q065",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q066",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q067",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q068",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q069",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q070",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q071",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q072",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q073",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q074",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q075",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q076",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q077",
+        "num_variants": 3,
+        "variants_found": 2,
+        "consistency": 0.6666666666666666,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 11,
+        "all_ranks": [
+          1,
+          1,
+          11
+        ]
+      },
+      {
+        "base_query_id": "q078",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.3333333333333333,
+        "best_rank": 1,
+        "worst_rank": 2,
+        "all_ranks": [
+          2,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q079",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.6666666666666667,
+        "best_rank": 1,
+        "worst_rank": 3,
+        "all_ranks": [
+          3,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q080",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q081",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q082",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q083",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q084",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.6666666666666667,
+        "best_rank": 1,
+        "worst_rank": 2,
+        "all_ranks": [
+          2,
+          1,
+          2
+        ]
+      },
+      {
+        "base_query_id": "q085",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 2.6666666666666665,
+        "best_rank": 1,
+        "worst_rank": 5,
+        "all_ranks": [
+          5,
+          1,
+          2
+        ]
+      }
+    ]
+  },
+  "labse": {
+    "aggregate": {
+      "model_id": "labse",
+      "k": 10,
+      "num_base_queries": 85,
+      "mean_consistency": 0.9058823529411765,
+      "median_consistency": 1.0,
+      "std_consistency": 0.17977302105807205,
+      "min_consistency": 0.3333333333333333,
+      "max_consistency": 1.0,
+      "perfect_consistency": 65,
+      "zero_consistency": 0
+    },
+    "per_base_query": [
+      {
+        "base_query_id": "q001",
+        "num_variants": 3,
+        "variants_found": 2,
+        "consistency": 0.6666666666666666,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 11,
+        "all_ranks": [
+          11,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q002",
+        "num_variants": 3,
+        "variants_found": 1,
+        "consistency": 0.3333333333333333,
+        "avg_rank": 2.0,
+        "best_rank": 2,
+        "worst_rank": 11,
+        "all_ranks": [
+          11,
+          2,
+          11
+        ]
+      },
+      {
+        "base_query_id": "q003",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q004",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q005",
+        "num_variants": 3,
+        "variants_found": 2,
+        "consistency": 0.6666666666666666,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 11,
+        "all_ranks": [
+          11,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q006",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 5.0,
+        "best_rank": 3,
+        "worst_rank": 7,
+        "all_ranks": [
+          5,
+          3,
+          7
+        ]
+      },
+      {
+        "base_query_id": "q007",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 3.6666666666666665,
+        "best_rank": 3,
+        "worst_rank": 4,
+        "all_ranks": [
+          4,
+          3,
+          4
+        ]
+      },
+      {
+        "base_query_id": "q008",
+        "num_variants": 3,
+        "variants_found": 2,
+        "consistency": 0.6666666666666666,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 11,
+        "all_ranks": [
+          11,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q009",
+        "num_variants": 4,
+        "variants_found": 4,
+        "consistency": 1.0,
+        "avg_rank": 1.25,
+        "best_rank": 1,
+        "worst_rank": 2,
+        "all_ranks": [
+          2,
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q010",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q011",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q012",
+        "num_variants": 3,
+        "variants_found": 2,
+        "consistency": 0.6666666666666666,
+        "avg_rank": 3.0,
+        "best_rank": 3,
+        "worst_rank": 11,
+        "all_ranks": [
+          3,
+          11,
+          3
+        ]
+      },
+      {
+        "base_query_id": "q013",
+        "num_variants": 3,
+        "variants_found": 1,
+        "consistency": 0.3333333333333333,
+        "avg_rank": 4.0,
+        "best_rank": 4,
+        "worst_rank": 11,
+        "all_ranks": [
+          11,
+          11,
+          4
+        ]
+      },
+      {
+        "base_query_id": "q014",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q015",
+        "num_variants": 3,
+        "variants_found": 2,
+        "consistency": 0.6666666666666666,
+        "avg_rank": 2.0,
+        "best_rank": 2,
+        "worst_rank": 11,
+        "all_ranks": [
+          11,
+          2,
+          2
+        ]
+      },
+      {
+        "base_query_id": "q016",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.6666666666666667,
+        "best_rank": 1,
+        "worst_rank": 3,
+        "all_ranks": [
+          3,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q017",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q018",
+        "num_variants": 4,
+        "variants_found": 4,
+        "consistency": 1.0,
+        "avg_rank": 1.25,
+        "best_rank": 1,
+        "worst_rank": 2,
+        "all_ranks": [
+          1,
+          2,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q019",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 2.0,
+        "best_rank": 1,
+        "worst_rank": 4,
+        "all_ranks": [
+          1,
+          4,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q020",
+        "num_variants": 2,
+        "variants_found": 2,
+        "consistency": 1.0,
+        "avg_rank": 1.5,
+        "best_rank": 1,
+        "worst_rank": 2,
+        "all_ranks": [
+          1,
+          2
+        ]
+      },
+      {
+        "base_query_id": "q021",
+        "num_variants": 3,
+        "variants_found": 2,
+        "consistency": 0.6666666666666666,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 11,
+        "all_ranks": [
+          11,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q022",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 2.3333333333333335,
+        "best_rank": 1,
+        "worst_rank": 3,
+        "all_ranks": [
+          3,
+          3,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q023",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 3.6666666666666665,
+        "best_rank": 1,
+        "worst_rank": 8,
+        "all_ranks": [
+          8,
+          1,
+          2
+        ]
+      },
+      {
+        "base_query_id": "q024",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q025",
+        "num_variants": 4,
+        "variants_found": 2,
+        "consistency": 0.5,
+        "avg_rank": 4.0,
+        "best_rank": 1,
+        "worst_rank": 11,
+        "all_ranks": [
+          11,
+          7,
+          1,
+          11
+        ]
+      },
+      {
+        "base_query_id": "q026",
+        "num_variants": 4,
+        "variants_found": 4,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q027",
+        "num_variants": 4,
+        "variants_found": 2,
+        "consistency": 0.5,
+        "avg_rank": 2.5,
+        "best_rank": 1,
+        "worst_rank": 11,
+        "all_ranks": [
+          11,
+          1,
+          11,
+          4
+        ]
+      },
+      {
+        "base_query_id": "q028",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.3333333333333333,
+        "best_rank": 1,
+        "worst_rank": 2,
+        "all_ranks": [
+          2,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q029",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q030",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 3.3333333333333335,
+        "best_rank": 1,
+        "worst_rank": 6,
+        "all_ranks": [
+          1,
+          6,
+          3
+        ]
+      },
+      {
+        "base_query_id": "q031",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q032",
+        "num_variants": 3,
+        "variants_found": 2,
+        "consistency": 0.6666666666666666,
+        "avg_rank": 4.0,
+        "best_rank": 2,
+        "worst_rank": 11,
+        "all_ranks": [
+          11,
+          2,
+          6
+        ]
+      },
+      {
+        "base_query_id": "q033",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q034",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q035",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q036",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q037",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 2.0,
+        "best_rank": 1,
+        "worst_rank": 4,
+        "all_ranks": [
+          4,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q038",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.3333333333333333,
+        "best_rank": 1,
+        "worst_rank": 2,
+        "all_ranks": [
+          2,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q039",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 4.666666666666667,
+        "best_rank": 2,
+        "worst_rank": 10,
+        "all_ranks": [
+          10,
+          2,
+          2
+        ]
+      },
+      {
+        "base_query_id": "q040",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.6666666666666667,
+        "best_rank": 1,
+        "worst_rank": 3,
+        "all_ranks": [
+          1,
+          3,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q041",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.3333333333333333,
+        "best_rank": 1,
+        "worst_rank": 2,
+        "all_ranks": [
+          2,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q042",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 3.3333333333333335,
+        "best_rank": 1,
+        "worst_rank": 6,
+        "all_ranks": [
+          1,
+          3,
+          6
+        ]
+      },
+      {
+        "base_query_id": "q043",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q044",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 2.6666666666666665,
+        "best_rank": 1,
+        "worst_rank": 6,
+        "all_ranks": [
+          6,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q045",
+        "num_variants": 3,
+        "variants_found": 2,
+        "consistency": 0.6666666666666666,
+        "avg_rank": 5.0,
+        "best_rank": 2,
+        "worst_rank": 11,
+        "all_ranks": [
+          2,
+          8,
+          11
+        ]
+      },
+      {
+        "base_query_id": "q046",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.6666666666666667,
+        "best_rank": 1,
+        "worst_rank": 3,
+        "all_ranks": [
+          1,
+          3,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q047",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q048",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q049",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q050",
+        "num_variants": 3,
+        "variants_found": 1,
+        "consistency": 0.3333333333333333,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 11,
+        "all_ranks": [
+          1,
+          11,
+          11
+        ]
+      },
+      {
+        "base_query_id": "q051",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 3.0,
+        "best_rank": 1,
+        "worst_rank": 7,
+        "all_ranks": [
+          1,
+          1,
+          7
+        ]
+      },
+      {
+        "base_query_id": "q052",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.3333333333333333,
+        "best_rank": 1,
+        "worst_rank": 2,
+        "all_ranks": [
+          1,
+          1,
+          2
+        ]
+      },
+      {
+        "base_query_id": "q053",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q054",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q055",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q056",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q057",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q058",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.6666666666666667,
+        "best_rank": 1,
+        "worst_rank": 3,
+        "all_ranks": [
+          3,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q059",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 5.333333333333333,
+        "best_rank": 2,
+        "worst_rank": 9,
+        "all_ranks": [
+          2,
+          9,
+          5
+        ]
+      },
+      {
+        "base_query_id": "q060",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 2.0,
+        "best_rank": 1,
+        "worst_rank": 3,
+        "all_ranks": [
+          2,
+          1,
+          3
+        ]
+      },
+      {
+        "base_query_id": "q061",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.3333333333333333,
+        "best_rank": 1,
+        "worst_rank": 2,
+        "all_ranks": [
+          1,
+          2,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q062",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q063",
+        "num_variants": 3,
+        "variants_found": 2,
+        "consistency": 0.6666666666666666,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 11,
+        "all_ranks": [
+          1,
+          1,
+          11
+        ]
+      },
+      {
+        "base_query_id": "q064",
+        "num_variants": 3,
+        "variants_found": 2,
+        "consistency": 0.6666666666666666,
+        "avg_rank": 1.5,
+        "best_rank": 1,
+        "worst_rank": 11,
+        "all_ranks": [
+          2,
+          11,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q065",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.3333333333333333,
+        "best_rank": 1,
+        "worst_rank": 2,
+        "all_ranks": [
+          2,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q066",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.6666666666666667,
+        "best_rank": 1,
+        "worst_rank": 2,
+        "all_ranks": [
+          2,
+          1,
+          2
+        ]
+      },
+      {
+        "base_query_id": "q067",
+        "num_variants": 3,
+        "variants_found": 2,
+        "consistency": 0.6666666666666666,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 11,
+        "all_ranks": [
+          1,
+          1,
+          11
+        ]
+      },
+      {
+        "base_query_id": "q068",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q069",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q070",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q071",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 3.0,
+        "best_rank": 1,
+        "worst_rank": 6,
+        "all_ranks": [
+          1,
+          2,
+          6
+        ]
+      },
+      {
+        "base_query_id": "q072",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.3333333333333333,
+        "best_rank": 1,
+        "worst_rank": 2,
+        "all_ranks": [
+          1,
+          1,
+          2
+        ]
+      },
+      {
+        "base_query_id": "q073",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q074",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.6666666666666667,
+        "best_rank": 1,
+        "worst_rank": 3,
+        "all_ranks": [
+          3,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q075",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.3333333333333333,
+        "best_rank": 1,
+        "worst_rank": 2,
+        "all_ranks": [
+          2,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q076",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q077",
+        "num_variants": 3,
+        "variants_found": 2,
+        "consistency": 0.6666666666666666,
+        "avg_rank": 2.0,
+        "best_rank": 1,
+        "worst_rank": 11,
+        "all_ranks": [
+          3,
+          1,
+          11
+        ]
+      },
+      {
+        "base_query_id": "q078",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 2.3333333333333335,
+        "best_rank": 2,
+        "worst_rank": 3,
+        "all_ranks": [
+          3,
+          2,
+          2
+        ]
+      },
+      {
+        "base_query_id": "q079",
+        "num_variants": 3,
+        "variants_found": 2,
+        "consistency": 0.6666666666666666,
+        "avg_rank": 5.0,
+        "best_rank": 4,
+        "worst_rank": 11,
+        "all_ranks": [
+          4,
+          6,
+          11
+        ]
+      },
+      {
+        "base_query_id": "q080",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.6666666666666667,
+        "best_rank": 1,
+        "worst_rank": 3,
+        "all_ranks": [
+          1,
+          1,
+          3
+        ]
+      },
+      {
+        "base_query_id": "q081",
+        "num_variants": 3,
+        "variants_found": 2,
+        "consistency": 0.6666666666666666,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 11,
+        "all_ranks": [
+          1,
+          11,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q082",
+        "num_variants": 3,
+        "variants_found": 2,
+        "consistency": 0.6666666666666666,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 11,
+        "all_ranks": [
+          11,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q083",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q084",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.6666666666666667,
+        "best_rank": 1,
+        "worst_rank": 3,
+        "all_ranks": [
+          1,
+          1,
+          3
+        ]
+      },
+      {
+        "base_query_id": "q085",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 5.333333333333333,
+        "best_rank": 2,
+        "worst_rank": 9,
+        "all_ranks": [
+          9,
+          5,
+          2
+        ]
+      }
+    ]
+  },
+  "bertimbau": {
+    "aggregate": {
+      "model_id": "bertimbau",
+      "k": 10,
+      "num_base_queries": 85,
+      "mean_consistency": 0.6784313725490195,
+      "median_consistency": 0.6666666666666666,
+      "std_consistency": 0.3565798275209187,
+      "min_consistency": 0.0,
+      "max_consistency": 1.0,
+      "perfect_consistency": 41,
+      "zero_consistency": 9
+    },
+    "per_base_query": [
+      {
+        "base_query_id": "q001",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 3.0,
+        "best_rank": 2,
+        "worst_rank": 4,
+        "all_ranks": [
+          3,
+          4,
+          2
+        ]
+      },
+      {
+        "base_query_id": "q002",
+        "num_variants": 3,
+        "variants_found": 1,
+        "consistency": 0.3333333333333333,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 11,
+        "all_ranks": [
+          11,
+          1,
+          11
+        ]
+      },
+      {
+        "base_query_id": "q003",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q004",
+        "num_variants": 3,
+        "variants_found": 1,
+        "consistency": 0.3333333333333333,
+        "avg_rank": 7.0,
+        "best_rank": 7,
+        "worst_rank": 11,
+        "all_ranks": [
+          11,
+          11,
+          7
+        ]
+      },
+      {
+        "base_query_id": "q005",
+        "num_variants": 3,
+        "variants_found": 1,
+        "consistency": 0.3333333333333333,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 11,
+        "all_ranks": [
+          11,
+          11,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q006",
+        "num_variants": 3,
+        "variants_found": 2,
+        "consistency": 0.6666666666666666,
+        "avg_rank": 5.5,
+        "best_rank": 4,
+        "worst_rank": 11,
+        "all_ranks": [
+          11,
+          4,
+          7
+        ]
+      },
+      {
+        "base_query_id": "q007",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 3.6666666666666665,
+        "best_rank": 1,
+        "worst_rank": 9,
+        "all_ranks": [
+          1,
+          9,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q008",
+        "num_variants": 3,
+        "variants_found": 2,
+        "consistency": 0.6666666666666666,
+        "avg_rank": 4.5,
+        "best_rank": 4,
+        "worst_rank": 11,
+        "all_ranks": [
+          11,
+          5,
+          4
+        ]
+      },
+      {
+        "base_query_id": "q009",
+        "num_variants": 4,
+        "variants_found": 4,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q010",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q011",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 2.0,
+        "best_rank": 2,
+        "worst_rank": 2,
+        "all_ranks": [
+          2,
+          2,
+          2
+        ]
+      },
+      {
+        "base_query_id": "q012",
+        "num_variants": 3,
+        "variants_found": 0,
+        "consistency": 0.0,
+        "avg_rank": 11,
+        "best_rank": 11,
+        "worst_rank": 11,
+        "all_ranks": [
+          11,
+          11,
+          11
+        ]
+      },
+      {
+        "base_query_id": "q013",
+        "num_variants": 3,
+        "variants_found": 0,
+        "consistency": 0.0,
+        "avg_rank": 11,
+        "best_rank": 11,
+        "worst_rank": 11,
+        "all_ranks": [
+          11,
+          11,
+          11
+        ]
+      },
+      {
+        "base_query_id": "q014",
+        "num_variants": 3,
+        "variants_found": 1,
+        "consistency": 0.3333333333333333,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 11,
+        "all_ranks": [
+          11,
+          1,
+          11
+        ]
+      },
+      {
+        "base_query_id": "q015",
+        "num_variants": 3,
+        "variants_found": 0,
+        "consistency": 0.0,
+        "avg_rank": 11,
+        "best_rank": 11,
+        "worst_rank": 11,
+        "all_ranks": [
+          11,
+          11,
+          11
+        ]
+      },
+      {
+        "base_query_id": "q016",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 3.0,
+        "best_rank": 1,
+        "worst_rank": 5,
+        "all_ranks": [
+          3,
+          5,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q017",
+        "num_variants": 3,
+        "variants_found": 0,
+        "consistency": 0.0,
+        "avg_rank": 11,
+        "best_rank": 11,
+        "worst_rank": 11,
+        "all_ranks": [
+          11,
+          11,
+          11
+        ]
+      },
+      {
+        "base_query_id": "q018",
+        "num_variants": 4,
+        "variants_found": 2,
+        "consistency": 0.5,
+        "avg_rank": 5.5,
+        "best_rank": 2,
+        "worst_rank": 11,
+        "all_ranks": [
+          11,
+          11,
+          2,
+          9
+        ]
+      },
+      {
+        "base_query_id": "q019",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q020",
+        "num_variants": 2,
+        "variants_found": 2,
+        "consistency": 1.0,
+        "avg_rank": 6.5,
+        "best_rank": 4,
+        "worst_rank": 9,
+        "all_ranks": [
+          4,
+          9
+        ]
+      },
+      {
+        "base_query_id": "q021",
+        "num_variants": 3,
+        "variants_found": 2,
+        "consistency": 0.6666666666666666,
+        "avg_rank": 2.5,
+        "best_rank": 2,
+        "worst_rank": 11,
+        "all_ranks": [
+          11,
+          2,
+          3
+        ]
+      },
+      {
+        "base_query_id": "q022",
+        "num_variants": 3,
+        "variants_found": 1,
+        "consistency": 0.3333333333333333,
+        "avg_rank": 7.0,
+        "best_rank": 7,
+        "worst_rank": 11,
+        "all_ranks": [
+          11,
+          7,
+          11
+        ]
+      },
+      {
+        "base_query_id": "q023",
+        "num_variants": 3,
+        "variants_found": 1,
+        "consistency": 0.3333333333333333,
+        "avg_rank": 4.0,
+        "best_rank": 4,
+        "worst_rank": 11,
+        "all_ranks": [
+          4,
+          11,
+          11
+        ]
+      },
+      {
+        "base_query_id": "q024",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 4.0,
+        "best_rank": 1,
+        "worst_rank": 10,
+        "all_ranks": [
+          1,
+          10,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q025",
+        "num_variants": 4,
+        "variants_found": 1,
+        "consistency": 0.25,
+        "avg_rank": 8.0,
+        "best_rank": 8,
+        "worst_rank": 11,
+        "all_ranks": [
+          11,
+          11,
+          8,
+          11
+        ]
+      },
+      {
+        "base_query_id": "q026",
+        "num_variants": 4,
+        "variants_found": 4,
+        "consistency": 1.0,
+        "avg_rank": 2.75,
+        "best_rank": 1,
+        "worst_rank": 8,
+        "all_ranks": [
+          1,
+          1,
+          8,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q027",
+        "num_variants": 4,
+        "variants_found": 1,
+        "consistency": 0.25,
+        "avg_rank": 2.0,
+        "best_rank": 2,
+        "worst_rank": 11,
+        "all_ranks": [
+          11,
+          2,
+          11,
+          11
+        ]
+      },
+      {
+        "base_query_id": "q028",
+        "num_variants": 3,
+        "variants_found": 1,
+        "consistency": 0.3333333333333333,
+        "avg_rank": 9.0,
+        "best_rank": 9,
+        "worst_rank": 11,
+        "all_ranks": [
+          9,
+          11,
+          11
+        ]
+      },
+      {
+        "base_query_id": "q029",
+        "num_variants": 3,
+        "variants_found": 2,
+        "consistency": 0.6666666666666666,
+        "avg_rank": 3.5,
+        "best_rank": 1,
+        "worst_rank": 11,
+        "all_ranks": [
+          1,
+          11,
+          6
+        ]
+      },
+      {
+        "base_query_id": "q030",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.3333333333333333,
+        "best_rank": 1,
+        "worst_rank": 2,
+        "all_ranks": [
+          1,
+          1,
+          2
+        ]
+      },
+      {
+        "base_query_id": "q031",
+        "num_variants": 3,
+        "variants_found": 2,
+        "consistency": 0.6666666666666666,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 11,
+        "all_ranks": [
+          1,
+          11,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q032",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 5.333333333333333,
+        "best_rank": 2,
+        "worst_rank": 10,
+        "all_ranks": [
+          10,
+          2,
+          4
+        ]
+      },
+      {
+        "base_query_id": "q033",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.6666666666666667,
+        "best_rank": 1,
+        "worst_rank": 3,
+        "all_ranks": [
+          1,
+          3,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q034",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 5.0,
+        "best_rank": 3,
+        "worst_rank": 8,
+        "all_ranks": [
+          3,
+          4,
+          8
+        ]
+      },
+      {
+        "base_query_id": "q035",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 3.3333333333333335,
+        "best_rank": 1,
+        "worst_rank": 5,
+        "all_ranks": [
+          1,
+          4,
+          5
+        ]
+      },
+      {
+        "base_query_id": "q036",
+        "num_variants": 3,
+        "variants_found": 1,
+        "consistency": 0.3333333333333333,
+        "avg_rank": 5.0,
+        "best_rank": 5,
+        "worst_rank": 11,
+        "all_ranks": [
+          5,
+          11,
+          11
+        ]
+      },
+      {
+        "base_query_id": "q037",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 2.6666666666666665,
+        "best_rank": 2,
+        "worst_rank": 3,
+        "all_ranks": [
+          2,
+          3,
+          3
+        ]
+      },
+      {
+        "base_query_id": "q038",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 5.666666666666667,
+        "best_rank": 1,
+        "worst_rank": 8,
+        "all_ranks": [
+          1,
+          8,
+          8
+        ]
+      },
+      {
+        "base_query_id": "q039",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 3.6666666666666665,
+        "best_rank": 2,
+        "worst_rank": 7,
+        "all_ranks": [
+          2,
+          7,
+          2
+        ]
+      },
+      {
+        "base_query_id": "q040",
+        "num_variants": 3,
+        "variants_found": 1,
+        "consistency": 0.3333333333333333,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 11,
+        "all_ranks": [
+          1,
+          11,
+          11
+        ]
+      },
+      {
+        "base_query_id": "q041",
+        "num_variants": 3,
+        "variants_found": 1,
+        "consistency": 0.3333333333333333,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 11,
+        "all_ranks": [
+          1,
+          11,
+          11
+        ]
+      },
+      {
+        "base_query_id": "q042",
+        "num_variants": 3,
+        "variants_found": 2,
+        "consistency": 0.6666666666666666,
+        "avg_rank": 4.0,
+        "best_rank": 4,
+        "worst_rank": 11,
+        "all_ranks": [
+          4,
+          11,
+          4
+        ]
+      },
+      {
+        "base_query_id": "q043",
+        "num_variants": 3,
+        "variants_found": 2,
+        "consistency": 0.6666666666666666,
+        "avg_rank": 2.0,
+        "best_rank": 2,
+        "worst_rank": 11,
+        "all_ranks": [
+          2,
+          11,
+          2
+        ]
+      },
+      {
+        "base_query_id": "q044",
+        "num_variants": 3,
+        "variants_found": 2,
+        "consistency": 0.6666666666666666,
+        "avg_rank": 3.5,
+        "best_rank": 1,
+        "worst_rank": 11,
+        "all_ranks": [
+          11,
+          6,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q045",
+        "num_variants": 3,
+        "variants_found": 2,
+        "consistency": 0.6666666666666666,
+        "avg_rank": 2.0,
+        "best_rank": 2,
+        "worst_rank": 11,
+        "all_ranks": [
+          2,
+          2,
+          11
+        ]
+      },
+      {
+        "base_query_id": "q046",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 6.666666666666667,
+        "best_rank": 4,
+        "worst_rank": 8,
+        "all_ranks": [
+          8,
+          8,
+          4
+        ]
+      },
+      {
+        "base_query_id": "q047",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 6.0,
+        "best_rank": 2,
+        "worst_rank": 9,
+        "all_ranks": [
+          7,
+          9,
+          2
+        ]
+      },
+      {
+        "base_query_id": "q048",
+        "num_variants": 3,
+        "variants_found": 0,
+        "consistency": 0.0,
+        "avg_rank": 11,
+        "best_rank": 11,
+        "worst_rank": 11,
+        "all_ranks": [
+          11,
+          11,
+          11
+        ]
+      },
+      {
+        "base_query_id": "q049",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 2.6666666666666665,
+        "best_rank": 1,
+        "worst_rank": 6,
+        "all_ranks": [
+          1,
+          6,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q050",
+        "num_variants": 3,
+        "variants_found": 1,
+        "consistency": 0.3333333333333333,
+        "avg_rank": 2.0,
+        "best_rank": 2,
+        "worst_rank": 11,
+        "all_ranks": [
+          2,
+          11,
+          11
+        ]
+      },
+      {
+        "base_query_id": "q051",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 7.0,
+        "best_rank": 4,
+        "worst_rank": 10,
+        "all_ranks": [
+          7,
+          4,
+          10
+        ]
+      },
+      {
+        "base_query_id": "q052",
+        "num_variants": 3,
+        "variants_found": 2,
+        "consistency": 0.6666666666666666,
+        "avg_rank": 4.5,
+        "best_rank": 1,
+        "worst_rank": 11,
+        "all_ranks": [
+          8,
+          11,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q053",
+        "num_variants": 3,
+        "variants_found": 2,
+        "consistency": 0.6666666666666666,
+        "avg_rank": 5.0,
+        "best_rank": 2,
+        "worst_rank": 11,
+        "all_ranks": [
+          8,
+          2,
+          11
+        ]
+      },
+      {
+        "base_query_id": "q054",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 5.0,
+        "best_rank": 1,
+        "worst_rank": 9,
+        "all_ranks": [
+          9,
+          1,
+          5
+        ]
+      },
+      {
+        "base_query_id": "q055",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 2.6666666666666665,
+        "best_rank": 1,
+        "worst_rank": 4,
+        "all_ranks": [
+          3,
+          1,
+          4
+        ]
+      },
+      {
+        "base_query_id": "q056",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.6666666666666667,
+        "best_rank": 1,
+        "worst_rank": 2,
+        "all_ranks": [
+          2,
+          1,
+          2
+        ]
+      },
+      {
+        "base_query_id": "q057",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q058",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.6666666666666667,
+        "best_rank": 1,
+        "worst_rank": 3,
+        "all_ranks": [
+          3,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q059",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 4.0,
+        "best_rank": 2,
+        "worst_rank": 8,
+        "all_ranks": [
+          8,
+          2,
+          2
+        ]
+      },
+      {
+        "base_query_id": "q060",
+        "num_variants": 3,
+        "variants_found": 1,
+        "consistency": 0.3333333333333333,
+        "avg_rank": 4.0,
+        "best_rank": 4,
+        "worst_rank": 11,
+        "all_ranks": [
+          11,
+          11,
+          4
+        ]
+      },
+      {
+        "base_query_id": "q061",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 2.0,
+        "best_rank": 1,
+        "worst_rank": 4,
+        "all_ranks": [
+          1,
+          1,
+          4
+        ]
+      },
+      {
+        "base_query_id": "q062",
+        "num_variants": 3,
+        "variants_found": 2,
+        "consistency": 0.6666666666666666,
+        "avg_rank": 1.5,
+        "best_rank": 1,
+        "worst_rank": 11,
+        "all_ranks": [
+          2,
+          11,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q063",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.6666666666666667,
+        "best_rank": 1,
+        "worst_rank": 3,
+        "all_ranks": [
+          1,
+          1,
+          3
+        ]
+      },
+      {
+        "base_query_id": "q064",
+        "num_variants": 3,
+        "variants_found": 1,
+        "consistency": 0.3333333333333333,
+        "avg_rank": 5.0,
+        "best_rank": 5,
+        "worst_rank": 11,
+        "all_ranks": [
+          5,
+          11,
+          11
+        ]
+      },
+      {
+        "base_query_id": "q065",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 6.0,
+        "best_rank": 3,
+        "worst_rank": 9,
+        "all_ranks": [
+          9,
+          6,
+          3
+        ]
+      },
+      {
+        "base_query_id": "q066",
+        "num_variants": 3,
+        "variants_found": 1,
+        "consistency": 0.3333333333333333,
+        "avg_rank": 10.0,
+        "best_rank": 10,
+        "worst_rank": 11,
+        "all_ranks": [
+          11,
+          10,
+          11
+        ]
+      },
+      {
+        "base_query_id": "q067",
+        "num_variants": 3,
+        "variants_found": 1,
+        "consistency": 0.3333333333333333,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 11,
+        "all_ranks": [
+          11,
+          1,
+          11
+        ]
+      },
+      {
+        "base_query_id": "q068",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 3.0,
+        "best_rank": 2,
+        "worst_rank": 5,
+        "all_ranks": [
+          5,
+          2,
+          2
+        ]
+      },
+      {
+        "base_query_id": "q069",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 2.0,
+        "best_rank": 1,
+        "worst_rank": 3,
+        "all_ranks": [
+          2,
+          3,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q070",
+        "num_variants": 3,
+        "variants_found": 2,
+        "consistency": 0.6666666666666666,
+        "avg_rank": 3.5,
+        "best_rank": 2,
+        "worst_rank": 11,
+        "all_ranks": [
+          5,
+          11,
+          2
+        ]
+      },
+      {
+        "base_query_id": "q071",
+        "num_variants": 3,
+        "variants_found": 0,
+        "consistency": 0.0,
+        "avg_rank": 11,
+        "best_rank": 11,
+        "worst_rank": 11,
+        "all_ranks": [
+          11,
+          11,
+          11
+        ]
+      },
+      {
+        "base_query_id": "q072",
+        "num_variants": 3,
+        "variants_found": 1,
+        "consistency": 0.3333333333333333,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 11,
+        "all_ranks": [
+          11,
+          1,
+          11
+        ]
+      },
+      {
+        "base_query_id": "q073",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 3.0,
+        "best_rank": 1,
+        "worst_rank": 7,
+        "all_ranks": [
+          1,
+          7,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q074",
+        "num_variants": 3,
+        "variants_found": 0,
+        "consistency": 0.0,
+        "avg_rank": 11,
+        "best_rank": 11,
+        "worst_rank": 11,
+        "all_ranks": [
+          11,
+          11,
+          11
+        ]
+      },
+      {
+        "base_query_id": "q075",
+        "num_variants": 3,
+        "variants_found": 0,
+        "consistency": 0.0,
+        "avg_rank": 11,
+        "best_rank": 11,
+        "worst_rank": 11,
+        "all_ranks": [
+          11,
+          11,
+          11
+        ]
+      },
+      {
+        "base_query_id": "q076",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 4.0,
+        "best_rank": 1,
+        "worst_rank": 9,
+        "all_ranks": [
+          2,
+          1,
+          9
+        ]
+      },
+      {
+        "base_query_id": "q077",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 2.3333333333333335,
+        "best_rank": 1,
+        "worst_rank": 3,
+        "all_ranks": [
+          3,
+          1,
+          3
+        ]
+      },
+      {
+        "base_query_id": "q078",
+        "num_variants": 3,
+        "variants_found": 2,
+        "consistency": 0.6666666666666666,
+        "avg_rank": 4.0,
+        "best_rank": 2,
+        "worst_rank": 11,
+        "all_ranks": [
+          2,
+          6,
+          11
+        ]
+      },
+      {
+        "base_query_id": "q079",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 4.333333333333333,
+        "best_rank": 4,
+        "worst_rank": 5,
+        "all_ranks": [
+          4,
+          5,
+          4
+        ]
+      },
+      {
+        "base_query_id": "q080",
+        "num_variants": 3,
+        "variants_found": 1,
+        "consistency": 0.3333333333333333,
+        "avg_rank": 2.0,
+        "best_rank": 2,
+        "worst_rank": 11,
+        "all_ranks": [
+          11,
+          2,
+          11
+        ]
+      },
+      {
+        "base_query_id": "q081",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 6.0,
+        "best_rank": 3,
+        "worst_rank": 9,
+        "all_ranks": [
+          9,
+          3,
+          6
+        ]
+      },
+      {
+        "base_query_id": "q082",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 3.0,
+        "best_rank": 1,
+        "worst_rank": 6,
+        "all_ranks": [
+          6,
+          1,
+          2
+        ]
+      },
+      {
+        "base_query_id": "q083",
+        "num_variants": 3,
+        "variants_found": 2,
+        "consistency": 0.6666666666666666,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 11,
+        "all_ranks": [
+          1,
+          11,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q084",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 4.333333333333333,
+        "best_rank": 4,
+        "worst_rank": 5,
+        "all_ranks": [
+          4,
+          5,
+          4
+        ]
+      },
+      {
+        "base_query_id": "q085",
+        "num_variants": 3,
+        "variants_found": 0,
+        "consistency": 0.0,
+        "avg_rank": 11,
+        "best_rank": 11,
+        "worst_rank": 11,
+        "all_ranks": [
+          11,
+          11,
+          11
+        ]
+      }
+    ]
+  },
+  "paraphrase-miniml": {
+    "aggregate": {
+      "model_id": "paraphrase-miniml",
+      "k": 10,
+      "num_base_queries": 85,
+      "mean_consistency": 0.6666666666666665,
+      "median_consistency": 0.6666666666666666,
+      "std_consistency": 0.3617766616867048,
+      "min_consistency": 0.0,
+      "max_consistency": 1.0,
+      "perfect_consistency": 39,
+      "zero_consistency": 11
+    },
+    "per_base_query": [
+      {
+        "base_query_id": "q001",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 3.0,
+        "best_rank": 1,
+        "worst_rank": 6,
+        "all_ranks": [
+          2,
+          6,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q002",
+        "num_variants": 3,
+        "variants_found": 1,
+        "consistency": 0.3333333333333333,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 11,
+        "all_ranks": [
+          11,
+          1,
+          11
+        ]
+      },
+      {
+        "base_query_id": "q003",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q004",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 3.6666666666666665,
+        "best_rank": 1,
+        "worst_rank": 5,
+        "all_ranks": [
+          5,
+          5,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q005",
+        "num_variants": 3,
+        "variants_found": 1,
+        "consistency": 0.3333333333333333,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 11,
+        "all_ranks": [
+          11,
+          11,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q006",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 3.0,
+        "best_rank": 2,
+        "worst_rank": 4,
+        "all_ranks": [
+          4,
+          2,
+          3
+        ]
+      },
+      {
+        "base_query_id": "q007",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 5.666666666666667,
+        "best_rank": 4,
+        "worst_rank": 8,
+        "all_ranks": [
+          5,
+          8,
+          4
+        ]
+      },
+      {
+        "base_query_id": "q008",
+        "num_variants": 3,
+        "variants_found": 2,
+        "consistency": 0.6666666666666666,
+        "avg_rank": 5.0,
+        "best_rank": 4,
+        "worst_rank": 11,
+        "all_ranks": [
+          11,
+          6,
+          4
+        ]
+      },
+      {
+        "base_query_id": "q009",
+        "num_variants": 4,
+        "variants_found": 2,
+        "consistency": 0.5,
+        "avg_rank": 1.5,
+        "best_rank": 1,
+        "worst_rank": 11,
+        "all_ranks": [
+          11,
+          11,
+          2,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q010",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.3333333333333333,
+        "best_rank": 1,
+        "worst_rank": 2,
+        "all_ranks": [
+          1,
+          1,
+          2
+        ]
+      },
+      {
+        "base_query_id": "q011",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 4.666666666666667,
+        "best_rank": 1,
+        "worst_rank": 9,
+        "all_ranks": [
+          4,
+          9,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q012",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 2.3333333333333335,
+        "best_rank": 1,
+        "worst_rank": 5,
+        "all_ranks": [
+          1,
+          1,
+          5
+        ]
+      },
+      {
+        "base_query_id": "q013",
+        "num_variants": 3,
+        "variants_found": 2,
+        "consistency": 0.6666666666666666,
+        "avg_rank": 3.5,
+        "best_rank": 1,
+        "worst_rank": 11,
+        "all_ranks": [
+          11,
+          6,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q014",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q015",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.6666666666666667,
+        "best_rank": 1,
+        "worst_rank": 3,
+        "all_ranks": [
+          1,
+          3,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q016",
+        "num_variants": 3,
+        "variants_found": 1,
+        "consistency": 0.3333333333333333,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 11,
+        "all_ranks": [
+          11,
+          1,
+          11
+        ]
+      },
+      {
+        "base_query_id": "q017",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q018",
+        "num_variants": 4,
+        "variants_found": 3,
+        "consistency": 0.75,
+        "avg_rank": 1.3333333333333333,
+        "best_rank": 1,
+        "worst_rank": 11,
+        "all_ranks": [
+          1,
+          11,
+          1,
+          2
+        ]
+      },
+      {
+        "base_query_id": "q019",
+        "num_variants": 3,
+        "variants_found": 1,
+        "consistency": 0.3333333333333333,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 11,
+        "all_ranks": [
+          11,
+          11,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q020",
+        "num_variants": 2,
+        "variants_found": 1,
+        "consistency": 0.5,
+        "avg_rank": 2.0,
+        "best_rank": 2,
+        "worst_rank": 11,
+        "all_ranks": [
+          2,
+          11
+        ]
+      },
+      {
+        "base_query_id": "q021",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 2.3333333333333335,
+        "best_rank": 1,
+        "worst_rank": 5,
+        "all_ranks": [
+          5,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q022",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 5.666666666666667,
+        "best_rank": 4,
+        "worst_rank": 8,
+        "all_ranks": [
+          4,
+          5,
+          8
+        ]
+      },
+      {
+        "base_query_id": "q023",
+        "num_variants": 3,
+        "variants_found": 2,
+        "consistency": 0.6666666666666666,
+        "avg_rank": 5.0,
+        "best_rank": 4,
+        "worst_rank": 11,
+        "all_ranks": [
+          11,
+          4,
+          6
+        ]
+      },
+      {
+        "base_query_id": "q024",
+        "num_variants": 3,
+        "variants_found": 0,
+        "consistency": 0.0,
+        "avg_rank": 11,
+        "best_rank": 11,
+        "worst_rank": 11,
+        "all_ranks": [
+          11,
+          11,
+          11
+        ]
+      },
+      {
+        "base_query_id": "q025",
+        "num_variants": 4,
+        "variants_found": 0,
+        "consistency": 0.0,
+        "avg_rank": 11,
+        "best_rank": 11,
+        "worst_rank": 11,
+        "all_ranks": [
+          11,
+          11,
+          11,
+          11
+        ]
+      },
+      {
+        "base_query_id": "q026",
+        "num_variants": 4,
+        "variants_found": 4,
+        "consistency": 1.0,
+        "avg_rank": 1.25,
+        "best_rank": 1,
+        "worst_rank": 2,
+        "all_ranks": [
+          1,
+          1,
+          2,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q027",
+        "num_variants": 4,
+        "variants_found": 1,
+        "consistency": 0.25,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 11,
+        "all_ranks": [
+          11,
+          1,
+          11,
+          11
+        ]
+      },
+      {
+        "base_query_id": "q028",
+        "num_variants": 3,
+        "variants_found": 0,
+        "consistency": 0.0,
+        "avg_rank": 11,
+        "best_rank": 11,
+        "worst_rank": 11,
+        "all_ranks": [
+          11,
+          11,
+          11
+        ]
+      },
+      {
+        "base_query_id": "q029",
+        "num_variants": 3,
+        "variants_found": 1,
+        "consistency": 0.3333333333333333,
+        "avg_rank": 10.0,
+        "best_rank": 10,
+        "worst_rank": 11,
+        "all_ranks": [
+          11,
+          11,
+          10
+        ]
+      },
+      {
+        "base_query_id": "q030",
+        "num_variants": 3,
+        "variants_found": 0,
+        "consistency": 0.0,
+        "avg_rank": 11,
+        "best_rank": 11,
+        "worst_rank": 11,
+        "all_ranks": [
+          11,
+          11,
+          11
+        ]
+      },
+      {
+        "base_query_id": "q031",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 2.3333333333333335,
+        "best_rank": 1,
+        "worst_rank": 4,
+        "all_ranks": [
+          4,
+          2,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q032",
+        "num_variants": 3,
+        "variants_found": 1,
+        "consistency": 0.3333333333333333,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 11,
+        "all_ranks": [
+          1,
+          11,
+          11
+        ]
+      },
+      {
+        "base_query_id": "q033",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q034",
+        "num_variants": 3,
+        "variants_found": 2,
+        "consistency": 0.6666666666666666,
+        "avg_rank": 3.5,
+        "best_rank": 2,
+        "worst_rank": 11,
+        "all_ranks": [
+          5,
+          11,
+          2
+        ]
+      },
+      {
+        "base_query_id": "q035",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q036",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.6666666666666667,
+        "best_rank": 1,
+        "worst_rank": 3,
+        "all_ranks": [
+          1,
+          3,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q037",
+        "num_variants": 3,
+        "variants_found": 0,
+        "consistency": 0.0,
+        "avg_rank": 11,
+        "best_rank": 11,
+        "worst_rank": 11,
+        "all_ranks": [
+          11,
+          11,
+          11
+        ]
+      },
+      {
+        "base_query_id": "q038",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 3.3333333333333335,
+        "best_rank": 1,
+        "worst_rank": 7,
+        "all_ranks": [
+          2,
+          7,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q039",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 2.0,
+        "best_rank": 2,
+        "worst_rank": 2,
+        "all_ranks": [
+          2,
+          2,
+          2
+        ]
+      },
+      {
+        "base_query_id": "q040",
+        "num_variants": 3,
+        "variants_found": 1,
+        "consistency": 0.3333333333333333,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 11,
+        "all_ranks": [
+          1,
+          11,
+          11
+        ]
+      },
+      {
+        "base_query_id": "q041",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.6666666666666667,
+        "best_rank": 1,
+        "worst_rank": 3,
+        "all_ranks": [
+          3,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q042",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 4.666666666666667,
+        "best_rank": 2,
+        "worst_rank": 8,
+        "all_ranks": [
+          2,
+          4,
+          8
+        ]
+      },
+      {
+        "base_query_id": "q043",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 3.6666666666666665,
+        "best_rank": 1,
+        "worst_rank": 9,
+        "all_ranks": [
+          9,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q044",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q045",
+        "num_variants": 3,
+        "variants_found": 2,
+        "consistency": 0.6666666666666666,
+        "avg_rank": 8.0,
+        "best_rank": 7,
+        "worst_rank": 11,
+        "all_ranks": [
+          9,
+          7,
+          11
+        ]
+      },
+      {
+        "base_query_id": "q046",
+        "num_variants": 3,
+        "variants_found": 1,
+        "consistency": 0.3333333333333333,
+        "avg_rank": 4.0,
+        "best_rank": 4,
+        "worst_rank": 11,
+        "all_ranks": [
+          4,
+          11,
+          11
+        ]
+      },
+      {
+        "base_query_id": "q047",
+        "num_variants": 3,
+        "variants_found": 2,
+        "consistency": 0.6666666666666666,
+        "avg_rank": 1.5,
+        "best_rank": 1,
+        "worst_rank": 11,
+        "all_ranks": [
+          11,
+          2,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q048",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 2.3333333333333335,
+        "best_rank": 1,
+        "worst_rank": 3,
+        "all_ranks": [
+          3,
+          1,
+          3
+        ]
+      },
+      {
+        "base_query_id": "q049",
+        "num_variants": 3,
+        "variants_found": 1,
+        "consistency": 0.3333333333333333,
+        "avg_rank": 4.0,
+        "best_rank": 4,
+        "worst_rank": 11,
+        "all_ranks": [
+          4,
+          11,
+          11
+        ]
+      },
+      {
+        "base_query_id": "q050",
+        "num_variants": 3,
+        "variants_found": 0,
+        "consistency": 0.0,
+        "avg_rank": 11,
+        "best_rank": 11,
+        "worst_rank": 11,
+        "all_ranks": [
+          11,
+          11,
+          11
+        ]
+      },
+      {
+        "base_query_id": "q051",
+        "num_variants": 3,
+        "variants_found": 1,
+        "consistency": 0.3333333333333333,
+        "avg_rank": 9.0,
+        "best_rank": 9,
+        "worst_rank": 11,
+        "all_ranks": [
+          11,
+          9,
+          11
+        ]
+      },
+      {
+        "base_query_id": "q052",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q053",
+        "num_variants": 3,
+        "variants_found": 0,
+        "consistency": 0.0,
+        "avg_rank": 11,
+        "best_rank": 11,
+        "worst_rank": 11,
+        "all_ranks": [
+          11,
+          11,
+          11
+        ]
+      },
+      {
+        "base_query_id": "q054",
+        "num_variants": 3,
+        "variants_found": 0,
+        "consistency": 0.0,
+        "avg_rank": 11,
+        "best_rank": 11,
+        "worst_rank": 11,
+        "all_ranks": [
+          11,
+          11,
+          11
+        ]
+      },
+      {
+        "base_query_id": "q055",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.3333333333333333,
+        "best_rank": 1,
+        "worst_rank": 2,
+        "all_ranks": [
+          1,
+          1,
+          2
+        ]
+      },
+      {
+        "base_query_id": "q056",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q057",
+        "num_variants": 3,
+        "variants_found": 1,
+        "consistency": 0.3333333333333333,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 11,
+        "all_ranks": [
+          11,
+          11,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q058",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q059",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q060",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 2.3333333333333335,
+        "best_rank": 1,
+        "worst_rank": 3,
+        "all_ranks": [
+          1,
+          3,
+          3
+        ]
+      },
+      {
+        "base_query_id": "q061",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 2.0,
+        "best_rank": 2,
+        "worst_rank": 2,
+        "all_ranks": [
+          2,
+          2,
+          2
+        ]
+      },
+      {
+        "base_query_id": "q062",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q063",
+        "num_variants": 3,
+        "variants_found": 2,
+        "consistency": 0.6666666666666666,
+        "avg_rank": 9.5,
+        "best_rank": 9,
+        "worst_rank": 11,
+        "all_ranks": [
+          9,
+          10,
+          11
+        ]
+      },
+      {
+        "base_query_id": "q064",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.6666666666666667,
+        "best_rank": 1,
+        "worst_rank": 2,
+        "all_ranks": [
+          2,
+          2,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q065",
+        "num_variants": 3,
+        "variants_found": 0,
+        "consistency": 0.0,
+        "avg_rank": 11,
+        "best_rank": 11,
+        "worst_rank": 11,
+        "all_ranks": [
+          11,
+          11,
+          11
+        ]
+      },
+      {
+        "base_query_id": "q066",
+        "num_variants": 3,
+        "variants_found": 1,
+        "consistency": 0.3333333333333333,
+        "avg_rank": 4.0,
+        "best_rank": 4,
+        "worst_rank": 11,
+        "all_ranks": [
+          11,
+          4,
+          11
+        ]
+      },
+      {
+        "base_query_id": "q067",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q068",
+        "num_variants": 3,
+        "variants_found": 1,
+        "consistency": 0.3333333333333333,
+        "avg_rank": 5.0,
+        "best_rank": 5,
+        "worst_rank": 11,
+        "all_ranks": [
+          11,
+          5,
+          11
+        ]
+      },
+      {
+        "base_query_id": "q069",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q070",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.6666666666666667,
+        "best_rank": 1,
+        "worst_rank": 2,
+        "all_ranks": [
+          2,
+          1,
+          2
+        ]
+      },
+      {
+        "base_query_id": "q071",
+        "num_variants": 3,
+        "variants_found": 2,
+        "consistency": 0.6666666666666666,
+        "avg_rank": 3.0,
+        "best_rank": 2,
+        "worst_rank": 11,
+        "all_ranks": [
+          2,
+          4,
+          11
+        ]
+      },
+      {
+        "base_query_id": "q072",
+        "num_variants": 3,
+        "variants_found": 2,
+        "consistency": 0.6666666666666666,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 11,
+        "all_ranks": [
+          1,
+          11,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q073",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q074",
+        "num_variants": 3,
+        "variants_found": 2,
+        "consistency": 0.6666666666666666,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 11,
+        "all_ranks": [
+          11,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q075",
+        "num_variants": 3,
+        "variants_found": 1,
+        "consistency": 0.3333333333333333,
+        "avg_rank": 5.0,
+        "best_rank": 5,
+        "worst_rank": 11,
+        "all_ranks": [
+          11,
+          5,
+          11
+        ]
+      },
+      {
+        "base_query_id": "q076",
+        "num_variants": 3,
+        "variants_found": 2,
+        "consistency": 0.6666666666666666,
+        "avg_rank": 2.0,
+        "best_rank": 2,
+        "worst_rank": 11,
+        "all_ranks": [
+          2,
+          2,
+          11
+        ]
+      },
+      {
+        "base_query_id": "q077",
+        "num_variants": 3,
+        "variants_found": 2,
+        "consistency": 0.6666666666666666,
+        "avg_rank": 2.0,
+        "best_rank": 2,
+        "worst_rank": 11,
+        "all_ranks": [
+          2,
+          2,
+          11
+        ]
+      },
+      {
+        "base_query_id": "q078",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 2.6666666666666665,
+        "best_rank": 1,
+        "worst_rank": 4,
+        "all_ranks": [
+          3,
+          4,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q079",
+        "num_variants": 3,
+        "variants_found": 0,
+        "consistency": 0.0,
+        "avg_rank": 11,
+        "best_rank": 11,
+        "worst_rank": 11,
+        "all_ranks": [
+          11,
+          11,
+          11
+        ]
+      },
+      {
+        "base_query_id": "q080",
+        "num_variants": 3,
+        "variants_found": 2,
+        "consistency": 0.6666666666666666,
+        "avg_rank": 3.0,
+        "best_rank": 1,
+        "worst_rank": 11,
+        "all_ranks": [
+          5,
+          1,
+          11
+        ]
+      },
+      {
+        "base_query_id": "q081",
+        "num_variants": 3,
+        "variants_found": 2,
+        "consistency": 0.6666666666666666,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 11,
+        "all_ranks": [
+          1,
+          11,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q082",
+        "num_variants": 3,
+        "variants_found": 2,
+        "consistency": 0.6666666666666666,
+        "avg_rank": 2.5,
+        "best_rank": 1,
+        "worst_rank": 11,
+        "all_ranks": [
+          11,
+          1,
+          4
+        ]
+      },
+      {
+        "base_query_id": "q083",
+        "num_variants": 3,
+        "variants_found": 1,
+        "consistency": 0.3333333333333333,
+        "avg_rank": 7.0,
+        "best_rank": 7,
+        "worst_rank": 11,
+        "all_ranks": [
+          11,
+          11,
+          7
+        ]
+      },
+      {
+        "base_query_id": "q084",
+        "num_variants": 3,
+        "variants_found": 2,
+        "consistency": 0.6666666666666666,
+        "avg_rank": 2.5,
+        "best_rank": 1,
+        "worst_rank": 11,
+        "all_ranks": [
+          11,
+          1,
+          4
+        ]
+      },
+      {
+        "base_query_id": "q085",
+        "num_variants": 3,
+        "variants_found": 0,
+        "consistency": 0.0,
+        "avg_rank": 11,
+        "best_rank": 11,
+        "worst_rank": 11,
+        "all_ranks": [
+          11,
+          11,
+          11
+        ]
+      }
+    ]
+  },
+  "paraphrase-mpnet": {
+    "aggregate": {
+      "model_id": "paraphrase-mpnet",
+      "k": 10,
+      "num_base_queries": 85,
+      "mean_consistency": 0.7607843137254903,
+      "median_consistency": 1.0,
+      "std_consistency": 0.31797671105530456,
+      "min_consistency": 0.0,
+      "max_consistency": 1.0,
+      "perfect_consistency": 47,
+      "zero_consistency": 7
+    },
+    "per_base_query": [
+      {
+        "base_query_id": "q001",
+        "num_variants": 3,
+        "variants_found": 2,
+        "consistency": 0.6666666666666666,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 11,
+        "all_ranks": [
+          1,
+          11,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q002",
+        "num_variants": 3,
+        "variants_found": 2,
+        "consistency": 0.6666666666666666,
+        "avg_rank": 1.5,
+        "best_rank": 1,
+        "worst_rank": 11,
+        "all_ranks": [
+          11,
+          1,
+          2
+        ]
+      },
+      {
+        "base_query_id": "q003",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q004",
+        "num_variants": 3,
+        "variants_found": 2,
+        "consistency": 0.6666666666666666,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 11,
+        "all_ranks": [
+          1,
+          11,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q005",
+        "num_variants": 3,
+        "variants_found": 1,
+        "consistency": 0.3333333333333333,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 11,
+        "all_ranks": [
+          11,
+          11,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q006",
+        "num_variants": 3,
+        "variants_found": 1,
+        "consistency": 0.3333333333333333,
+        "avg_rank": 6.0,
+        "best_rank": 6,
+        "worst_rank": 11,
+        "all_ranks": [
+          6,
+          11,
+          11
+        ]
+      },
+      {
+        "base_query_id": "q007",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 3.0,
+        "best_rank": 2,
+        "worst_rank": 5,
+        "all_ranks": [
+          2,
+          5,
+          2
+        ]
+      },
+      {
+        "base_query_id": "q008",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 2.6666666666666665,
+        "best_rank": 1,
+        "worst_rank": 6,
+        "all_ranks": [
+          6,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q009",
+        "num_variants": 4,
+        "variants_found": 3,
+        "consistency": 0.75,
+        "avg_rank": 4.0,
+        "best_rank": 1,
+        "worst_rank": 11,
+        "all_ranks": [
+          11,
+          10,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q010",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q011",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 3.0,
+        "best_rank": 2,
+        "worst_rank": 5,
+        "all_ranks": [
+          2,
+          5,
+          2
+        ]
+      },
+      {
+        "base_query_id": "q012",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q013",
+        "num_variants": 3,
+        "variants_found": 2,
+        "consistency": 0.6666666666666666,
+        "avg_rank": 2.0,
+        "best_rank": 1,
+        "worst_rank": 11,
+        "all_ranks": [
+          11,
+          3,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q014",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q015",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q016",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 3.0,
+        "best_rank": 1,
+        "worst_rank": 7,
+        "all_ranks": [
+          7,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q017",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q018",
+        "num_variants": 4,
+        "variants_found": 4,
+        "consistency": 1.0,
+        "avg_rank": 3.5,
+        "best_rank": 1,
+        "worst_rank": 8,
+        "all_ranks": [
+          1,
+          4,
+          1,
+          8
+        ]
+      },
+      {
+        "base_query_id": "q019",
+        "num_variants": 3,
+        "variants_found": 2,
+        "consistency": 0.6666666666666666,
+        "avg_rank": 3.5,
+        "best_rank": 1,
+        "worst_rank": 11,
+        "all_ranks": [
+          6,
+          11,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q020",
+        "num_variants": 2,
+        "variants_found": 1,
+        "consistency": 0.5,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 11,
+        "all_ranks": [
+          1,
+          11
+        ]
+      },
+      {
+        "base_query_id": "q021",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 3.6666666666666665,
+        "best_rank": 1,
+        "worst_rank": 9,
+        "all_ranks": [
+          9,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q022",
+        "num_variants": 3,
+        "variants_found": 0,
+        "consistency": 0.0,
+        "avg_rank": 11,
+        "best_rank": 11,
+        "worst_rank": 11,
+        "all_ranks": [
+          11,
+          11,
+          11
+        ]
+      },
+      {
+        "base_query_id": "q023",
+        "num_variants": 3,
+        "variants_found": 2,
+        "consistency": 0.6666666666666666,
+        "avg_rank": 3.0,
+        "best_rank": 2,
+        "worst_rank": 11,
+        "all_ranks": [
+          11,
+          2,
+          4
+        ]
+      },
+      {
+        "base_query_id": "q024",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 5.666666666666667,
+        "best_rank": 3,
+        "worst_rank": 10,
+        "all_ranks": [
+          4,
+          10,
+          3
+        ]
+      },
+      {
+        "base_query_id": "q025",
+        "num_variants": 4,
+        "variants_found": 2,
+        "consistency": 0.5,
+        "avg_rank": 4.0,
+        "best_rank": 1,
+        "worst_rank": 11,
+        "all_ranks": [
+          11,
+          7,
+          1,
+          11
+        ]
+      },
+      {
+        "base_query_id": "q026",
+        "num_variants": 4,
+        "variants_found": 4,
+        "consistency": 1.0,
+        "avg_rank": 1.5,
+        "best_rank": 1,
+        "worst_rank": 3,
+        "all_ranks": [
+          1,
+          1,
+          3,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q027",
+        "num_variants": 4,
+        "variants_found": 1,
+        "consistency": 0.25,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 11,
+        "all_ranks": [
+          11,
+          1,
+          11,
+          11
+        ]
+      },
+      {
+        "base_query_id": "q028",
+        "num_variants": 3,
+        "variants_found": 2,
+        "consistency": 0.6666666666666666,
+        "avg_rank": 4.5,
+        "best_rank": 3,
+        "worst_rank": 11,
+        "all_ranks": [
+          11,
+          6,
+          3
+        ]
+      },
+      {
+        "base_query_id": "q029",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 3.0,
+        "best_rank": 1,
+        "worst_rank": 4,
+        "all_ranks": [
+          4,
+          1,
+          4
+        ]
+      },
+      {
+        "base_query_id": "q030",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 3.3333333333333335,
+        "best_rank": 2,
+        "worst_rank": 5,
+        "all_ranks": [
+          5,
+          3,
+          2
+        ]
+      },
+      {
+        "base_query_id": "q031",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q032",
+        "num_variants": 3,
+        "variants_found": 2,
+        "consistency": 0.6666666666666666,
+        "avg_rank": 3.0,
+        "best_rank": 3,
+        "worst_rank": 11,
+        "all_ranks": [
+          3,
+          3,
+          11
+        ]
+      },
+      {
+        "base_query_id": "q033",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q034",
+        "num_variants": 3,
+        "variants_found": 1,
+        "consistency": 0.3333333333333333,
+        "avg_rank": 3.0,
+        "best_rank": 3,
+        "worst_rank": 11,
+        "all_ranks": [
+          11,
+          11,
+          3
+        ]
+      },
+      {
+        "base_query_id": "q035",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.3333333333333333,
+        "best_rank": 1,
+        "worst_rank": 2,
+        "all_ranks": [
+          1,
+          1,
+          2
+        ]
+      },
+      {
+        "base_query_id": "q036",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 3.0,
+        "best_rank": 1,
+        "worst_rank": 5,
+        "all_ranks": [
+          3,
+          5,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q037",
+        "num_variants": 3,
+        "variants_found": 1,
+        "consistency": 0.3333333333333333,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 11,
+        "all_ranks": [
+          11,
+          11,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q038",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.6666666666666667,
+        "best_rank": 1,
+        "worst_rank": 2,
+        "all_ranks": [
+          2,
+          2,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q039",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.6666666666666667,
+        "best_rank": 1,
+        "worst_rank": 2,
+        "all_ranks": [
+          2,
+          2,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q040",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.3333333333333333,
+        "best_rank": 1,
+        "worst_rank": 2,
+        "all_ranks": [
+          1,
+          2,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q041",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.6666666666666667,
+        "best_rank": 1,
+        "worst_rank": 3,
+        "all_ranks": [
+          3,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q042",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 5.0,
+        "best_rank": 3,
+        "worst_rank": 7,
+        "all_ranks": [
+          3,
+          7,
+          5
+        ]
+      },
+      {
+        "base_query_id": "q043",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 3.6666666666666665,
+        "best_rank": 1,
+        "worst_rank": 9,
+        "all_ranks": [
+          9,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q044",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q045",
+        "num_variants": 3,
+        "variants_found": 2,
+        "consistency": 0.6666666666666666,
+        "avg_rank": 3.0,
+        "best_rank": 2,
+        "worst_rank": 11,
+        "all_ranks": [
+          2,
+          4,
+          11
+        ]
+      },
+      {
+        "base_query_id": "q046",
+        "num_variants": 3,
+        "variants_found": 1,
+        "consistency": 0.3333333333333333,
+        "avg_rank": 4.0,
+        "best_rank": 4,
+        "worst_rank": 11,
+        "all_ranks": [
+          4,
+          11,
+          11
+        ]
+      },
+      {
+        "base_query_id": "q047",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 3.3333333333333335,
+        "best_rank": 1,
+        "worst_rank": 6,
+        "all_ranks": [
+          3,
+          6,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q048",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 2.0,
+        "best_rank": 1,
+        "worst_rank": 4,
+        "all_ranks": [
+          1,
+          1,
+          4
+        ]
+      },
+      {
+        "base_query_id": "q049",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 6.666666666666667,
+        "best_rank": 2,
+        "worst_rank": 10,
+        "all_ranks": [
+          2,
+          10,
+          8
+        ]
+      },
+      {
+        "base_query_id": "q050",
+        "num_variants": 3,
+        "variants_found": 0,
+        "consistency": 0.0,
+        "avg_rank": 11,
+        "best_rank": 11,
+        "worst_rank": 11,
+        "all_ranks": [
+          11,
+          11,
+          11
+        ]
+      },
+      {
+        "base_query_id": "q051",
+        "num_variants": 3,
+        "variants_found": 2,
+        "consistency": 0.6666666666666666,
+        "avg_rank": 3.0,
+        "best_rank": 2,
+        "worst_rank": 11,
+        "all_ranks": [
+          2,
+          4,
+          11
+        ]
+      },
+      {
+        "base_query_id": "q052",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q053",
+        "num_variants": 3,
+        "variants_found": 0,
+        "consistency": 0.0,
+        "avg_rank": 11,
+        "best_rank": 11,
+        "worst_rank": 11,
+        "all_ranks": [
+          11,
+          11,
+          11
+        ]
+      },
+      {
+        "base_query_id": "q054",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 4.333333333333333,
+        "best_rank": 1,
+        "worst_rank": 9,
+        "all_ranks": [
+          9,
+          1,
+          3
+        ]
+      },
+      {
+        "base_query_id": "q055",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q056",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q057",
+        "num_variants": 3,
+        "variants_found": 2,
+        "consistency": 0.6666666666666666,
+        "avg_rank": 6.0,
+        "best_rank": 3,
+        "worst_rank": 11,
+        "all_ranks": [
+          3,
+          11,
+          9
+        ]
+      },
+      {
+        "base_query_id": "q058",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q059",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q060",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.3333333333333333,
+        "best_rank": 1,
+        "worst_rank": 2,
+        "all_ranks": [
+          1,
+          2,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q061",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 4.0,
+        "best_rank": 4,
+        "worst_rank": 4,
+        "all_ranks": [
+          4,
+          4,
+          4
+        ]
+      },
+      {
+        "base_query_id": "q062",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q063",
+        "num_variants": 3,
+        "variants_found": 2,
+        "consistency": 0.6666666666666666,
+        "avg_rank": 4.0,
+        "best_rank": 1,
+        "worst_rank": 11,
+        "all_ranks": [
+          1,
+          7,
+          11
+        ]
+      },
+      {
+        "base_query_id": "q064",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.3333333333333333,
+        "best_rank": 1,
+        "worst_rank": 2,
+        "all_ranks": [
+          1,
+          2,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q065",
+        "num_variants": 3,
+        "variants_found": 1,
+        "consistency": 0.3333333333333333,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 11,
+        "all_ranks": [
+          11,
+          1,
+          11
+        ]
+      },
+      {
+        "base_query_id": "q066",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 4.333333333333333,
+        "best_rank": 1,
+        "worst_rank": 6,
+        "all_ranks": [
+          6,
+          1,
+          6
+        ]
+      },
+      {
+        "base_query_id": "q067",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.3333333333333333,
+        "best_rank": 1,
+        "worst_rank": 2,
+        "all_ranks": [
+          2,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q068",
+        "num_variants": 3,
+        "variants_found": 2,
+        "consistency": 0.6666666666666666,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 11,
+        "all_ranks": [
+          1,
+          1,
+          11
+        ]
+      },
+      {
+        "base_query_id": "q069",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q070",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q071",
+        "num_variants": 3,
+        "variants_found": 2,
+        "consistency": 0.6666666666666666,
+        "avg_rank": 3.0,
+        "best_rank": 2,
+        "worst_rank": 11,
+        "all_ranks": [
+          2,
+          4,
+          11
+        ]
+      },
+      {
+        "base_query_id": "q072",
+        "num_variants": 3,
+        "variants_found": 2,
+        "consistency": 0.6666666666666666,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 11,
+        "all_ranks": [
+          1,
+          11,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q073",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.3333333333333333,
+        "best_rank": 1,
+        "worst_rank": 2,
+        "all_ranks": [
+          1,
+          2,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q074",
+        "num_variants": 3,
+        "variants_found": 2,
+        "consistency": 0.6666666666666666,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 11,
+        "all_ranks": [
+          11,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q075",
+        "num_variants": 3,
+        "variants_found": 0,
+        "consistency": 0.0,
+        "avg_rank": 11,
+        "best_rank": 11,
+        "worst_rank": 11,
+        "all_ranks": [
+          11,
+          11,
+          11
+        ]
+      },
+      {
+        "base_query_id": "q076",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 2.6666666666666665,
+        "best_rank": 1,
+        "worst_rank": 5,
+        "all_ranks": [
+          2,
+          1,
+          5
+        ]
+      },
+      {
+        "base_query_id": "q077",
+        "num_variants": 3,
+        "variants_found": 2,
+        "consistency": 0.6666666666666666,
+        "avg_rank": 5.0,
+        "best_rank": 3,
+        "worst_rank": 11,
+        "all_ranks": [
+          7,
+          3,
+          11
+        ]
+      },
+      {
+        "base_query_id": "q078",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 2.6666666666666665,
+        "best_rank": 2,
+        "worst_rank": 3,
+        "all_ranks": [
+          3,
+          3,
+          2
+        ]
+      },
+      {
+        "base_query_id": "q079",
+        "num_variants": 3,
+        "variants_found": 0,
+        "consistency": 0.0,
+        "avg_rank": 11,
+        "best_rank": 11,
+        "worst_rank": 11,
+        "all_ranks": [
+          11,
+          11,
+          11
+        ]
+      },
+      {
+        "base_query_id": "q080",
+        "num_variants": 3,
+        "variants_found": 2,
+        "consistency": 0.6666666666666666,
+        "avg_rank": 4.5,
+        "best_rank": 4,
+        "worst_rank": 11,
+        "all_ranks": [
+          4,
+          5,
+          11
+        ]
+      },
+      {
+        "base_query_id": "q081",
+        "num_variants": 3,
+        "variants_found": 0,
+        "consistency": 0.0,
+        "avg_rank": 11,
+        "best_rank": 11,
+        "worst_rank": 11,
+        "all_ranks": [
+          11,
+          11,
+          11
+        ]
+      },
+      {
+        "base_query_id": "q082",
+        "num_variants": 3,
+        "variants_found": 1,
+        "consistency": 0.3333333333333333,
+        "avg_rank": 3.0,
+        "best_rank": 3,
+        "worst_rank": 11,
+        "all_ranks": [
+          11,
+          3,
+          11
+        ]
+      },
+      {
+        "base_query_id": "q083",
+        "num_variants": 3,
+        "variants_found": 2,
+        "consistency": 0.6666666666666666,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 11,
+        "all_ranks": [
+          11,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q084",
+        "num_variants": 3,
+        "variants_found": 2,
+        "consistency": 0.6666666666666666,
+        "avg_rank": 3.5,
+        "best_rank": 1,
+        "worst_rank": 11,
+        "all_ranks": [
+          11,
+          1,
+          6
+        ]
+      },
+      {
+        "base_query_id": "q085",
+        "num_variants": 3,
+        "variants_found": 0,
+        "consistency": 0.0,
+        "avg_rank": 11,
+        "best_rank": 11,
+        "worst_rank": 11,
+        "all_ranks": [
+          11,
+          11,
+          11
+        ]
+      }
+    ]
+  },
+  "multilingual-e5-small": {
+    "aggregate": {
+      "model_id": "multilingual-e5-small",
+      "k": 10,
+      "num_base_queries": 85,
+      "mean_consistency": 0.9882352941176471,
+      "median_consistency": 1.0,
+      "std_consistency": 0.061507400554345594,
+      "min_consistency": 0.6666666666666666,
+      "max_consistency": 1.0,
+      "perfect_consistency": 82,
+      "zero_consistency": 0
+    },
+    "per_base_query": [
+      {
+        "base_query_id": "q001",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.3333333333333333,
+        "best_rank": 1,
+        "worst_rank": 2,
+        "all_ranks": [
+          2,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q002",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.3333333333333333,
+        "best_rank": 1,
+        "worst_rank": 2,
+        "all_ranks": [
+          1,
+          1,
+          2
+        ]
+      },
+      {
+        "base_query_id": "q003",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q004",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q005",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.6666666666666667,
+        "best_rank": 1,
+        "worst_rank": 3,
+        "all_ranks": [
+          3,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q006",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.3333333333333333,
+        "best_rank": 1,
+        "worst_rank": 2,
+        "all_ranks": [
+          2,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q007",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q008",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.3333333333333333,
+        "best_rank": 1,
+        "worst_rank": 2,
+        "all_ranks": [
+          2,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q009",
+        "num_variants": 4,
+        "variants_found": 4,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q010",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q011",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q012",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q013",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.3333333333333333,
+        "best_rank": 1,
+        "worst_rank": 2,
+        "all_ranks": [
+          1,
+          2,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q014",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q015",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q016",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q017",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q018",
+        "num_variants": 4,
+        "variants_found": 4,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q019",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q020",
+        "num_variants": 2,
+        "variants_found": 2,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q021",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q022",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.6666666666666667,
+        "best_rank": 1,
+        "worst_rank": 3,
+        "all_ranks": [
+          1,
+          1,
+          3
+        ]
+      },
+      {
+        "base_query_id": "q023",
+        "num_variants": 3,
+        "variants_found": 2,
+        "consistency": 0.6666666666666666,
+        "avg_rank": 4.5,
+        "best_rank": 4,
+        "worst_rank": 11,
+        "all_ranks": [
+          11,
+          5,
+          4
+        ]
+      },
+      {
+        "base_query_id": "q024",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q025",
+        "num_variants": 4,
+        "variants_found": 4,
+        "consistency": 1.0,
+        "avg_rank": 3.0,
+        "best_rank": 1,
+        "worst_rank": 5,
+        "all_ranks": [
+          4,
+          2,
+          1,
+          5
+        ]
+      },
+      {
+        "base_query_id": "q026",
+        "num_variants": 4,
+        "variants_found": 4,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q027",
+        "num_variants": 4,
+        "variants_found": 4,
+        "consistency": 1.0,
+        "avg_rank": 1.75,
+        "best_rank": 1,
+        "worst_rank": 2,
+        "all_ranks": [
+          2,
+          1,
+          2,
+          2
+        ]
+      },
+      {
+        "base_query_id": "q028",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q029",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q030",
+        "num_variants": 3,
+        "variants_found": 2,
+        "consistency": 0.6666666666666666,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 11,
+        "all_ranks": [
+          1,
+          1,
+          11
+        ]
+      },
+      {
+        "base_query_id": "q031",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q032",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.3333333333333333,
+        "best_rank": 1,
+        "worst_rank": 2,
+        "all_ranks": [
+          2,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q033",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q034",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q035",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q036",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q037",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q038",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q039",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.3333333333333333,
+        "best_rank": 1,
+        "worst_rank": 2,
+        "all_ranks": [
+          2,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q040",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q041",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q042",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q043",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q044",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q045",
+        "num_variants": 3,
+        "variants_found": 2,
+        "consistency": 0.6666666666666666,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 11,
+        "all_ranks": [
+          1,
+          1,
+          11
+        ]
+      },
+      {
+        "base_query_id": "q046",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q047",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q048",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q049",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q050",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.3333333333333333,
+        "best_rank": 1,
+        "worst_rank": 2,
+        "all_ranks": [
+          1,
+          1,
+          2
+        ]
+      },
+      {
+        "base_query_id": "q051",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q052",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q053",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q054",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q055",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q056",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q057",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q058",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q059",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q060",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q061",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q062",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q063",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q064",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.3333333333333333,
+        "best_rank": 1,
+        "worst_rank": 2,
+        "all_ranks": [
+          1,
+          2,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q065",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q066",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q067",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.6666666666666667,
+        "best_rank": 1,
+        "worst_rank": 3,
+        "all_ranks": [
+          1,
+          1,
+          3
+        ]
+      },
+      {
+        "base_query_id": "q068",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q069",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q070",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.3333333333333333,
+        "best_rank": 1,
+        "worst_rank": 2,
+        "all_ranks": [
+          1,
+          1,
+          2
+        ]
+      },
+      {
+        "base_query_id": "q071",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q072",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q073",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q074",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 2.6666666666666665,
+        "best_rank": 1,
+        "worst_rank": 6,
+        "all_ranks": [
+          6,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q075",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q076",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q077",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.3333333333333333,
+        "best_rank": 1,
+        "worst_rank": 2,
+        "all_ranks": [
+          1,
+          1,
+          2
+        ]
+      },
+      {
+        "base_query_id": "q078",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 2.0,
+        "best_rank": 2,
+        "worst_rank": 2,
+        "all_ranks": [
+          2,
+          2,
+          2
+        ]
+      },
+      {
+        "base_query_id": "q079",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 3.6666666666666665,
+        "best_rank": 1,
+        "worst_rank": 8,
+        "all_ranks": [
+          2,
+          8,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q080",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q081",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q082",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.3333333333333333,
+        "best_rank": 1,
+        "worst_rank": 2,
+        "all_ranks": [
+          2,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q083",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.0,
+        "best_rank": 1,
+        "worst_rank": 1,
+        "all_ranks": [
+          1,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q084",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.3333333333333333,
+        "best_rank": 1,
+        "worst_rank": 2,
+        "all_ranks": [
+          2,
+          1,
+          1
+        ]
+      },
+      {
+        "base_query_id": "q085",
+        "num_variants": 3,
+        "variants_found": 3,
+        "consistency": 1.0,
+        "avg_rank": 1.6666666666666667,
+        "best_rank": 1,
+        "worst_rank": 2,
+        "all_ranks": [
+          2,
+          2,
+          1
+        ]
+      }
+    ]
+  }
+}

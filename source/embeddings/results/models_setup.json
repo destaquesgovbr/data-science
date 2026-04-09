@@ -1,0 +1,49 @@
+{
+  "device": "cpu",
+  "has_gpu": false,
+  "models": {
+    "multilingual-e5-large": {
+      "status": "success",
+      "name": "intfloat/multilingual-e5-large",
+      "group": "multilingual",
+      "dims": 1024,
+      "max_tokens": 512
+    },
+    "multilingual-e5-base": {
+      "status": "success",
+      "name": "intfloat/multilingual-e5-base",
+      "group": "multilingual",
+      "dims": 768,
+      "max_tokens": 512
+    },
+    "labse": {
+      "status": "success",
+      "name": "sentence-transformers/LaBSE",
+      "group": "multilingual",
+      "dims": 768,
+      "max_tokens": 512
+    },
+    "bertimbau": {
+      "status": "success",
+      "name": "neuralmind/bert-base-portuguese-cased",
+      "group": "pt-specific",
+      "dims": 768,
+      "max_tokens": 512
+    },
+    "paraphrase-miniml": {
+      "status": "warning",
+      "error": "Tests failed or low similarity"
+    },
+    "paraphrase-mpnet": {
+      "status": "warning",
+      "error": "Tests failed or low similarity"
+    },
+    "multilingual-e5-small": {
+      "status": "success",
+      "name": "intfloat/multilingual-e5-small",
+      "group": "small",
+      "dims": 384,
+      "max_tokens": 512
+    }
+  }
+}
