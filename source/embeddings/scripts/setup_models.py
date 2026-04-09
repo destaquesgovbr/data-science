@@ -38,6 +38,13 @@ MODELS = {
         "params": "560M",
         "group": "multilingual"
     },
+    "multilingual-e5-base": {
+        "name": "intfloat/multilingual-e5-base",
+        "dims": 768,
+        "max_tokens": 512,
+        "params": "278M",
+        "group": "multilingual"
+    },
     "labse": {
         "name": "sentence-transformers/LaBSE",
         "dims": 768,
@@ -48,7 +55,7 @@ MODELS = {
 
     # Group B: PT-BR Specific
     "serafim": {
-        "name": "maritaca-ai/serafim-900m-portuguese",
+        "name": "PORTULAN/serafim-900m-portuguese-pt-sentence-encoder",
         "dims": 1536,
         "max_tokens": 512,
         "params": "900M",
@@ -76,6 +83,13 @@ MODELS = {
         "max_tokens": 512,
         "params": "118M",
         "group": "small"
+    },
+    "paraphrase-mpnet": {
+        "name": "sentence-transformers/paraphrase-multilingual-mpnet-base-v2",
+        "dims": 768,
+        "max_tokens": 512,
+        "params": "278M",
+        "group": "multilingual"
     },
     "multilingual-e5-small": {
         "name": "intfloat/multilingual-e5-small",
