@@ -100,15 +100,6 @@
   - Link: https://huggingface.co/blog/getting-started-with-embeddings
   - Foco: Overview, casos de uso, boas práticas
 
-### Benchmarks e Leaderboards
-
-- [ ] **MTEB Leaderboard**
-  - Link: https://huggingface.co/spaces/mteb/leaderboard
-  - Foco: Ver rankings, comparar modelos
-
-- [ ] **Papers with Code - Sentence Embeddings**
-  - Link: https://paperswithcode.com/task/sentence-embeddings
-  - Foco: SOTA models, datasets, código
 
 ---
 

@@ -287,9 +287,11 @@ Resultados para os 9 modelos testados (259 queries):
 | Paraphrase-MiniLM | 0.4740 | 0.5049 | 0.4199 | 0.5808 | 0.5501 |
 | BERTimbau | 0.3705 | 0.4181 | 0.3311 | 0.4686 | 0.4947 |
 
-**Consenso entre métricas:** Todas as métricas concordam com a ordem dos modelos, confirmando robustez do ranking.
+**Consenso entre métricas:** Todas as métricas concordam com a ordem dos modelos (correlação de Spearman ρ > 0.98), confirmando robustez do ranking.
 
 **Nota metodológica:** NDCG foi calculado apenas para K ≤ 10, coerente com a metodologia de anotação (Top-10 por query). Métricas para K > 10 não são reportadas pois assumiriam irrelevância não verificada de documentos fora do Top-10.
+
+**Nota sobre correlações:** Utilizou-se correlação de Spearman (ρ) por ser padrão em pesquisa de Information Retrieval, pois mede concordância no ranking dos sistemas ao invés de relação linear entre valores absolutos.
 
 ---
 
