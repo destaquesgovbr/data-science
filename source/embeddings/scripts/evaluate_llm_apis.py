@@ -87,8 +87,7 @@ def load_test_data() -> pd.DataFrame:
 def evaluate_model(
     model_config: Dict,
     test_df: pd.DataFrame,
-    categories: List[str],
-    prompt_strategy: str = 'zero-shot',
+    prompt_strategy: str = 'chain-of-thought',
     batch_size: int = 10
 ) -> Dict:
     """
@@ -97,7 +96,6 @@ def evaluate_model(
     Args:
         model_config: Configuração do modelo (do YAML)
         test_df: DataFrame com notícias de teste
-        categories: Lista de categorias válidas
         prompt_strategy: Estratégia de prompt
         batch_size: Tamanho do batch para feedback visual
 
@@ -113,16 +111,19 @@ def evaluate_model(
     print(f"🤖 Avaliando: {model_name}")
     print(f"   ID: {model_id}")
     print(f"   Provider: {provider}")
+    print(f"   Estratégia: {prompt_strategy}")
     print(f"{'='*80}")
 
-    # Criar classificador
+    # Criar classificador (taxonomia carregada automaticamente)
     classifier = BedrockClassifier(
         model_id=model_id,
         model_name=model_name,
         provider=provider,
-        categories=categories,
         region='us-east-1'
     )
+
+    # Pegar categorias da taxonomia
+    categories = [cat['level3'] for cat in classifier.taxonomy.flat_categories]
 
     # Classificar todas as notícias
     predictions = []
@@ -158,26 +159,40 @@ def evaluate_model(
 
     print(f"  ✅ Classificação completa: {total} notícias")
 
-    # Calcular métricas
-    accuracy = accuracy_score(ground_truth, predictions)
-    f1_macro = f1_score(ground_truth, predictions, average='macro', zero_division=0)
-    f1_weighted = f1_score(ground_truth, predictions, average='weighted', zero_division=0)
+    # Calcular métricas (com tratamento de erro)
+    try:
+        accuracy = accuracy_score(ground_truth, predictions)
 
-    # Confusion matrix
-    conf_matrix = confusion_matrix(
-        ground_truth,
-        predictions,
-        labels=categories
-    )
+        # F1 scores - usar apenas labels que aparecem nos dados
+        unique_labels = sorted(set(ground_truth + predictions))
+        valid_categories = [c for c in categories if c in unique_labels]
 
-    # Classification report (por categoria)
-    class_report = classification_report(
-        ground_truth,
-        predictions,
-        labels=categories,
-        output_dict=True,
-        zero_division=0
-    )
+        f1_macro = f1_score(ground_truth, predictions, average='macro', zero_division=0, labels=valid_categories)
+        f1_weighted = f1_score(ground_truth, predictions, average='weighted', zero_division=0, labels=valid_categories)
+
+        # Confusion matrix
+        conf_matrix = confusion_matrix(
+            ground_truth,
+            predictions,
+            labels=valid_categories
+        )
+
+        # Classification report (por categoria)
+        class_report = classification_report(
+            ground_truth,
+            predictions,
+            labels=valid_categories,
+            output_dict=True,
+            zero_division=0
+        )
+    except Exception as e:
+        print(f"  ⚠️  Erro ao calcular métricas: {e}")
+        print(f"  ℹ️  Usando métricas padrão com zero_division")
+        accuracy = 0.0
+        f1_macro = 0.0
+        f1_weighted = 0.0
+        conf_matrix = [[0]]
+        class_report = {}
 
     # Latência (percentis)
     latencies_arr = np.array(latencies)
@@ -248,7 +263,7 @@ def evaluate_model(
     return result
 
 
-def generate_comparison_report(all_results: List[Dict], categories: List[str]):
+def generate_comparison_report(all_results: List[Dict]):
     """
     Gera relatório comparativo entre todos os modelos.
 
@@ -392,9 +407,8 @@ def main():
     # 2. Carregar test data
     test_df = load_test_data()
 
-    categories = config['categories']
-    prompt_strategy = config['evaluation']['prompt_strategy']
-    batch_size = config['evaluation']['batch_size']
+    prompt_strategy = config['evaluation'].get('prompt_strategy', 'chain-of-thought')
+    batch_size = config['evaluation'].get('batch_size', 10)
 
     # 3. Avaliar cada modelo
     all_results = []
@@ -408,7 +422,6 @@ def main():
             result = evaluate_model(
                 model_config=model_config,
                 test_df=test_df,
-                categories=categories,
                 prompt_strategy=prompt_strategy,
                 batch_size=batch_size
             )
@@ -418,9 +431,14 @@ def main():
             print(f"\n❌ ERRO ao avaliar {model_config['name']}: {e}")
             print("   Pulando este modelo...")
 
+            # Salvar resultados parciais mesmo com erro
+            if all_results and i == len(config['models']):
+                print("\n💾 Salvando resultados dos modelos que funcionaram...")
+                generate_comparison_report(all_results)
+
     # 4. Gerar relatório comparativo
     if all_results:
-        generate_comparison_report(all_results, categories)
+        generate_comparison_report(all_results)
 
     total_time = time.time() - start_time
 

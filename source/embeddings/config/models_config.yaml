@@ -106,32 +106,23 @@ models:
     context_limit: 128000
     tier: "D"
 
-  - model_id: "mistral.mistral-7b-instruct-v0:2"
-    name: "Mistral 7B"
-    provider: "mistral"
-    pricing:
-      input_per_mtok: 0.15
-      output_per_mtok: 0.20
-    context_limit: 32000
-    tier: "D"
+  # Mistral 7B removido - modelo inventa códigos inexistentes
+  # - model_id: "mistral.mistral-7b-instruct-v0:2"
+  #   name: "Mistral 7B"
+  #   provider: "mistral"
+  #   pricing:
+  #     input_per_mtok: 0.15
+  #     output_per_mtok: 0.20
+  #   context_limit: 32000
+  #   tier: "D"
 
 
-# Categorias do dataset (CORRETO - deve bater com o CSV!)
-categories:
-  - "Agricultura"
-  - "Assistência Social"
-  - "Ciência e Tecnologia"
-  - "Cultura"
-  - "Economia"
-  - "Educação"
-  - "Infraestrutura"
-  - "Meio Ambiente"
-  - "Saúde"
-  - "Segurança Pública"
+# Taxonomia carregada automaticamente de data/classification/arvore.yaml
+# 25 grandes áreas, 115 subcategorias, 500 tópicos específicos
 
 # Configurações de avaliação
 evaluation:
   test_file: "data/classification/news_classification_test.csv"
-  prompt_strategy: "zero-shot"  # Começar com zero-shot
+  prompt_strategy: "chain-of-thought"  # Chain-of-thought para taxonomia hierárquica
   region: "us-east-1"
   batch_size: 10  # Classificar 10 por vez antes de dar feedback visual
