@@ -44,6 +44,11 @@ from embeddings.classifiers.bedrock_classifier import BedrockClassifier
 # Paths
 BASE_DIR = Path(__file__).parent.parent
 CONFIG_PATH = BASE_DIR / "config" / "models_config.yaml"
+
+# Permitir override via argumento
+import sys
+if len(sys.argv) > 1:
+    CONFIG_PATH = BASE_DIR / "config" / sys.argv[1]
 TEST_DATA_PATH = BASE_DIR / "data" / "classification" / "news_classification_test.csv"
 OUTPUT_DIR = BASE_DIR / "results" / "llm_evaluation"
 OUTPUT_DIR.mkdir(parents=True, exist_ok=True)

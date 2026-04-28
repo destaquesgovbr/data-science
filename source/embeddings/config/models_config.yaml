@@ -116,18 +116,18 @@ models:
     tier: "D"
 
 
-# Categorias do dataset
+# Categorias do dataset (CORRETO - deve bater com o CSV!)
 categories:
   - "Agricultura"
+  - "Assistência Social"
   - "Ciência e Tecnologia"
   - "Cultura"
   - "Economia"
   - "Educação"
+  - "Infraestrutura"
   - "Meio Ambiente"
-  - "Outros"
-  - "Política"
   - "Saúde"
-  - "Segurança"
+  - "Segurança Pública"
 
 # Configurações de avaliação
 evaluation:
