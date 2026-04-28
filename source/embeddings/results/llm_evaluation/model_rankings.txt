@@ -1,0 +1,43 @@
+================================================================================
+RANKINGS POR MÉTRICA - Issue #3
+================================================================================
+
+🏆 TOP 5 - ACCURACY
+--------------------------------------------------------------------------------
+1. Claude 3 Sonnet: 0.5100 (51.00%)
+2. Claude 3 Haiku: 0.4800 (48.00%)
+3. Amazon Nova Pro: 0.4700 (47.00%)
+4. Mistral Large 2: 0.4600 (46.00%)
+5. Amazon Nova Micro: 0.4550 (45.50%)
+
+🏆 TOP 5 - F1-MACRO
+--------------------------------------------------------------------------------
+1. Claude 3 Haiku: 0.3737
+2. Claude 3 Sonnet: 0.3732
+3. Amazon Nova Pro: 0.3608
+4. Amazon Nova Micro: 0.3546
+5. Mistral Large 2: 0.3445
+
+⚡ TOP 5 - LATÊNCIA (P50)
+--------------------------------------------------------------------------------
+1. Cohere Command R+: 0.204s
+2. Llama 3 8B: 0.205s
+3. Llama 3 70B: 0.206s
+4. Ministral 3 8B: 0.223s
+5. Mistral Large 3: 0.228s
+
+💰 TOP 5 - CUSTO (menor)
+--------------------------------------------------------------------------------
+1. Mistral Large 3: $0.0000
+2. Mistral Large 2: $0.0000
+3. Llama 3 70B: $0.0000
+4. Llama 3 8B: $0.0000
+5. Cohere Command R+: $0.0000
+
+💎 CUSTO-BENEFÍCIO (Accuracy / Cost)
+--------------------------------------------------------------------------------
+1. Amazon Nova Micro: 101.48 (acc/dólar)
+2. Amazon Nova Lite: 55.80 (acc/dólar)
+3. Claude 3 Haiku: 12.53 (acc/dólar)
+4. Amazon Nova Pro: 4.60 (acc/dólar)
+5. Claude 3 Sonnet: 1.11 (acc/dólar)
