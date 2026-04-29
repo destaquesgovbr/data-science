@@ -1,0 +1,1320 @@
+================================================================================
+RELATÓRIO DE AVALIAÇÃO - FORMATO JSON
+Data: 2026-04-28 15:45:43
+================================================================================
+
+
+================================================================================
+MODELO: Claude 3 Sonnet
+================================================================================
+
+Accuracy: 0.3350
+F1-score (macro): 0.1737
+
+Latência média: 9.753s
+Total de chamadas: 200
+Input tokens: 2,405,645
+Output tokens: 48,206
+Custo total: $7.9400
+Erros: 0
+
+Classification Report (sklearn):
+                                                      precision    recall  f1-score   support
+
+                        01.01.03 - Análise Econômica       0.00      0.00      0.00         2
+                   01.02.01 - Fiscalização Econômica       0.89      0.32      0.47        25
+                    01.02.02 - Tributação e Impostos       0.00      0.00      0.00         1
+                  01.02.03 - Combate à Evasão Fiscal       0.00      0.00      0.00         0
+                 01.03.01 - Atração de Investimentos       0.00      0.00      0.00         3
+                     01.03.03 - Investimentos Verdes       0.00      0.00      0.00         0
+     01.04.01 - Apoio Financeiro a Pequenas Empresas       0.30      0.75      0.43         4
+          01.04.03 - Financiamento de Infraestrutura       0.00      0.00      0.00         3
+                         01.05.02 - Economia Digital       0.00      0.00      0.00         4
+                       02.01.02 - Ensino Fundamental       0.00      0.00      0.00         4
+                     02.01.04 - Internet nas Escolas       0.00      0.00      0.00         0
+            02.02.01 - Pesquisa Acadêmica e Inovação       0.00      0.00      0.00         0
+                02.03.01 - Aprendizagem Profissional       0.00      0.00      0.00         1
+                    02.03.03 - Formação Profissional       0.00      0.00      0.00         0
+                   02.04.01 - Políticas Educacionais       0.50      0.17      0.25         6
+                     02.04.02 - Campanhas Educativas       0.33      1.00      0.50         1
+                      02.04.03 - Bolsas e Incentivos       0.55      1.00      0.71         6
+                     03.01.02 - Assistência em Saúde       0.67      0.50      0.57         8
+                         03.01.03 - Atenção Integral       0.00      0.00      0.00         1
+                         03.02.01 - Combate à Dengue       0.67      1.00      0.80         2
+                         03.02.02 - Saúde da Criança       0.00      0.00      0.00         1
+                      03.03.01 - Vigilância em Saúde       0.00      0.00      0.00         0
+                        03.03.02 - Inovação em Saúde       0.00      0.00      0.00         1
+               03.04.01 - Políticas de Saúde Pública       0.00      0.00      0.00         2
+                            03.04.02 - Epidemiologia       0.00      0.00      0.00         0
+                   04.01.01 - Policiamento Ostensivo       0.00      0.00      0.00         0
+  04.02.01 - Investigação de Organizações Criminosas       1.00      0.33      0.50         3
+     04.02.02 - Operações Contra o Tráfico de Drogas       0.00      0.00      0.00         0
+              04.02.03 - Combate ao Tráfico de Armas       0.00      0.00      0.00         0
+                    04.03.01 - Prevenção à Violência       0.00      0.00      0.00         2
+             04.03.02 - Campanhas de Conscientização       0.00      0.00      0.00         1
+      04.03.03 - Enfrentamento à Violência Doméstica       0.00      0.00      0.00         2
+                05.01.01 - Proteção da Vida Selvagem       1.00      0.67      0.80         6
+                      05.01.02 - Conservação Marinha       0.00      0.00      0.00         1
+                        05.01.03 - Qualidade da Água       0.67      0.25      0.36         8
+                  05.01.06 - Agricultura Sustentável       0.00      0.00      0.00         0
+                   05.02.01 - Catástrofes Climáticas       0.00      0.00      0.00         0
+                        05.02.02 - Justiça Climática       0.00      0.00      0.00         1
+                       05.02.03 - Educação Ambiental       0.50      0.50      0.50         2
+                        05.03.01 - Energia Renovável       0.00      0.00      0.00         0
+                       05.04.01 - Gestão de Resíduos       0.00      0.00      0.00         1
+                           06.01.01 - Ciência Aberta       0.00      0.00      0.00         5
+                     06.01.02 - Ciência e Democracia       0.00      0.00      0.00         2
+                    06.01.03 - Inteligência em Dados       0.20      0.50      0.29         2
+                  06.02.01 - Inteligência Artificial       1.00      1.00      1.00         3
+                        06.02.03 - Novas Tecnologias       0.50      1.00      0.67         2
+                      06.03.01 - Inovação e Startups       0.00      0.00      0.00         1
+               06.04.02 - Inovação e Descarbonização       0.00      0.00      0.00         0
+                       06.04.03 - Tecnologias Verdes       0.00      0.00      0.00         1
+                    06.05.02 - Regulação Tecnológica       1.00      0.33      0.50         3
+                   07.01.01 - Construção de Estradas       1.00      0.25      0.40         4
+              07.01.03 - Infraestrutura de Qualidade       0.00      0.00      0.00         0
+                       07.02.01 - Transporte Público       1.00      1.00      1.00         1
+                    07.03.01 - Transporte Rodoviário       0.33      0.33      0.33         3
+                   07.03.02 - Transporte Ferroviário       0.00      0.00      0.00         1
+                    07.03.03 - Transporte Aquaviário       0.67      1.00      0.80         2
+           07.04.02 - Conectividade e Infraestrutura       0.00      0.00      0.00         0
+               07.04.03 - Segurança e Regulamentação       0.00      0.00      0.00         0
+                 08.01.03 - Apresentações Artísticas       0.50      1.00      0.67         2
+                     08.02.01 - Patrimônio Histórico       1.00      0.75      0.86         4
+                     08.02.02 - Patrimônio Imaterial       0.00      0.00      0.00         0
+                         08.03.01 - Apoio a Artistas       0.00      0.00      0.00         2
+                  08.03.02 - Financiamento e Editais       0.25      1.00      0.40         1
+                    08.04.01 - Artesanato Brasileiro       0.00      0.00      0.00         0
+                         08.04.02 - Língua e Cultura       0.00      0.00      0.00         1
+                     08.04.03 - Tradições e Costumes       0.00      0.00      0.00         4
+                         09.01.03 - Jogos de Inverno       0.00      0.00      0.00         0
+                    10.01.01 - Produção de Alimentos       1.00      1.00      1.00         1
+                    10.01.02 - Desenvolvimento Rural       0.00      0.00      0.00         1
+                   10.01.03 - Agricultura e Pecuária       0.50      0.67      0.57         3
+                           10.02.02 - Combate à Fome       0.60      1.00      0.75         3
+                         10.03.02 - Crédito Agrícola       1.00      1.00      1.00         2
+     10.04.01 - Assistência Técnica e Extensão Rural       0.00      0.00      0.00         2
+              10.04.03 - Apoio a Pequenos Produtores       0.25      0.67      0.36         3
+                          10.05.01 - Sanidade Animal       0.00      0.00      0.00         1
+                  11.02.01 - Exportação e Importação       0.00      0.00      0.00         0
+                       11.02.02 - Acordos Comerciais       0.00      0.00      0.00         0
+                          11.02.03 - Competitividade       0.00      0.00      0.00         0
+                       12.01.03 - Acordos Ambientais       0.00      0.00      0.00         1
+12.02.02 - Cooperação Técnica para o Desenvolvimento       0.00      0.00      0.00         0
+                      12.03.02 - Relações Bilaterais       0.00      0.00      0.00         0
+                            13.01.03 - Justiça e Lei       0.00      0.00      0.00         0
+                      13.02.03 - Liberdade Religiosa       0.00      0.00      0.00         1
+                          14.01.01 - Emprego e Renda       0.00      0.00      0.00         0
+                      14.01.02 - Inserção no Mercado       0.00      0.00      0.00         0
+                14.03.01 - Qualificação Profissional       0.00      0.00      0.00         0
+             14.04.01 - Auditoria Fiscal do Trabalho       0.00      0.00      0.00         1
+             14.04.03 - Combate ao Trabalho Infantil       1.00      1.00      1.00         2
+            14.05.01 - Normas Regulamentadoras (NRs)       1.00      1.00      1.00         1
+                            15.01.01 - Bolsa Família       0.00      0.00      0.00        11
+                        15.01.02 - Iniciativa Social       0.17      0.14      0.15         7
+                   15.02.01 - Combate à Desigualdade       0.00      0.00      0.00         3
+                           15.02.02 - Combate à Fome       0.00      0.00      0.00         1
+                        15.02.03 - Apoio Emergencial       0.00      0.00      0.00         1
+               15.03.01 - Benefícios Previdenciários       0.00      0.00      0.00         1
+           16.01.03 - Promoção de Destinos Nacionais       0.00      0.00      0.00         2
+          16.04.01 - Turismo Ecológico e de Natureza       0.00      0.00      0.00         0
+         16.05.01 - Formação Profissional em Turismo       0.00      0.00      0.00         1
+                17.01.03 - Exploração de Gás Natural       0.00      0.00      0.00         0
+                     17.02.01 - Extração de Minerais       0.00      0.00      0.00         1
+        17.03.01 - Regulação e Legislação Energética       1.00      0.50      0.67         2
+         17.03.03 - Planejamento Energético Nacional       0.00      0.00      0.00         0
+                        18.01.01 - Serviços Digitais       0.00      0.00      0.00         0
+                         18.01.03 - Inclusão Digital       0.50      1.00      0.67         1
+                        18.03.01 - Interação Digital       0.00      0.00      0.00         1
+       19.02.03 - Cooperação Internacional em Defesa       0.00      0.00      0.00         0
+                     19.03.03 - Resposta a Desastres       0.00      0.00      0.00         0
+                      20.01.03 - Integridade Pública       0.00      0.00      0.00         0
+          21.01.03 - Alterações e Ajustes Normativos       0.00      0.00      0.00         0
+                      24.01.01 - Igualdade de Gênero       0.00      0.00      0.00         0
+                       24.01.02 - Liderança Feminina       0.00      0.00      0.00         0
+                24.01.03 - Violência contra Mulheres       0.00      0.00      0.00         0
+                    24.02.01 - Direitos Territoriais       0.00      0.00      0.00         0
+                              24.04.01 - Quilombolas       0.00      0.00      0.00         0
+                24.05.01 - Acessibilidade e Inclusão       0.00      0.00      0.00         0
+
+                                            accuracy                           0.34       200
+                                           macro avg       0.19      0.20      0.17       200
+                                        weighted avg       0.43      0.34      0.33       200
+
+
+================================================================================
+MODELO: Claude 3 Haiku
+================================================================================
+
+Accuracy: 0.8050
+F1-score (macro): 0.6700
+
+Latência média: 2.831s
+Total de chamadas: 200
+Input tokens: 2,405,645
+Output tokens: 42,751
+Custo total: $0.6548
+Erros: 0
+
+Classification Report (sklearn):
+                                                    precision    recall  f1-score   support
+
+                      01.01.03 - Análise Econômica       1.00      1.00      1.00         2
+                 01.02.01 - Fiscalização Econômica       1.00      0.84      0.91        25
+                  01.02.02 - Tributação e Impostos       0.50      1.00      0.67         1
+               01.03.01 - Atração de Investimentos       0.75      1.00      0.86         3
+   01.04.01 - Apoio Financeiro a Pequenas Empresas       1.00      1.00      1.00         4
+        01.04.03 - Financiamento de Infraestrutura       0.67      0.67      0.67         3
+                      01.05.01 - Economia Circular       0.00      0.00      0.00         0
+                       01.05.02 - Economia Digital       0.67      0.50      0.57         4
+                     02.01.02 - Ensino Fundamental       1.00      0.75      0.86         4
+                    02.01.03 - Alimentação Escolar       0.00      0.00      0.00         0
+              02.03.01 - Aprendizagem Profissional       1.00      1.00      1.00         1
+                 02.04.01 - Políticas Educacionais       1.00      0.83      0.91         6
+                   02.04.02 - Campanhas Educativas       1.00      1.00      1.00         1
+                    02.04.03 - Bolsas e Incentivos       0.86      1.00      0.92         6
+                   03.01.02 - Assistência em Saúde       0.80      1.00      0.89         8
+                       03.01.03 - Atenção Integral       1.00      1.00      1.00         1
+                       03.02.01 - Combate à Dengue       1.00      0.50      0.67         2
+                       03.02.02 - Saúde da Criança       0.00      0.00      0.00         1
+                      03.03.02 - Inovação em Saúde       1.00      1.00      1.00         1
+             03.04.01 - Políticas de Saúde Pública       1.00      1.00      1.00         2
+04.02.01 - Investigação de Organizações Criminosas       1.00      1.00      1.00         3
+                  04.03.01 - Prevenção à Violência       0.67      1.00      0.80         2
+           04.03.02 - Campanhas de Conscientização       1.00      1.00      1.00         1
+    04.03.03 - Enfrentamento à Violência Doméstica       1.00      1.00      1.00         2
+              05.01.01 - Proteção da Vida Selvagem       0.71      0.83      0.77         6
+                    05.01.02 - Conservação Marinha       0.33      1.00      0.50         1
+                      05.01.03 - Qualidade da Água       1.00      0.38      0.55         8
+                      05.02.02 - Justiça Climática       1.00      1.00      1.00         1
+                     05.02.03 - Educação Ambiental       1.00      0.50      0.67         2
+                      05.03.01 - Energia Renovável       0.00      0.00      0.00         0
+                     05.04.01 - Gestão de Resíduos       0.00      0.00      0.00         1
+                         06.01.01 - Ciência Aberta       1.00      1.00      1.00         5
+                   06.01.02 - Ciência e Democracia       1.00      1.00      1.00         2
+                  06.01.03 - Inteligência em Dados       1.00      0.50      0.67         2
+                06.02.01 - Inteligência Artificial       1.00      1.00      1.00         3
+                      06.02.03 - Novas Tecnologias       0.50      1.00      0.67         2
+                    06.03.01 - Inovação e Startups       0.50      1.00      0.67         1
+                     06.04.03 - Tecnologias Verdes       0.00      0.00      0.00         1
+                  06.05.02 - Regulação Tecnológica       1.00      0.67      0.80         3
+                 07.01.01 - Construção de Estradas       1.00      1.00      1.00         4
+                     07.02.01 - Transporte Público       1.00      1.00      1.00         1
+                  07.03.01 - Transporte Rodoviário       1.00      0.67      0.80         3
+                 07.03.02 - Transporte Ferroviário       1.00      1.00      1.00         1
+                  07.03.03 - Transporte Aquaviário       1.00      1.00      1.00         2
+           07.04.01 - Infraestrutura Aeroportuária       0.00      0.00      0.00         0
+               08.01.03 - Apresentações Artísticas       0.67      1.00      0.80         2
+                   08.02.01 - Patrimônio Histórico       1.00      1.00      1.00         4
+                       08.03.01 - Apoio a Artistas       1.00      0.50      0.67         2
+                08.03.02 - Financiamento e Editais       1.00      1.00      1.00         1
+                       08.04.02 - Língua e Cultura       0.00      0.00      0.00         1
+                   08.04.03 - Tradições e Costumes       1.00      1.00      1.00         4
+                  10.01.01 - Produção de Alimentos       0.50      1.00      0.67         1
+                  10.01.02 - Desenvolvimento Rural       0.00      0.00      0.00         1
+                 10.01.03 - Agricultura e Pecuária       0.50      0.67      0.57         3
+                         10.02.02 - Combate à Fome       0.75      1.00      0.86         3
+                       10.03.02 - Crédito Agrícola       1.00      1.00      1.00         2
+   10.04.01 - Assistência Técnica e Extensão Rural       1.00      1.00      1.00         2
+        10.04.02 - Cooperativismo e Associativismo       0.00      0.00      0.00         0
+            10.04.03 - Apoio a Pequenos Produtores       0.67      0.67      0.67         3
+                        10.05.01 - Sanidade Animal       0.00      0.00      0.00         1
+                     12.01.03 - Acordos Ambientais       1.00      1.00      1.00         1
+                 12.03.01 - Estratégia Geopolítica       0.00      0.00      0.00         0
+                    13.02.03 - Liberdade Religiosa       0.00      0.00      0.00         1
+           14.04.01 - Auditoria Fiscal do Trabalho       0.00      0.00      0.00         1
+           14.04.03 - Combate ao Trabalho Infantil       1.00      1.00      1.00         2
+          14.05.01 - Normas Regulamentadoras (NRs)       1.00      1.00      1.00         1
+                          15.01.01 - Bolsa Família       0.69      0.82      0.75        11
+                      15.01.02 - Iniciativa Social       1.00      0.43      0.60         7
+                 15.02.01 - Combate à Desigualdade       0.60      1.00      0.75         3
+                         15.02.02 - Combate à Fome       1.00      1.00      1.00         1
+                      15.02.03 - Apoio Emergencial       0.00      0.00      0.00         1
+             15.03.01 - Benefícios Previdenciários       1.00      1.00      1.00         1
+         16.01.03 - Promoção de Destinos Nacionais       1.00      1.00      1.00         2
+       16.05.01 - Formação Profissional em Turismo       1.00      1.00      1.00         1
+                   17.02.01 - Extração de Minerais       0.50      1.00      0.67         1
+      17.03.01 - Regulação e Legislação Energética       0.67      1.00      0.80         2
+                       18.01.03 - Inclusão Digital       1.00      1.00      1.00         1
+                      18.03.01 - Interação Digital       0.00      0.00      0.00         1
+                      18.03.02 - Cidadania Digital       0.00      0.00      0.00         0
+                       20.03.01 - Recursos Humanos       0.00      0.00      0.00         0
+
+                                          accuracy                           0.81       200
+                                         macro avg       0.68      0.70      0.67       200
+                                      weighted avg       0.85      0.81      0.80       200
+
+
+================================================================================
+MODELO: Mistral Large 3
+================================================================================
+
+Accuracy: 0.3350
+F1-score (macro): 0.1960
+
+Latência média: 1.473s
+Total de chamadas: 186
+Input tokens: 2,308,765
+Output tokens: 42,803
+Custo total: $4.8743
+Erros: 14
+
+Classification Report (sklearn):
+                                                      precision    recall  f1-score   support
+
+                          01.01.01 - Política Fiscal       0.00      0.00      0.00         0
+                        01.01.03 - Análise Econômica       0.00      0.00      0.00         2
+                   01.02.01 - Fiscalização Econômica       1.00      0.28      0.44        25
+                    01.02.02 - Tributação e Impostos       0.00      0.00      0.00         1
+                  01.02.03 - Combate à Evasão Fiscal       0.00      0.00      0.00         0
+                 01.03.01 - Atração de Investimentos       1.00      0.33      0.50         3
+                        01.03.04 - Balança Comercial       0.00      0.00      0.00         0
+     01.04.01 - Apoio Financeiro a Pequenas Empresas       0.57      1.00      0.73         4
+          01.04.03 - Financiamento de Infraestrutura       1.00      0.33      0.50         3
+                         01.05.02 - Economia Digital       0.00      0.00      0.00         4
+                       02.01.02 - Ensino Fundamental       0.00      0.00      0.00         4
+                02.03.01 - Aprendizagem Profissional       0.00      0.00      0.00         1
+                 02.03.02 - Capacitação Profissional       0.00      0.00      0.00         0
+                   02.04.01 - Políticas Educacionais       0.50      0.17      0.25         6
+                     02.04.02 - Campanhas Educativas       0.00      0.00      0.00         1
+                      02.04.03 - Bolsas e Incentivos       0.33      0.83      0.48         6
+                     03.01.02 - Assistência em Saúde       0.67      0.50      0.57         8
+                         03.01.03 - Atenção Integral       0.50      1.00      0.67         1
+                         03.02.01 - Combate à Dengue       0.00      0.00      0.00         2
+                         03.02.02 - Saúde da Criança       0.00      0.00      0.00         1
+                      03.03.01 - Vigilância em Saúde       0.00      0.00      0.00         0
+                        03.03.02 - Inovação em Saúde       0.00      0.00      0.00         1
+                      03.03.03 - Controle de Doenças       0.00      0.00      0.00         0
+               03.04.01 - Políticas de Saúde Pública       0.00      0.00      0.00         2
+                            03.04.02 - Epidemiologia       0.00      0.00      0.00         0
+                              03.05.01 - Saúde Bucal       0.00      0.00      0.00         0
+  04.02.01 - Investigação de Organizações Criminosas       1.00      0.67      0.80         3
+     04.02.02 - Operações Contra o Tráfico de Drogas       0.00      0.00      0.00         0
+                    04.03.01 - Prevenção à Violência       1.00      0.50      0.67         2
+             04.03.02 - Campanhas de Conscientização       0.00      0.00      0.00         1
+      04.03.03 - Enfrentamento à Violência Doméstica       0.40      1.00      0.57         2
+                05.01.01 - Proteção da Vida Selvagem       1.00      0.50      0.67         6
+                      05.01.02 - Conservação Marinha       0.00      0.00      0.00         1
+                        05.01.03 - Qualidade da Água       1.00      0.12      0.22         8
+                   05.02.01 - Catástrofes Climáticas       0.00      0.00      0.00         0
+                        05.02.02 - Justiça Climática       0.00      0.00      0.00         1
+                       05.02.03 - Educação Ambiental       0.50      0.50      0.50         2
+                        05.03.01 - Energia Renovável       0.00      0.00      0.00         0
+                       05.04.01 - Gestão de Resíduos       0.00      0.00      0.00         1
+                  05.04.02 - Licenciamento Ambiental       0.00      0.00      0.00         0
+                           06.01.01 - Ciência Aberta       1.00      0.20      0.33         5
+                     06.01.02 - Ciência e Democracia       0.00      0.00      0.00         2
+                    06.01.03 - Inteligência em Dados       0.00      0.00      0.00         2
+                  06.02.01 - Inteligência Artificial       0.00      0.00      0.00         3
+                        06.02.03 - Novas Tecnologias       0.00      0.00      0.00         2
+                      06.03.01 - Inovação e Startups       0.17      1.00      0.29         1
+                          06.03.02 - Inovação Aberta       0.00      0.00      0.00         0
+                       06.04.03 - Tecnologias Verdes       0.00      0.00      0.00         1
+        06.05.01 - Políticas de Ciência e Tecnologia       0.00      0.00      0.00         0
+                    06.05.02 - Regulação Tecnológica       0.67      0.67      0.67         3
+                   07.01.01 - Construção de Estradas       1.00      0.75      0.86         4
+              07.01.03 - Infraestrutura de Qualidade       0.00      0.00      0.00         0
+                       07.02.01 - Transporte Público       1.00      1.00      1.00         1
+                    07.03.01 - Transporte Rodoviário       0.00      0.00      0.00         3
+                   07.03.02 - Transporte Ferroviário       0.00      0.00      0.00         1
+                    07.03.03 - Transporte Aquaviário       1.00      1.00      1.00         2
+           07.04.02 - Conectividade e Infraestrutura       0.00      0.00      0.00         0
+               07.04.03 - Segurança e Regulamentação       0.00      0.00      0.00         0
+                 08.01.03 - Apresentações Artísticas       1.00      1.00      1.00         2
+                     08.02.01 - Patrimônio Histórico       1.00      0.75      0.86         4
+                     08.02.02 - Patrimônio Imaterial       0.00      0.00      0.00         0
+                         08.03.01 - Apoio a Artistas       0.00      0.00      0.00         2
+                  08.03.02 - Financiamento e Editais       0.17      1.00      0.29         1
+                         08.04.02 - Língua e Cultura       0.00      0.00      0.00         1
+                     08.04.03 - Tradições e Costumes       0.00      0.00      0.00         4
+                          09.01.01 - Jogos Olímpicos       0.00      0.00      0.00         0
+                    10.01.01 - Produção de Alimentos       1.00      1.00      1.00         1
+                    10.01.02 - Desenvolvimento Rural       0.00      0.00      0.00         1
+                   10.01.03 - Agricultura e Pecuária       0.50      0.67      0.57         3
+10.02.01 - Abastecimento e Distribuição de Alimentos       0.00      0.00      0.00         0
+                           10.02.02 - Combate à Fome       1.00      0.33      0.50         3
+                         10.03.02 - Crédito Agrícola       0.67      1.00      0.80         2
+     10.04.01 - Assistência Técnica e Extensão Rural       0.00      0.00      0.00         2
+              10.04.03 - Apoio a Pequenos Produtores       0.50      0.67      0.57         3
+                          10.05.01 - Sanidade Animal       0.00      0.00      0.00         1
+                       11.02.02 - Acordos Comerciais       0.00      0.00      0.00         0
+                       12.01.03 - Acordos Ambientais       0.00      0.00      0.00         1
+12.02.02 - Cooperação Técnica para o Desenvolvimento       0.00      0.00      0.00         0
+                      12.03.02 - Relações Bilaterais       0.00      0.00      0.00         0
+                   12.03.03 - Relações Multilaterais       0.00      0.00      0.00         0
+                    12.04.03 - Integração Energética       0.00      0.00      0.00         0
+                            13.01.03 - Justiça e Lei       0.00      0.00      0.00         0
+                           13.02.02 - Justiça Social       0.00      0.00      0.00         0
+                      13.02.03 - Liberdade Religiosa       0.00      0.00      0.00         1
+                          14.01.01 - Emprego e Renda       0.00      0.00      0.00         0
+             14.04.01 - Auditoria Fiscal do Trabalho       0.00      0.00      0.00         1
+             14.04.03 - Combate ao Trabalho Infantil       1.00      0.50      0.67         2
+            14.05.01 - Normas Regulamentadoras (NRs)       1.00      1.00      1.00         1
+                            15.01.01 - Bolsa Família       0.00      0.00      0.00        11
+                        15.01.02 - Iniciativa Social       0.29      0.29      0.29         7
+                   15.02.01 - Combate à Desigualdade       0.00      0.00      0.00         3
+                           15.02.02 - Combate à Fome       0.00      0.00      0.00         1
+                        15.02.03 - Apoio Emergencial       0.00      0.00      0.00         1
+               15.03.01 - Benefícios Previdenciários       1.00      1.00      1.00         1
+           16.01.03 - Promoção de Destinos Nacionais       1.00      1.00      1.00         2
+         16.05.01 - Formação Profissional em Turismo       1.00      1.00      1.00         1
+                     17.02.01 - Extração de Minerais       0.00      0.00      0.00         1
+       17.02.03 - Pesquisa e Desenvolvimento Mineral       0.00      0.00      0.00         0
+        17.03.01 - Regulação e Legislação Energética       0.50      0.50      0.50         2
+         17.03.03 - Planejamento Energético Nacional       0.00      0.00      0.00         0
+                         18.01.03 - Inclusão Digital       0.00      0.00      0.00         1
+                18.02.03 - Integridade da Informação       0.00      0.00      0.00         0
+                        18.03.01 - Interação Digital       0.00      0.00      0.00         1
+       19.02.03 - Cooperação Internacional em Defesa       0.00      0.00      0.00         0
+                19.03.01 - Preparação para Desastres       0.00      0.00      0.00         0
+                     19.03.03 - Resposta a Desastres       0.00      0.00      0.00         0
+                       19.04.03 - Ações Humanitárias       0.00      0.00      0.00         0
+                         20.01.01 - Controle Interno       0.00      0.00      0.00         0
+                         20.03.01 - Recursos Humanos       0.00      0.00      0.00         0
+            21.01.01 - Publicação de Leis e Decretos       0.00      0.00      0.00         0
+                     21.02.01 - Propostas de Reforma       0.00      0.00      0.00         0
+                      22.04.02 - Homenagens Oficiais       0.00      0.00      0.00         0
+                      24.01.01 - Igualdade de Gênero       0.00      0.00      0.00         0
+                24.01.03 - Violência contra Mulheres       0.00      0.00      0.00         0
+                    24.02.01 - Direitos Territoriais       0.00      0.00      0.00         0
+                24.05.01 - Acessibilidade e Inclusão       0.00      0.00      0.00         0
+
+                                            accuracy                           0.34       200
+                                           macro avg       0.23      0.21      0.20       200
+                                        weighted avg       0.52      0.34      0.36       200
+
+
+================================================================================
+MODELO: Mistral Large 2
+================================================================================
+
+Accuracy: 0.0950
+F1-score (macro): 0.0880
+
+Latência média: 7.153s
+Total de chamadas: 97
+Input tokens: 0
+Output tokens: 0
+Custo total: $0.0000
+Erros: 103
+
+Classification Report (sklearn):
+                                                      precision    recall  f1-score   support
+
+                        01.01.03 - Análise Econômica       0.00      0.00      0.00         2
+                   01.02.01 - Fiscalização Econômica       1.00      0.04      0.08        25
+                    01.02.02 - Tributação e Impostos       0.00      0.00      0.00         1
+                 01.03.01 - Atração de Investimentos       1.00      0.33      0.50         3
+     01.04.01 - Apoio Financeiro a Pequenas Empresas       0.40      0.50      0.44         4
+           01.04.02 - Apoio Financeiro para Inovação       0.00      0.00      0.00         0
+          01.04.03 - Financiamento de Infraestrutura       0.00      0.00      0.00         3
+       01.04.04 - Microcrédito e Inclusão Financeira       0.00      0.00      0.00         0
+                         01.05.02 - Economia Digital       0.00      0.00      0.00         4
+                       02.01.02 - Ensino Fundamental       0.00      0.00      0.00         4
+            02.02.01 - Pesquisa Acadêmica e Inovação       0.00      0.00      0.00         0
+                02.03.01 - Aprendizagem Profissional       1.00      1.00      1.00         1
+                   02.04.01 - Políticas Educacionais       0.00      0.00      0.00         6
+                     02.04.02 - Campanhas Educativas       0.00      0.00      0.00         1
+                      02.04.03 - Bolsas e Incentivos       0.40      0.33      0.36         6
+                       02.04.04 - Educação Inclusiva       0.00      0.00      0.00         0
+                         03.01.01 - Atenção Primária       0.00      0.00      0.00         0
+                     03.01.02 - Assistência em Saúde       1.00      0.12      0.22         8
+                         03.01.03 - Atenção Integral       0.00      0.00      0.00         1
+                         03.02.01 - Combate à Dengue       0.50      0.50      0.50         2
+                         03.02.02 - Saúde da Criança       0.00      0.00      0.00         1
+                        03.03.02 - Inovação em Saúde       0.00      0.00      0.00         1
+               03.04.01 - Políticas de Saúde Pública       0.00      0.00      0.00         2
+                            03.04.02 - Epidemiologia       0.00      0.00      0.00         0
+      03.05.04 - Pesquisa e Desenvolvimento em Saúde       0.00      0.00      0.00         0
+  04.02.01 - Investigação de Organizações Criminosas       0.00      0.00      0.00         3
+     04.02.02 - Operações Contra o Tráfico de Drogas       0.00      0.00      0.00         0
+              04.02.03 - Combate ao Tráfico de Armas       0.00      0.00      0.00         0
+                    04.03.01 - Prevenção à Violência       0.00      0.00      0.00         2
+             04.03.02 - Campanhas de Conscientização       0.00      0.00      0.00         1
+      04.03.03 - Enfrentamento à Violência Doméstica       0.00      0.00      0.00         2
+                05.01.01 - Proteção da Vida Selvagem       1.00      0.17      0.29         6
+                      05.01.02 - Conservação Marinha       0.00      0.00      0.00         1
+                        05.01.03 - Qualidade da Água       0.00      0.00      0.00         8
+                          05.01.04 - Qualidade do Ar       0.00      0.00      0.00         0
+                   05.02.01 - Catástrofes Climáticas       0.00      0.00      0.00         0
+                        05.02.02 - Justiça Climática       0.00      0.00      0.00         1
+                       05.02.03 - Educação Ambiental       0.00      0.00      0.00         2
+                       05.04.01 - Gestão de Resíduos       0.00      0.00      0.00         1
+                  05.04.02 - Licenciamento Ambiental       0.00      0.00      0.00         0
+                           06.01.01 - Ciência Aberta       0.00      0.00      0.00         5
+                     06.01.02 - Ciência e Democracia       0.00      0.00      0.00         2
+                    06.01.03 - Inteligência em Dados       0.00      0.00      0.00         2
+                  06.02.01 - Inteligência Artificial       0.00      0.00      0.00         3
+                        06.02.03 - Novas Tecnologias       0.00      0.00      0.00         2
+                      06.03.01 - Inovação e Startups       0.00      0.00      0.00         1
+               06.04.02 - Inovação e Descarbonização       0.00      0.00      0.00         0
+                       06.04.03 - Tecnologias Verdes       0.00      0.00      0.00         1
+                    06.05.02 - Regulação Tecnológica       0.00      0.00      0.00         3
+                   07.01.01 - Construção de Estradas       1.00      0.25      0.40         4
+                    07.01.04 - Saneamento e Drenagem       0.00      0.00      0.00         0
+                       07.02.01 - Transporte Público       0.00      0.00      0.00         1
+                    07.03.01 - Transporte Rodoviário       0.00      0.00      0.00         3
+                   07.03.02 - Transporte Ferroviário       0.00      0.00      0.00         1
+                    07.03.03 - Transporte Aquaviário       0.00      0.00      0.00         2
+                     07.03.04 - Transporte de Cargas       0.00      0.00      0.00         0
+             07.04.01 - Infraestrutura Aeroportuária       0.00      0.00      0.00         0
+                       08.01.01 - Festivais e Feiras       0.00      0.00      0.00         0
+                     08.01.02 - Mostras e Exposições       0.00      0.00      0.00         0
+                 08.01.03 - Apresentações Artísticas       0.00      0.00      0.00         2
+                     08.02.01 - Patrimônio Histórico       0.00      0.00      0.00         4
+                         08.03.01 - Apoio a Artistas       0.00      0.00      0.00         2
+                  08.03.02 - Financiamento e Editais       0.50      1.00      0.67         1
+                         08.04.02 - Língua e Cultura       0.00      0.00      0.00         1
+                     08.04.03 - Tradições e Costumes       0.00      0.00      0.00         4
+                    10.01.01 - Produção de Alimentos       1.00      1.00      1.00         1
+                    10.01.02 - Desenvolvimento Rural       0.00      0.00      0.00         1
+                   10.01.03 - Agricultura e Pecuária       1.00      0.33      0.50         3
+10.02.01 - Abastecimento e Distribuição de Alimentos       0.00      0.00      0.00         0
+                           10.02.02 - Combate à Fome       0.00      0.00      0.00         3
+                   10.03.01 - Incentivos e Subsídios       0.00      0.00      0.00         0
+                         10.03.02 - Crédito Agrícola       0.00      0.00      0.00         2
+     10.04.01 - Assistência Técnica e Extensão Rural       0.00      0.00      0.00         2
+              10.04.03 - Apoio a Pequenos Produtores       0.00      0.00      0.00         3
+                          10.05.01 - Sanidade Animal       0.00      0.00      0.00         1
+                       12.01.03 - Acordos Ambientais       0.00      0.00      0.00         1
+                    13.02.01 - Direitos das Crianças       0.00      0.00      0.00         0
+                      13.02.03 - Liberdade Religiosa       0.00      0.00      0.00         1
+             14.04.01 - Auditoria Fiscal do Trabalho       0.00      0.00      0.00         1
+             14.04.03 - Combate ao Trabalho Infantil       1.00      0.50      0.67         2
+            14.05.01 - Normas Regulamentadoras (NRs)       0.00      0.00      0.00         1
+                            15.01.01 - Bolsa Família       1.00      0.09      0.17        11
+                        15.01.02 - Iniciativa Social       1.00      0.14      0.25         7
+               15.01.04 - Programas para a Juventude       0.00      0.00      0.00         0
+                   15.02.01 - Combate à Desigualdade       0.00      0.00      0.00         3
+                           15.02.02 - Combate à Fome       0.00      0.00      0.00         1
+                        15.02.03 - Apoio Emergencial       0.50      1.00      0.67         1
+               15.03.01 - Benefícios Previdenciários       1.00      1.00      1.00         1
+           16.01.03 - Promoção de Destinos Nacionais       0.00      0.00      0.00         2
+         16.05.01 - Formação Profissional em Turismo       0.00      0.00      0.00         1
+                     17.02.01 - Extração de Minerais       0.00      0.00      0.00         1
+        17.03.01 - Regulação e Legislação Energética       0.00      0.00      0.00         2
+                   17.03.02 - Subsídios e Incentivos       0.00      0.00      0.00         0
+                            17.04.01 - Energia Solar       0.00      0.00      0.00         0
+                         18.01.03 - Inclusão Digital       0.00      0.00      0.00         1
+                        18.03.01 - Interação Digital       0.00      0.00      0.00         1
+                         20.01.01 - Controle Interno       0.00      0.00      0.00         0
+                      20.01.03 - Integridade Pública       0.00      0.00      0.00         0
+             20.02.01 - Fortalecimento Institucional       0.00      0.00      0.00         0
+
+                                            accuracy                           0.10       200
+                                           macro avg       0.14      0.08      0.09       200
+                                        weighted avg       0.39      0.10      0.12       200
+
+
+================================================================================
+MODELO: Amazon Nova Pro
+================================================================================
+
+Accuracy: 0.3150
+F1-score (macro): 0.1698
+
+Latência média: 2.668s
+Total de chamadas: 200
+Input tokens: 2,449,764
+Output tokens: 40,278
+Custo total: $2.0887
+Erros: 0
+
+Classification Report (sklearn):
+                                                    precision    recall  f1-score   support
+
+                    01.01.02 - Autonomia Econômica       0.00      0.00      0.00         0
+                      01.01.03 - Análise Econômica       0.00      0.00      0.00         2
+                 01.02.01 - Fiscalização Econômica       1.00      0.44      0.61        25
+                  01.02.02 - Tributação e Impostos       0.25      1.00      0.40         1
+                01.02.03 - Combate à Evasão Fiscal       0.00      0.00      0.00         0
+               01.03.01 - Atração de Investimentos       0.60      1.00      0.75         3
+                      01.03.04 - Balança Comercial       0.00      0.00      0.00         0
+   01.04.01 - Apoio Financeiro a Pequenas Empresas       0.50      1.00      0.67         4
+        01.04.03 - Financiamento de Infraestrutura       0.00      0.00      0.00         3
+                      01.05.01 - Economia Circular       0.00      0.00      0.00         0
+                       01.05.02 - Economia Digital       0.00      0.00      0.00         4
+                     02.01.02 - Ensino Fundamental       0.00      0.00      0.00         4
+          02.02.01 - Pesquisa Acadêmica e Inovação       0.00      0.00      0.00         0
+              02.03.01 - Aprendizagem Profissional       0.00      0.00      0.00         1
+                 02.04.01 - Políticas Educacionais       0.33      0.67      0.44         6
+                   02.04.02 - Campanhas Educativas       0.00      0.00      0.00         1
+                    02.04.03 - Bolsas e Incentivos       1.00      0.17      0.29         6
+                       03.01.01 - Atenção Primária       0.00      0.00      0.00         0
+                   03.01.02 - Assistência em Saúde       0.00      0.00      0.00         8
+                       03.01.03 - Atenção Integral       0.00      0.00      0.00         1
+                       03.02.01 - Combate à Dengue       0.50      0.50      0.50         2
+                       03.02.02 - Saúde da Criança       0.00      0.00      0.00         1
+                    03.03.01 - Vigilância em Saúde       0.00      0.00      0.00         0
+                      03.03.02 - Inovação em Saúde       0.00      0.00      0.00         1
+             03.04.01 - Políticas de Saúde Pública       0.09      0.50      0.15         2
+                            03.05.01 - Saúde Bucal       0.00      0.00      0.00         0
+                 04.01.01 - Policiamento Ostensivo       0.00      0.00      0.00         0
+04.02.01 - Investigação de Organizações Criminosas       1.00      1.00      1.00         3
+                  04.03.01 - Prevenção à Violência       0.20      0.50      0.29         2
+           04.03.02 - Campanhas de Conscientização       0.00      0.00      0.00         1
+    04.03.03 - Enfrentamento à Violência Doméstica       0.00      0.00      0.00         2
+              05.01.01 - Proteção da Vida Selvagem       0.71      0.83      0.77         6
+                    05.01.02 - Conservação Marinha       0.00      0.00      0.00         1
+                      05.01.03 - Qualidade da Água       0.00      0.00      0.00         8
+                 05.02.01 - Catástrofes Climáticas       0.00      0.00      0.00         0
+                      05.02.02 - Justiça Climática       0.00      0.00      0.00         1
+                     05.02.03 - Educação Ambiental       0.00      0.00      0.00         2
+                     05.04.01 - Gestão de Resíduos       0.00      0.00      0.00         1
+                         06.01.01 - Ciência Aberta       1.00      0.20      0.33         5
+                   06.01.02 - Ciência e Democracia       0.00      0.00      0.00         2
+                  06.01.03 - Inteligência em Dados       0.00      0.00      0.00         2
+                06.02.01 - Inteligência Artificial       0.00      0.00      0.00         3
+                      06.02.03 - Novas Tecnologias       0.00      0.00      0.00         2
+                    06.03.01 - Inovação e Startups       0.10      1.00      0.18         1
+                     06.04.03 - Tecnologias Verdes       0.00      0.00      0.00         1
+      06.05.01 - Políticas de Ciência e Tecnologia       0.00      0.00      0.00         0
+                  06.05.02 - Regulação Tecnológica       0.50      0.33      0.40         3
+                 07.01.01 - Construção de Estradas       0.60      0.75      0.67         4
+                     07.02.01 - Transporte Público       1.00      1.00      1.00         1
+            07.02.02 - Inovação e Mobilidade Verde       0.00      0.00      0.00         0
+                  07.03.01 - Transporte Rodoviário       0.00      0.00      0.00         3
+                 07.03.02 - Transporte Ferroviário       0.00      0.00      0.00         1
+                  07.03.03 - Transporte Aquaviário       0.50      0.50      0.50         2
+           07.04.01 - Infraestrutura Aeroportuária       0.00      0.00      0.00         0
+         07.04.02 - Conectividade e Infraestrutura       0.00      0.00      0.00         0
+             07.04.03 - Segurança e Regulamentação       0.00      0.00      0.00         0
+                     08.01.01 - Festivais e Feiras       0.00      0.00      0.00         0
+               08.01.03 - Apresentações Artísticas       0.00      0.00      0.00         2
+                   08.02.01 - Patrimônio Histórico       1.00      1.00      1.00         4
+                       08.03.01 - Apoio a Artistas       0.50      0.50      0.50         2
+                08.03.02 - Financiamento e Editais       0.50      1.00      0.67         1
+                       08.04.02 - Língua e Cultura       0.00      0.00      0.00         1
+                   08.04.03 - Tradições e Costumes       0.00      0.00      0.00         4
+                        09.01.01 - Jogos Olímpicos       0.00      0.00      0.00         0
+                  10.01.01 - Produção de Alimentos       1.00      1.00      1.00         1
+                  10.01.02 - Desenvolvimento Rural       0.00      0.00      0.00         1
+                 10.01.03 - Agricultura e Pecuária       0.50      0.67      0.57         3
+                         10.02.02 - Combate à Fome       1.00      0.33      0.50         3
+                 10.03.01 - Incentivos e Subsídios       0.00      0.00      0.00         0
+                       10.03.02 - Crédito Agrícola       1.00      1.00      1.00         2
+   10.04.01 - Assistência Técnica e Extensão Rural       0.00      0.00      0.00         2
+            10.04.03 - Apoio a Pequenos Produtores       0.20      0.33      0.25         3
+                        10.05.01 - Sanidade Animal       0.00      0.00      0.00         1
+                     12.01.03 - Acordos Ambientais       0.00      0.00      0.00         1
+                      13.01.01 - Advocacia Pública       0.00      0.00      0.00         0
+                  13.02.01 - Direitos das Crianças       0.00      0.00      0.00         0
+                    13.02.03 - Liberdade Religiosa       0.00      0.00      0.00         1
+                        14.01.01 - Emprego e Renda       0.00      0.00      0.00         0
+              14.03.01 - Qualificação Profissional       0.00      0.00      0.00         0
+           14.04.01 - Auditoria Fiscal do Trabalho       0.00      0.00      0.00         1
+           14.04.03 - Combate ao Trabalho Infantil       1.00      0.50      0.67         2
+          14.05.01 - Normas Regulamentadoras (NRs)       1.00      1.00      1.00         1
+                          15.01.01 - Bolsa Família       0.75      0.27      0.40        11
+                      15.01.02 - Iniciativa Social       0.00      0.00      0.00         7
+                 15.02.01 - Combate à Desigualdade       0.00      0.00      0.00         3
+                         15.02.02 - Combate à Fome       0.00      0.00      0.00         1
+                      15.02.03 - Apoio Emergencial       0.00      0.00      0.00         1
+             15.03.01 - Benefícios Previdenciários       0.33      1.00      0.50         1
+                16.01.01 - Campanhas de Divulgação       0.00      0.00      0.00         0
+         16.01.03 - Promoção de Destinos Nacionais       0.00      0.00      0.00         2
+       16.05.01 - Formação Profissional em Turismo       1.00      1.00      1.00         1
+                 17.01.01 - Exploração de Petróleo       0.00      0.00      0.00         0
+              17.01.03 - Exploração de Gás Natural       0.00      0.00      0.00         0
+                   17.02.01 - Extração de Minerais       0.00      0.00      0.00         1
+      17.03.01 - Regulação e Legislação Energética       0.00      0.00      0.00         2
+                      18.01.01 - Serviços Digitais       0.00      0.00      0.00         0
+                       18.01.03 - Inclusão Digital       0.00      0.00      0.00         1
+                      18.03.01 - Interação Digital       0.00      0.00      0.00         1
+              19.03.01 - Preparação para Desastres       0.00      0.00      0.00         0
+                    20.01.03 - Integridade Pública       0.00      0.00      0.00         0
+                       20.03.01 - Recursos Humanos       0.00      0.00      0.00         0
+              20.03.02 - Capacitação de Servidores       0.00      0.00      0.00         0
+          21.01.01 - Publicação de Leis e Decretos       0.00      0.00      0.00         0
+                    24.01.01 - Igualdade de Gênero       0.00      0.00      0.00         0
+                  25.01.01 - Minha Casa Minha Vida       0.00      0.00      0.00         0
+                  25.03.01 - Abastecimento de Água       0.00      0.00      0.00         0
+
+                                          accuracy                           0.32       200
+                                         macro avg       0.19      0.20      0.17       200
+                                      weighted avg       0.42      0.32      0.32       200
+
+
+================================================================================
+MODELO: Amazon Nova Lite
+================================================================================
+
+Accuracy: 0.2600
+F1-score (macro): 0.1425
+
+Latência média: 2.163s
+Total de chamadas: 200
+Input tokens: 2,449,764
+Output tokens: 41,395
+Custo total: $0.1569
+Erros: 0
+
+Classification Report (sklearn):
+                                                           precision    recall  f1-score   support
+
+                               01.01.01 - Política Fiscal       0.00      0.00      0.00         0
+                             01.01.03 - Análise Econômica       0.50      0.50      0.50         2
+                        01.02.01 - Fiscalização Econômica       1.00      0.04      0.08        25
+                         01.02.02 - Tributação e Impostos       0.06      1.00      0.11         1
+                       01.02.03 - Combate à Evasão Fiscal       0.00      0.00      0.00         0
+                      01.03.01 - Atração de Investimentos       0.25      0.33      0.29         3
+                          01.03.03 - Investimentos Verdes       0.00      0.00      0.00         0
+          01.04.01 - Apoio Financeiro a Pequenas Empresas       0.27      1.00      0.42         4
+               01.04.03 - Financiamento de Infraestrutura       0.00      0.00      0.00         3
+                              01.05.02 - Economia Digital       0.33      0.25      0.29         4
+                            02.01.02 - Ensino Fundamental       0.00      0.00      0.00         4
+                           02.01.03 - Alimentação Escolar       0.00      0.00      0.00         0
+                 02.02.01 - Pesquisa Acadêmica e Inovação       0.00      0.00      0.00         0
+                     02.03.01 - Aprendizagem Profissional       0.00      0.00      0.00         1
+                        02.04.01 - Políticas Educacionais       0.43      0.50      0.46         6
+                          02.04.02 - Campanhas Educativas       0.00      0.00      0.00         1
+                           02.04.03 - Bolsas e Incentivos       0.33      0.17      0.22         6
+                              03.01.01 - Atenção Primária       0.00      0.00      0.00         0
+                          03.01.02 - Assistência em Saúde       0.00      0.00      0.00         8
+                              03.01.03 - Atenção Integral       0.00      0.00      0.00         1
+                              03.02.01 - Combate à Dengue       0.67      1.00      0.80         2
+                              03.02.02 - Saúde da Criança       0.00      0.00      0.00         1
+                                  03.02.03 - Saúde Mental       0.00      0.00      0.00         0
+                             03.03.02 - Inovação em Saúde       0.00      0.00      0.00         1
+                    03.04.01 - Políticas de Saúde Pública       0.00      0.00      0.00         2
+       04.02.01 - Investigação de Organizações Criminosas       1.00      0.33      0.50         3
+          04.02.02 - Operações Contra o Tráfico de Drogas       0.00      0.00      0.00         0
+                         04.03.01 - Prevenção à Violência       0.00      0.00      0.00         2
+                  04.03.02 - Campanhas de Conscientização       0.00      0.00      0.00         1
+           04.03.03 - Enfrentamento à Violência Doméstica       0.50      0.50      0.50         2
+                     05.01.01 - Proteção da Vida Selvagem       1.00      0.50      0.67         6
+                           05.01.02 - Conservação Marinha       0.00      0.00      0.00         1
+                             05.01.03 - Qualidade da Água       1.00      0.38      0.55         8
+                        05.02.01 - Catástrofes Climáticas       0.00      0.00      0.00         0
+                             05.02.02 - Justiça Climática       0.00      0.00      0.00         1
+                            05.02.03 - Educação Ambiental       0.40      1.00      0.57         2
+                            05.04.01 - Gestão de Resíduos       0.00      0.00      0.00         1
+                                06.01.01 - Ciência Aberta       0.38      0.60      0.46         5
+                          06.01.02 - Ciência e Democracia       0.00      0.00      0.00         2
+                         06.01.03 - Inteligência em Dados       0.00      0.00      0.00         2
+                       06.02.01 - Inteligência Artificial       1.00      0.33      0.50         3
+                             06.02.03 - Novas Tecnologias       0.20      0.50      0.29         2
+                           06.03.01 - Inovação e Startups       0.00      0.00      0.00         1
+                   06.04.01 - Inovação e Sustentabilidade       0.00      0.00      0.00         0
+                            06.04.03 - Tecnologias Verdes       0.00      0.00      0.00         1
+             06.05.01 - Políticas de Ciência e Tecnologia       0.00      0.00      0.00         0
+                         06.05.02 - Regulação Tecnológica       0.00      0.00      0.00         3
+                06.05.03 - Ética em Tecnologia e Inovação       0.00      0.00      0.00         0
+                        07.01.01 - Construção de Estradas       0.38      0.75      0.50         4
+                            07.02.01 - Transporte Público       1.00      1.00      1.00         1
+                         07.03.01 - Transporte Rodoviário       1.00      0.33      0.50         3
+                        07.03.02 - Transporte Ferroviário       0.00      0.00      0.00         1
+                         07.03.03 - Transporte Aquaviário       0.00      0.00      0.00         2
+                  07.04.01 - Infraestrutura Aeroportuária       0.00      0.00      0.00         0
+                            08.01.01 - Festivais e Feiras       0.00      0.00      0.00         0
+                      08.01.03 - Apresentações Artísticas       0.50      1.00      0.67         2
+                          08.02.01 - Patrimônio Histórico       1.00      0.75      0.86         4
+                              08.03.01 - Apoio a Artistas       0.00      0.00      0.00         2
+                       08.03.02 - Financiamento e Editais       0.00      0.00      0.00         1
+                              08.04.02 - Língua e Cultura       0.00      0.00      0.00         1
+                          08.04.03 - Tradições e Costumes       1.00      0.25      0.40         4
+                               08.05.01 - Cultura Digital       0.00      0.00      0.00         0
+                           08.05.03 - Integração Cultural       0.00      0.00      0.00         0
+                               09.01.01 - Jogos Olímpicos       0.00      0.00      0.00         0
+                         10.01.01 - Produção de Alimentos       0.00      0.00      0.00         1
+                         10.01.02 - Desenvolvimento Rural       0.00      0.00      0.00         1
+                        10.01.03 - Agricultura e Pecuária       0.67      0.67      0.67         3
+                                10.02.02 - Combate à Fome       1.00      0.33      0.50         3
+                   10.02.03 - Nutrição e Sustentabilidade       0.00      0.00      0.00         0
+                              10.03.02 - Crédito Agrícola       0.00      0.00      0.00         2
+          10.04.01 - Assistência Técnica e Extensão Rural       0.00      0.00      0.00         2
+                   10.04.03 - Apoio a Pequenos Produtores       0.50      0.67      0.57         3
+                               10.05.01 - Sanidade Animal       0.00      0.00      0.00         1
+                            12.01.03 - Acordos Ambientais       0.00      0.00      0.00         1
+                           12.03.02 - Relações Bilaterais       0.00      0.00      0.00         0
+                         13.02.01 - Direitos das Crianças       0.00      0.00      0.00         0
+                           13.02.03 - Liberdade Religiosa       0.00      0.00      0.00         1
+                         13.03.01 - Direitos das Crianças       0.00      0.00      0.00         0
+                  14.01.03 - Intermediação de Mão de Obra       0.00      0.00      0.00         0
+                  14.04.01 - Auditoria Fiscal do Trabalho       0.00      0.00      0.00         1
+                  14.04.03 - Combate ao Trabalho Infantil       0.00      0.00      0.00         2
+                 14.05.01 - Normas Regulamentadoras (NRs)       0.00      0.00      0.00         1
+                                 15.01.01 - Bolsa Família       0.29      0.36      0.32        11
+                             15.01.02 - Iniciativa Social       0.00      0.00      0.00         7
+                        15.02.01 - Combate à Desigualdade       0.00      0.00      0.00         3
+                                15.02.02 - Combate à Fome       0.00      0.00      0.00         1
+                             15.02.03 - Apoio Emergencial       0.00      0.00      0.00         1
+                    15.03.01 - Benefícios Previdenciários       0.33      1.00      0.50         1
+                16.01.03 - Promoção de Destinos Nacionais       0.00      0.00      0.00         2
+     16.04.03 - Proteção de Patrimônio Cultural e Natural       0.00      0.00      0.00         0
+              16.05.01 - Formação Profissional em Turismo       0.00      0.00      0.00         1
+                          17.02.01 - Extração de Minerais       0.00      0.00      0.00         1
+             17.03.01 - Regulação e Legislação Energética       0.00      0.00      0.00         2
+                             18.01.01 - Serviços Digitais       0.00      0.00      0.00         0
+                              18.01.03 - Inclusão Digital       0.00      0.00      0.00         1
+                             18.03.01 - Interação Digital       1.00      1.00      1.00         1
+                      18.03.03 - Comunicação Antirracista       0.00      0.00      0.00         0
+                         19.01.03 - Combate ao Terrorismo       0.00      0.00      0.00         0
+                          19.04.01 - Resgate e Salvamento       0.00      0.00      0.00         0
+                            19.04.03 - Ações Humanitárias       0.00      0.00      0.00         0
+                 21.01.01 - Publicação de Leis e Decretos       0.00      0.00      0.00         0
+          22.02.03 - Inauguração de Equipamentos Públicos       0.00      0.00      0.00         0
+22.05.03 - Eventos Comemorativos de Instituições Públicas       0.00      0.00      0.00         0
+
+                                                 accuracy                           0.26       200
+                                                macro avg       0.17      0.17      0.14       200
+                                             weighted avg       0.42      0.26      0.25       200
+
+
+================================================================================
+MODELO: Amazon Nova Micro
+================================================================================
+
+Accuracy: 0.1600
+F1-score (macro): 0.0668
+
+Latência média: 1.206s
+Total de chamadas: 196
+Input tokens: 2,400,683
+Output tokens: 35,920
+Custo total: $0.0891
+Erros: 4
+
+Classification Report (sklearn):
+                                                           precision    recall  f1-score   support
+
+                             01.01.03 - Análise Econômica       0.00      0.00      0.00         2
+                        01.02.01 - Fiscalização Econômica       0.00      0.00      0.00        25
+                         01.02.02 - Tributação e Impostos       0.00      0.00      0.00         1
+                       01.02.03 - Combate à Evasão Fiscal       0.00      0.00      0.00         0
+                      01.03.01 - Atração de Investimentos       0.50      0.33      0.40         3
+                     01.03.02 - Investimentos no Exterior       0.00      0.00      0.00         0
+                          01.03.03 - Investimentos Verdes       0.00      0.00      0.00         0
+          01.04.01 - Apoio Financeiro a Pequenas Empresas       1.00      0.25      0.40         4
+               01.04.03 - Financiamento de Infraestrutura       0.20      0.67      0.31         3
+                              01.05.02 - Economia Digital       0.00      0.00      0.00         4
+                             02.01.01 - Educação Infantil       0.00      0.00      0.00         0
+                            02.01.02 - Ensino Fundamental       0.00      0.00      0.00         4
+                     02.03.01 - Aprendizagem Profissional       0.00      0.00      0.00         1
+                        02.04.01 - Políticas Educacionais       0.00      0.00      0.00         6
+                          02.04.02 - Campanhas Educativas       0.00      0.00      0.00         1
+                           02.04.03 - Bolsas e Incentivos       0.40      0.33      0.36         6
+                              03.01.01 - Atenção Primária       0.00      0.00      0.00         0
+                          03.01.02 - Assistência em Saúde       0.00      0.00      0.00         8
+                              03.01.03 - Atenção Integral       0.00      0.00      0.00         1
+                              03.02.01 - Combate à Dengue       0.00      0.00      0.00         2
+                              03.02.02 - Saúde da Criança       0.00      0.00      0.00         1
+                             03.03.02 - Inovação em Saúde       0.00      0.00      0.00         1
+                    03.04.01 - Políticas de Saúde Pública       0.00      0.00      0.00         2
+                                   03.05.01 - Saúde Bucal       0.00      0.00      0.00         0
+                          03.05.03 - Saúde do Trabalhador       0.00      0.00      0.00         0
+       04.02.01 - Investigação de Organizações Criminosas       1.00      0.33      0.50         3
+          04.02.02 - Operações Contra o Tráfico de Drogas       0.00      0.00      0.00         0
+                         04.03.01 - Prevenção à Violência       0.00      0.00      0.00         2
+                  04.03.02 - Campanhas de Conscientização       0.00      0.00      0.00         1
+           04.03.03 - Enfrentamento à Violência Doméstica       0.00      0.00      0.00         2
+ 04.04.01 - Cooperação entre Polícia e Sistema Judiciário       0.00      0.00      0.00         0
+                     05.01.01 - Proteção da Vida Selvagem       0.67      0.33      0.44         6
+                           05.01.02 - Conservação Marinha       0.00      0.00      0.00         1
+                             05.01.03 - Qualidade da Água       0.00      0.00      0.00         8
+                             05.02.02 - Justiça Climática       0.00      0.00      0.00         1
+                            05.02.03 - Educação Ambiental       1.00      1.00      1.00         2
+                            05.04.01 - Gestão de Resíduos       0.00      0.00      0.00         1
+                       05.04.02 - Licenciamento Ambiental       0.00      0.00      0.00         0
+                                06.01.01 - Ciência Aberta       0.38      0.60      0.46         5
+                          06.01.02 - Ciência e Democracia       0.00      0.00      0.00         2
+                         06.01.03 - Inteligência em Dados       0.00      0.00      0.00         2
+                       06.02.01 - Inteligência Artificial       0.25      0.33      0.29         3
+                             06.02.03 - Novas Tecnologias       0.20      0.50      0.29         2
+                           06.03.01 - Inovação e Startups       0.00      0.00      0.00         1
+                   06.04.01 - Inovação e Sustentabilidade       0.00      0.00      0.00         0
+                    06.04.02 - Inovação e Descarbonização       0.00      0.00      0.00         0
+                            06.04.03 - Tecnologias Verdes       0.00      0.00      0.00         1
+             06.05.01 - Políticas de Ciência e Tecnologia       0.00      0.00      0.00         0
+                         06.05.02 - Regulação Tecnológica       0.00      0.00      0.00         3
+                06.05.03 - Ética em Tecnologia e Inovação       0.00      0.00      0.00         0
+                        07.01.01 - Construção de Estradas       0.44      1.00      0.62         4
+                   07.01.03 - Infraestrutura de Qualidade       0.00      0.00      0.00         0
+                            07.02.01 - Transporte Público       0.00      0.00      0.00         1
+                   07.02.02 - Inovação e Mobilidade Verde       0.00      0.00      0.00         0
+                         07.03.01 - Transporte Rodoviário       0.00      0.00      0.00         3
+                        07.03.02 - Transporte Ferroviário       0.00      0.00      0.00         1
+                         07.03.03 - Transporte Aquaviário       0.00      0.00      0.00         2
+                            08.01.01 - Festivais e Feiras       0.00      0.00      0.00         0
+                      08.01.03 - Apresentações Artísticas       0.00      0.00      0.00         2
+                          08.02.01 - Patrimônio Histórico       0.50      0.25      0.33         4
+                              08.03.01 - Apoio a Artistas       0.00      0.00      0.00         2
+                       08.03.02 - Financiamento e Editais       0.00      0.00      0.00         1
+                         08.04.01 - Artesanato Brasileiro       0.00      0.00      0.00         0
+                              08.04.02 - Língua e Cultura       0.00      0.00      0.00         1
+                          08.04.03 - Tradições e Costumes       0.00      0.00      0.00         4
+                               08.05.01 - Cultura Digital       0.00      0.00      0.00         0
+                             08.05.02 - Economia Criativa       0.00      0.00      0.00         0
+                         10.01.01 - Produção de Alimentos       0.00      0.00      0.00         1
+                         10.01.02 - Desenvolvimento Rural       0.00      0.00      0.00         1
+                        10.01.03 - Agricultura e Pecuária       0.00      0.00      0.00         3
+                                10.02.02 - Combate à Fome       0.50      0.33      0.40         3
+                              10.03.02 - Crédito Agrícola       0.00      0.00      0.00         2
+          10.04.01 - Assistência Técnica e Extensão Rural       0.00      0.00      0.00         2
+                   10.04.03 - Apoio a Pequenos Produtores       0.00      0.00      0.00         3
+                               10.05.01 - Sanidade Animal       0.00      0.00      0.00         1
+                          11.01.01 - Inovação Tecnológica       0.00      0.00      0.00         0
+                      11.04.01 - Logística e Distribuição       0.00      0.00      0.00         0
+                            12.01.03 - Acordos Ambientais       0.00      0.00      0.00         1
+     12.02.02 - Cooperação Técnica para o Desenvolvimento       0.00      0.00      0.00         0
+                             13.01.01 - Advocacia Pública       0.00      0.00      0.00         0
+                         13.02.01 - Direitos das Crianças       0.00      0.00      0.00         0
+                                13.02.02 - Justiça Social       0.00      0.00      0.00         0
+                           13.02.03 - Liberdade Religiosa       0.50      1.00      0.67         1
+                  14.04.01 - Auditoria Fiscal do Trabalho       0.00      0.00      0.00         1
+                  14.04.03 - Combate ao Trabalho Infantil       0.00      0.00      0.00         2
+                 14.05.01 - Normas Regulamentadoras (NRs)       0.00      0.00      0.00         1
+                                 15.01.01 - Bolsa Família       0.35      0.82      0.49        11
+                             15.01.02 - Iniciativa Social       0.00      0.00      0.00         7
+                        15.02.01 - Combate à Desigualdade       0.00      0.00      0.00         3
+                                15.02.02 - Combate à Fome       0.00      0.00      0.00         1
+                             15.02.03 - Apoio Emergencial       0.00      0.00      0.00         1
+                    15.03.01 - Benefícios Previdenciários       0.00      0.00      0.00         1
+                       16.01.01 - Campanhas de Divulgação       0.00      0.00      0.00         0
+                16.01.03 - Promoção de Destinos Nacionais       0.00      0.00      0.00         2
+              16.05.01 - Formação Profissional em Turismo       0.00      0.00      0.00         1
+                          17.02.01 - Extração de Minerais       0.00      0.00      0.00         1
+             17.03.01 - Regulação e Legislação Energética       0.00      0.00      0.00         2
+17.05.05 - Parcerias Público-Privadas no Setor Energético       0.00      0.00      0.00         0
+                             18.01.01 - Serviços Digitais       0.00      0.00      0.00         0
+                              18.01.03 - Inclusão Digital       0.00      0.00      0.00         1
+                             18.03.01 - Interação Digital       0.00      0.00      0.00         1
+               19.05.01 - Planejamento de Defesa Nacional       0.00      0.00      0.00         0
+                              20.01.01 - Controle Interno       0.00      0.00      0.00         0
+                               20.05.01 - Sociedade Civil       0.00      0.00      0.00         0
+
+                                                 accuracy                           0.16       200
+                                                macro avg       0.08      0.08      0.07       200
+                                             weighted avg       0.15      0.16      0.13       200
+
+
+================================================================================
+MODELO: Llama 3 70B
+================================================================================
+
+Accuracy: 0.0000
+F1-score (macro): 0.0000
+
+Latência média: 0.000s
+Total de chamadas: 0
+Input tokens: 0
+Output tokens: 0
+Custo total: $0.0000
+Erros: 200
+
+Classification Report (sklearn):
+                                                    precision    recall  f1-score   support
+
+                      01.01.03 - Análise Econômica       0.00      0.00      0.00       2.0
+                 01.02.01 - Fiscalização Econômica       0.00      0.00      0.00      25.0
+                  01.02.02 - Tributação e Impostos       0.00      0.00      0.00       1.0
+               01.03.01 - Atração de Investimentos       0.00      0.00      0.00       3.0
+   01.04.01 - Apoio Financeiro a Pequenas Empresas       0.00      0.00      0.00       4.0
+        01.04.03 - Financiamento de Infraestrutura       0.00      0.00      0.00       3.0
+                       01.05.02 - Economia Digital       0.00      0.00      0.00       4.0
+                     02.01.02 - Ensino Fundamental       0.00      0.00      0.00       4.0
+              02.03.01 - Aprendizagem Profissional       0.00      0.00      0.00       1.0
+                 02.04.01 - Políticas Educacionais       0.00      0.00      0.00       6.0
+                   02.04.02 - Campanhas Educativas       0.00      0.00      0.00       1.0
+                    02.04.03 - Bolsas e Incentivos       0.00      0.00      0.00       6.0
+                   03.01.02 - Assistência em Saúde       0.00      0.00      0.00       8.0
+                       03.01.03 - Atenção Integral       0.00      0.00      0.00       1.0
+                       03.02.01 - Combate à Dengue       0.00      0.00      0.00       2.0
+                       03.02.02 - Saúde da Criança       0.00      0.00      0.00       1.0
+                      03.03.02 - Inovação em Saúde       0.00      0.00      0.00       1.0
+             03.04.01 - Políticas de Saúde Pública       0.00      0.00      0.00       2.0
+04.02.01 - Investigação de Organizações Criminosas       0.00      0.00      0.00       3.0
+                  04.03.01 - Prevenção à Violência       0.00      0.00      0.00       2.0
+           04.03.02 - Campanhas de Conscientização       0.00      0.00      0.00       1.0
+    04.03.03 - Enfrentamento à Violência Doméstica       0.00      0.00      0.00       2.0
+              05.01.01 - Proteção da Vida Selvagem       0.00      0.00      0.00       6.0
+                    05.01.02 - Conservação Marinha       0.00      0.00      0.00       1.0
+                      05.01.03 - Qualidade da Água       0.00      0.00      0.00       8.0
+                      05.02.02 - Justiça Climática       0.00      0.00      0.00       1.0
+                     05.02.03 - Educação Ambiental       0.00      0.00      0.00       2.0
+                     05.04.01 - Gestão de Resíduos       0.00      0.00      0.00       1.0
+                         06.01.01 - Ciência Aberta       0.00      0.00      0.00       5.0
+                   06.01.02 - Ciência e Democracia       0.00      0.00      0.00       2.0
+                  06.01.03 - Inteligência em Dados       0.00      0.00      0.00       2.0
+                06.02.01 - Inteligência Artificial       0.00      0.00      0.00       3.0
+                      06.02.03 - Novas Tecnologias       0.00      0.00      0.00       2.0
+                    06.03.01 - Inovação e Startups       0.00      0.00      0.00       1.0
+                     06.04.03 - Tecnologias Verdes       0.00      0.00      0.00       1.0
+                  06.05.02 - Regulação Tecnológica       0.00      0.00      0.00       3.0
+                 07.01.01 - Construção de Estradas       0.00      0.00      0.00       4.0
+                     07.02.01 - Transporte Público       0.00      0.00      0.00       1.0
+                  07.03.01 - Transporte Rodoviário       0.00      0.00      0.00       3.0
+                 07.03.02 - Transporte Ferroviário       0.00      0.00      0.00       1.0
+                  07.03.03 - Transporte Aquaviário       0.00      0.00      0.00       2.0
+               08.01.03 - Apresentações Artísticas       0.00      0.00      0.00       2.0
+                   08.02.01 - Patrimônio Histórico       0.00      0.00      0.00       4.0
+                       08.03.01 - Apoio a Artistas       0.00      0.00      0.00       2.0
+                08.03.02 - Financiamento e Editais       0.00      0.00      0.00       1.0
+                       08.04.02 - Língua e Cultura       0.00      0.00      0.00       1.0
+                   08.04.03 - Tradições e Costumes       0.00      0.00      0.00       4.0
+                  10.01.01 - Produção de Alimentos       0.00      0.00      0.00       1.0
+                  10.01.02 - Desenvolvimento Rural       0.00      0.00      0.00       1.0
+                 10.01.03 - Agricultura e Pecuária       0.00      0.00      0.00       3.0
+                         10.02.02 - Combate à Fome       0.00      0.00      0.00       3.0
+                       10.03.02 - Crédito Agrícola       0.00      0.00      0.00       2.0
+   10.04.01 - Assistência Técnica e Extensão Rural       0.00      0.00      0.00       2.0
+            10.04.03 - Apoio a Pequenos Produtores       0.00      0.00      0.00       3.0
+                        10.05.01 - Sanidade Animal       0.00      0.00      0.00       1.0
+                     12.01.03 - Acordos Ambientais       0.00      0.00      0.00       1.0
+                    13.02.03 - Liberdade Religiosa       0.00      0.00      0.00       1.0
+           14.04.01 - Auditoria Fiscal do Trabalho       0.00      0.00      0.00       1.0
+           14.04.03 - Combate ao Trabalho Infantil       0.00      0.00      0.00       2.0
+          14.05.01 - Normas Regulamentadoras (NRs)       0.00      0.00      0.00       1.0
+                          15.01.01 - Bolsa Família       0.00      0.00      0.00      11.0
+                      15.01.02 - Iniciativa Social       0.00      0.00      0.00       7.0
+                 15.02.01 - Combate à Desigualdade       0.00      0.00      0.00       3.0
+                         15.02.02 - Combate à Fome       0.00      0.00      0.00       1.0
+                      15.02.03 - Apoio Emergencial       0.00      0.00      0.00       1.0
+             15.03.01 - Benefícios Previdenciários       0.00      0.00      0.00       1.0
+         16.01.03 - Promoção de Destinos Nacionais       0.00      0.00      0.00       2.0
+       16.05.01 - Formação Profissional em Turismo       0.00      0.00      0.00       1.0
+                   17.02.01 - Extração de Minerais       0.00      0.00      0.00       1.0
+      17.03.01 - Regulação e Legislação Energética       0.00      0.00      0.00       2.0
+                       18.01.03 - Inclusão Digital       0.00      0.00      0.00       1.0
+                      18.03.01 - Interação Digital       0.00      0.00      0.00       1.0
+                       20.01.01 - Controle Interno       0.00      0.00      0.00       0.0
+
+                                          accuracy                           0.00     200.0
+                                         macro avg       0.00      0.00      0.00     200.0
+                                      weighted avg       0.00      0.00      0.00     200.0
+
+
+================================================================================
+MODELO: Llama 3 8B
+================================================================================
+
+Accuracy: 0.0000
+F1-score (macro): 0.0000
+
+Latência média: 0.000s
+Total de chamadas: 0
+Input tokens: 0
+Output tokens: 0
+Custo total: $0.0000
+Erros: 200
+
+Classification Report (sklearn):
+                                                    precision    recall  f1-score   support
+
+                      01.01.03 - Análise Econômica       0.00      0.00      0.00       2.0
+                 01.02.01 - Fiscalização Econômica       0.00      0.00      0.00      25.0
+                  01.02.02 - Tributação e Impostos       0.00      0.00      0.00       1.0
+               01.03.01 - Atração de Investimentos       0.00      0.00      0.00       3.0
+   01.04.01 - Apoio Financeiro a Pequenas Empresas       0.00      0.00      0.00       4.0
+        01.04.03 - Financiamento de Infraestrutura       0.00      0.00      0.00       3.0
+                       01.05.02 - Economia Digital       0.00      0.00      0.00       4.0
+                     02.01.02 - Ensino Fundamental       0.00      0.00      0.00       4.0
+              02.03.01 - Aprendizagem Profissional       0.00      0.00      0.00       1.0
+                 02.04.01 - Políticas Educacionais       0.00      0.00      0.00       6.0
+                   02.04.02 - Campanhas Educativas       0.00      0.00      0.00       1.0
+                    02.04.03 - Bolsas e Incentivos       0.00      0.00      0.00       6.0
+                   03.01.02 - Assistência em Saúde       0.00      0.00      0.00       8.0
+                       03.01.03 - Atenção Integral       0.00      0.00      0.00       1.0
+                       03.02.01 - Combate à Dengue       0.00      0.00      0.00       2.0
+                       03.02.02 - Saúde da Criança       0.00      0.00      0.00       1.0
+                      03.03.02 - Inovação em Saúde       0.00      0.00      0.00       1.0
+             03.04.01 - Políticas de Saúde Pública       0.00      0.00      0.00       2.0
+04.02.01 - Investigação de Organizações Criminosas       0.00      0.00      0.00       3.0
+                  04.03.01 - Prevenção à Violência       0.00      0.00      0.00       2.0
+           04.03.02 - Campanhas de Conscientização       0.00      0.00      0.00       1.0
+    04.03.03 - Enfrentamento à Violência Doméstica       0.00      0.00      0.00       2.0
+              05.01.01 - Proteção da Vida Selvagem       0.00      0.00      0.00       6.0
+                    05.01.02 - Conservação Marinha       0.00      0.00      0.00       1.0
+                      05.01.03 - Qualidade da Água       0.00      0.00      0.00       8.0
+                      05.02.02 - Justiça Climática       0.00      0.00      0.00       1.0
+                     05.02.03 - Educação Ambiental       0.00      0.00      0.00       2.0
+                     05.04.01 - Gestão de Resíduos       0.00      0.00      0.00       1.0
+                         06.01.01 - Ciência Aberta       0.00      0.00      0.00       5.0
+                   06.01.02 - Ciência e Democracia       0.00      0.00      0.00       2.0
+                  06.01.03 - Inteligência em Dados       0.00      0.00      0.00       2.0
+                06.02.01 - Inteligência Artificial       0.00      0.00      0.00       3.0
+                      06.02.03 - Novas Tecnologias       0.00      0.00      0.00       2.0
+                    06.03.01 - Inovação e Startups       0.00      0.00      0.00       1.0
+                     06.04.03 - Tecnologias Verdes       0.00      0.00      0.00       1.0
+                  06.05.02 - Regulação Tecnológica       0.00      0.00      0.00       3.0
+                 07.01.01 - Construção de Estradas       0.00      0.00      0.00       4.0
+                     07.02.01 - Transporte Público       0.00      0.00      0.00       1.0
+                  07.03.01 - Transporte Rodoviário       0.00      0.00      0.00       3.0
+                 07.03.02 - Transporte Ferroviário       0.00      0.00      0.00       1.0
+                  07.03.03 - Transporte Aquaviário       0.00      0.00      0.00       2.0
+               08.01.03 - Apresentações Artísticas       0.00      0.00      0.00       2.0
+                   08.02.01 - Patrimônio Histórico       0.00      0.00      0.00       4.0
+                       08.03.01 - Apoio a Artistas       0.00      0.00      0.00       2.0
+                08.03.02 - Financiamento e Editais       0.00      0.00      0.00       1.0
+                       08.04.02 - Língua e Cultura       0.00      0.00      0.00       1.0
+                   08.04.03 - Tradições e Costumes       0.00      0.00      0.00       4.0
+                  10.01.01 - Produção de Alimentos       0.00      0.00      0.00       1.0
+                  10.01.02 - Desenvolvimento Rural       0.00      0.00      0.00       1.0
+                 10.01.03 - Agricultura e Pecuária       0.00      0.00      0.00       3.0
+                         10.02.02 - Combate à Fome       0.00      0.00      0.00       3.0
+                       10.03.02 - Crédito Agrícola       0.00      0.00      0.00       2.0
+   10.04.01 - Assistência Técnica e Extensão Rural       0.00      0.00      0.00       2.0
+            10.04.03 - Apoio a Pequenos Produtores       0.00      0.00      0.00       3.0
+                        10.05.01 - Sanidade Animal       0.00      0.00      0.00       1.0
+                     12.01.03 - Acordos Ambientais       0.00      0.00      0.00       1.0
+                    13.02.03 - Liberdade Religiosa       0.00      0.00      0.00       1.0
+           14.04.01 - Auditoria Fiscal do Trabalho       0.00      0.00      0.00       1.0
+           14.04.03 - Combate ao Trabalho Infantil       0.00      0.00      0.00       2.0
+          14.05.01 - Normas Regulamentadoras (NRs)       0.00      0.00      0.00       1.0
+                          15.01.01 - Bolsa Família       0.00      0.00      0.00      11.0
+                      15.01.02 - Iniciativa Social       0.00      0.00      0.00       7.0
+                 15.02.01 - Combate à Desigualdade       0.00      0.00      0.00       3.0
+                         15.02.02 - Combate à Fome       0.00      0.00      0.00       1.0
+                      15.02.03 - Apoio Emergencial       0.00      0.00      0.00       1.0
+             15.03.01 - Benefícios Previdenciários       0.00      0.00      0.00       1.0
+         16.01.03 - Promoção de Destinos Nacionais       0.00      0.00      0.00       2.0
+       16.05.01 - Formação Profissional em Turismo       0.00      0.00      0.00       1.0
+                   17.02.01 - Extração de Minerais       0.00      0.00      0.00       1.0
+      17.03.01 - Regulação e Legislação Energética       0.00      0.00      0.00       2.0
+                       18.01.03 - Inclusão Digital       0.00      0.00      0.00       1.0
+                      18.03.01 - Interação Digital       0.00      0.00      0.00       1.0
+                       20.01.01 - Controle Interno       0.00      0.00      0.00       0.0
+
+                                          accuracy                           0.00     200.0
+                                         macro avg       0.00      0.00      0.00     200.0
+                                      weighted avg       0.00      0.00      0.00     200.0
+
+
+================================================================================
+MODELO: Cohere Command R+
+================================================================================
+
+Accuracy: 0.0000
+F1-score (macro): 0.0000
+
+Latência média: 0.000s
+Total de chamadas: 0
+Input tokens: 0
+Output tokens: 0
+Custo total: $0.0000
+Erros: 200
+
+Classification Report (sklearn):
+                                                    precision    recall  f1-score   support
+
+                      01.01.03 - Análise Econômica       0.00      0.00      0.00       2.0
+                 01.02.01 - Fiscalização Econômica       0.00      0.00      0.00      25.0
+                  01.02.02 - Tributação e Impostos       0.00      0.00      0.00       1.0
+               01.03.01 - Atração de Investimentos       0.00      0.00      0.00       3.0
+   01.04.01 - Apoio Financeiro a Pequenas Empresas       0.00      0.00      0.00       4.0
+        01.04.03 - Financiamento de Infraestrutura       0.00      0.00      0.00       3.0
+                       01.05.02 - Economia Digital       0.00      0.00      0.00       4.0
+                     02.01.02 - Ensino Fundamental       0.00      0.00      0.00       4.0
+              02.03.01 - Aprendizagem Profissional       0.00      0.00      0.00       1.0
+                 02.04.01 - Políticas Educacionais       0.00      0.00      0.00       6.0
+                   02.04.02 - Campanhas Educativas       0.00      0.00      0.00       1.0
+                    02.04.03 - Bolsas e Incentivos       0.00      0.00      0.00       6.0
+                   03.01.02 - Assistência em Saúde       0.00      0.00      0.00       8.0
+                       03.01.03 - Atenção Integral       0.00      0.00      0.00       1.0
+                       03.02.01 - Combate à Dengue       0.00      0.00      0.00       2.0
+                       03.02.02 - Saúde da Criança       0.00      0.00      0.00       1.0
+                      03.03.02 - Inovação em Saúde       0.00      0.00      0.00       1.0
+             03.04.01 - Políticas de Saúde Pública       0.00      0.00      0.00       2.0
+04.02.01 - Investigação de Organizações Criminosas       0.00      0.00      0.00       3.0
+                  04.03.01 - Prevenção à Violência       0.00      0.00      0.00       2.0
+           04.03.02 - Campanhas de Conscientização       0.00      0.00      0.00       1.0
+    04.03.03 - Enfrentamento à Violência Doméstica       0.00      0.00      0.00       2.0
+              05.01.01 - Proteção da Vida Selvagem       0.00      0.00      0.00       6.0
+                    05.01.02 - Conservação Marinha       0.00      0.00      0.00       1.0
+                      05.01.03 - Qualidade da Água       0.00      0.00      0.00       8.0
+                      05.02.02 - Justiça Climática       0.00      0.00      0.00       1.0
+                     05.02.03 - Educação Ambiental       0.00      0.00      0.00       2.0
+                     05.04.01 - Gestão de Resíduos       0.00      0.00      0.00       1.0
+                         06.01.01 - Ciência Aberta       0.00      0.00      0.00       5.0
+                   06.01.02 - Ciência e Democracia       0.00      0.00      0.00       2.0
+                  06.01.03 - Inteligência em Dados       0.00      0.00      0.00       2.0
+                06.02.01 - Inteligência Artificial       0.00      0.00      0.00       3.0
+                      06.02.03 - Novas Tecnologias       0.00      0.00      0.00       2.0
+                    06.03.01 - Inovação e Startups       0.00      0.00      0.00       1.0
+                     06.04.03 - Tecnologias Verdes       0.00      0.00      0.00       1.0
+                  06.05.02 - Regulação Tecnológica       0.00      0.00      0.00       3.0
+                 07.01.01 - Construção de Estradas       0.00      0.00      0.00       4.0
+                     07.02.01 - Transporte Público       0.00      0.00      0.00       1.0
+                  07.03.01 - Transporte Rodoviário       0.00      0.00      0.00       3.0
+                 07.03.02 - Transporte Ferroviário       0.00      0.00      0.00       1.0
+                  07.03.03 - Transporte Aquaviário       0.00      0.00      0.00       2.0
+               08.01.03 - Apresentações Artísticas       0.00      0.00      0.00       2.0
+                   08.02.01 - Patrimônio Histórico       0.00      0.00      0.00       4.0
+                       08.03.01 - Apoio a Artistas       0.00      0.00      0.00       2.0
+                08.03.02 - Financiamento e Editais       0.00      0.00      0.00       1.0
+                       08.04.02 - Língua e Cultura       0.00      0.00      0.00       1.0
+                   08.04.03 - Tradições e Costumes       0.00      0.00      0.00       4.0
+                  10.01.01 - Produção de Alimentos       0.00      0.00      0.00       1.0
+                  10.01.02 - Desenvolvimento Rural       0.00      0.00      0.00       1.0
+                 10.01.03 - Agricultura e Pecuária       0.00      0.00      0.00       3.0
+                         10.02.02 - Combate à Fome       0.00      0.00      0.00       3.0
+                       10.03.02 - Crédito Agrícola       0.00      0.00      0.00       2.0
+   10.04.01 - Assistência Técnica e Extensão Rural       0.00      0.00      0.00       2.0
+            10.04.03 - Apoio a Pequenos Produtores       0.00      0.00      0.00       3.0
+                        10.05.01 - Sanidade Animal       0.00      0.00      0.00       1.0
+                     12.01.03 - Acordos Ambientais       0.00      0.00      0.00       1.0
+                    13.02.03 - Liberdade Religiosa       0.00      0.00      0.00       1.0
+           14.04.01 - Auditoria Fiscal do Trabalho       0.00      0.00      0.00       1.0
+           14.04.03 - Combate ao Trabalho Infantil       0.00      0.00      0.00       2.0
+          14.05.01 - Normas Regulamentadoras (NRs)       0.00      0.00      0.00       1.0
+                          15.01.01 - Bolsa Família       0.00      0.00      0.00      11.0
+                      15.01.02 - Iniciativa Social       0.00      0.00      0.00       7.0
+                 15.02.01 - Combate à Desigualdade       0.00      0.00      0.00       3.0
+                         15.02.02 - Combate à Fome       0.00      0.00      0.00       1.0
+                      15.02.03 - Apoio Emergencial       0.00      0.00      0.00       1.0
+             15.03.01 - Benefícios Previdenciários       0.00      0.00      0.00       1.0
+         16.01.03 - Promoção de Destinos Nacionais       0.00      0.00      0.00       2.0
+       16.05.01 - Formação Profissional em Turismo       0.00      0.00      0.00       1.0
+                   17.02.01 - Extração de Minerais       0.00      0.00      0.00       1.0
+      17.03.01 - Regulação e Legislação Energética       0.00      0.00      0.00       2.0
+                       18.01.03 - Inclusão Digital       0.00      0.00      0.00       1.0
+                      18.03.01 - Interação Digital       0.00      0.00      0.00       1.0
+                       20.01.01 - Controle Interno       0.00      0.00      0.00       0.0
+
+                                          accuracy                           0.00     200.0
+                                         macro avg       0.00      0.00      0.00     200.0
+                                      weighted avg       0.00      0.00      0.00     200.0
+
+
+================================================================================
+MODELO: Ministral 3 8B
+================================================================================
+
+Accuracy: 0.2400
+F1-score (macro): 0.1703
+
+Latência média: 1.468s
+Total de chamadas: 200
+Input tokens: 2,482,585
+Output tokens: 39,228
+Custo total: $0.2522
+Erros: 0
+
+Classification Report (sklearn):
+                                                      precision    recall  f1-score   support
+
+                        01.01.03 - Análise Econômica       0.00      0.00      0.00         2
+                   01.02.01 - Fiscalização Econômica       1.00      0.08      0.15        25
+                    01.02.02 - Tributação e Impostos       0.33      1.00      0.50         1
+                  01.02.03 - Combate à Evasão Fiscal       0.00      0.00      0.00         0
+                 01.03.01 - Atração de Investimentos       0.00      0.00      0.00         3
+                     01.03.03 - Investimentos Verdes       0.00      0.00      0.00         0
+     01.04.01 - Apoio Financeiro a Pequenas Empresas       0.67      0.50      0.57         4
+          01.04.03 - Financiamento de Infraestrutura       0.00      0.00      0.00         3
+                         01.05.02 - Economia Digital       0.00      0.00      0.00         4
+                       02.01.02 - Ensino Fundamental       0.00      0.00      0.00         4
+            02.02.01 - Pesquisa Acadêmica e Inovação       0.00      0.00      0.00         0
+                02.03.01 - Aprendizagem Profissional       0.00      0.00      0.00         1
+                 02.03.02 - Capacitação Profissional       0.00      0.00      0.00         0
+                    02.03.03 - Formação Profissional       0.00      0.00      0.00         0
+                   02.04.01 - Políticas Educacionais       1.00      0.17      0.29         6
+                     02.04.02 - Campanhas Educativas       0.33      1.00      0.50         1
+                      02.04.03 - Bolsas e Incentivos       0.36      0.67      0.47         6
+                     03.01.02 - Assistência em Saúde       0.00      0.00      0.00         8
+                         03.01.03 - Atenção Integral       0.00      0.00      0.00         1
+                         03.02.01 - Combate à Dengue       0.00      0.00      0.00         2
+                         03.02.02 - Saúde da Criança       0.00      0.00      0.00         1
+                      03.03.01 - Vigilância em Saúde       0.00      0.00      0.00         0
+                        03.03.02 - Inovação em Saúde       0.00      0.00      0.00         1
+               03.04.01 - Políticas de Saúde Pública       1.00      0.50      0.67         2
+                        03.04.03 - Educação em Saúde       0.00      0.00      0.00         0
+                              03.05.01 - Saúde Bucal       0.00      0.00      0.00         0
+                     03.05.03 - Saúde do Trabalhador       0.00      0.00      0.00         0
+  04.02.01 - Investigação de Organizações Criminosas       0.50      0.33      0.40         3
+     04.02.02 - Operações Contra o Tráfico de Drogas       0.00      0.00      0.00         0
+              04.02.03 - Combate ao Tráfico de Armas       0.00      0.00      0.00         0
+                    04.03.01 - Prevenção à Violência       0.25      1.00      0.40         2
+             04.03.02 - Campanhas de Conscientização       1.00      1.00      1.00         1
+      04.03.03 - Enfrentamento à Violência Doméstica       0.00      0.00      0.00         2
+                05.01.01 - Proteção da Vida Selvagem       0.00      0.00      0.00         6
+                      05.01.02 - Conservação Marinha       0.00      0.00      0.00         1
+                        05.01.03 - Qualidade da Água       0.25      0.12      0.17         8
+                   05.02.01 - Catástrofes Climáticas       0.00      0.00      0.00         0
+                        05.02.02 - Justiça Climática       0.00      0.00      0.00         1
+                       05.02.03 - Educação Ambiental       1.00      1.00      1.00         2
+                            05.03.02 - Energia Limpa       0.00      0.00      0.00         0
+                       05.04.01 - Gestão de Resíduos       0.00      0.00      0.00         1
+                  05.04.02 - Licenciamento Ambiental       0.00      0.00      0.00         0
+                           06.01.01 - Ciência Aberta       0.00      0.00      0.00         5
+                     06.01.02 - Ciência e Democracia       0.00      0.00      0.00         2
+                    06.01.03 - Inteligência em Dados       0.33      0.50      0.40         2
+                  06.02.01 - Inteligência Artificial       0.33      0.33      0.33         3
+                        06.02.03 - Novas Tecnologias       0.00      0.00      0.00         2
+                      06.03.01 - Inovação e Startups       0.00      0.00      0.00         1
+              06.04.01 - Inovação e Sustentabilidade       0.00      0.00      0.00         0
+               06.04.02 - Inovação e Descarbonização       0.00      0.00      0.00         0
+                       06.04.03 - Tecnologias Verdes       0.00      0.00      0.00         1
+                    06.05.02 - Regulação Tecnológica       0.00      0.00      0.00         3
+           06.05.03 - Ética em Tecnologia e Inovação       0.00      0.00      0.00         0
+                   07.01.01 - Construção de Estradas       0.67      0.50      0.57         4
+              07.01.03 - Infraestrutura de Qualidade       0.00      0.00      0.00         0
+                       07.02.01 - Transporte Público       1.00      1.00      1.00         1
+                    07.03.01 - Transporte Rodoviário       0.00      0.00      0.00         3
+                   07.03.02 - Transporte Ferroviário       1.00      1.00      1.00         1
+                    07.03.03 - Transporte Aquaviário       1.00      1.00      1.00         2
+           07.04.02 - Conectividade e Infraestrutura       0.00      0.00      0.00         0
+               07.04.03 - Segurança e Regulamentação       0.00      0.00      0.00         0
+                 08.01.03 - Apresentações Artísticas       0.67      1.00      0.80         2
+                     08.02.01 - Patrimônio Histórico       0.75      0.75      0.75         4
+                         08.03.01 - Apoio a Artistas       0.00      0.00      0.00         2
+                  08.03.02 - Financiamento e Editais       1.00      1.00      1.00         1
+         08.03.03 - Formação e Capacitação Artística       0.00      0.00      0.00         0
+                         08.04.02 - Língua e Cultura       0.00      0.00      0.00         1
+                     08.04.03 - Tradições e Costumes       0.00      0.00      0.00         4
+                        08.05.02 - Economia Criativa       0.00      0.00      0.00         0
+                    10.01.01 - Produção de Alimentos       1.00      1.00      1.00         1
+                    10.01.02 - Desenvolvimento Rural       0.00      0.00      0.00         1
+                   10.01.03 - Agricultura e Pecuária       0.50      1.00      0.67         3
+10.02.01 - Abastecimento e Distribuição de Alimentos       0.00      0.00      0.00         0
+                           10.02.02 - Combate à Fome       1.00      0.33      0.50         3
+                   10.03.01 - Incentivos e Subsídios       0.00      0.00      0.00         0
+                         10.03.02 - Crédito Agrícola       0.00      0.00      0.00         2
+     10.04.01 - Assistência Técnica e Extensão Rural       0.00      0.00      0.00         2
+              10.04.03 - Apoio a Pequenos Produtores       0.33      1.00      0.50         3
+                          10.05.01 - Sanidade Animal       0.00      0.00      0.00         1
+                  11.02.01 - Exportação e Importação       0.00      0.00      0.00         0
+                      11.04.03 - Gestão de Qualidade       0.00      0.00      0.00         0
+                       12.01.03 - Acordos Ambientais       1.00      1.00      1.00         1
+         12.02.03 - Parcerias de Pesquisa e Educação       0.00      0.00      0.00         0
+                                 12.04.01 - Mercosul       0.00      0.00      0.00         0
+                      13.02.03 - Liberdade Religiosa       0.00      0.00      0.00         1
+                          14.01.01 - Emprego e Renda       0.00      0.00      0.00         0
+                14.03.01 - Qualificação Profissional       0.00      0.00      0.00         0
+              14.03.03 - Políticas Ativas de Emprego       0.00      0.00      0.00         0
+             14.04.01 - Auditoria Fiscal do Trabalho       0.00      0.00      0.00         1
+             14.04.03 - Combate ao Trabalho Infantil       0.67      1.00      0.80         2
+            14.05.01 - Normas Regulamentadoras (NRs)       1.00      1.00      1.00         1
+         14.05.03 - Condições Ambientais de Trabalho       0.00      0.00      0.00         0
+                            15.01.01 - Bolsa Família       0.00      0.00      0.00        11
+                        15.01.02 - Iniciativa Social       0.00      0.00      0.00         7
+                       15.01.03 - Juventude no Campo       0.00      0.00      0.00         0
+                   15.02.01 - Combate à Desigualdade       0.00      0.00      0.00         3
+                           15.02.02 - Combate à Fome       0.00      0.00      0.00         1
+                        15.02.03 - Apoio Emergencial       0.00      0.00      0.00         1
+               15.03.01 - Benefícios Previdenciários       1.00      1.00      1.00         1
+           16.01.03 - Promoção de Destinos Nacionais       0.00      0.00      0.00         2
+          16.04.01 - Turismo Ecológico e de Natureza       0.00      0.00      0.00         0
+         16.05.01 - Formação Profissional em Turismo       0.00      0.00      0.00         1
+                     17.02.01 - Extração de Minerais       0.00      0.00      0.00         1
+        17.03.01 - Regulação e Legislação Energética       1.00      1.00      1.00         2
+         17.03.03 - Planejamento Energético Nacional       0.00      0.00      0.00         0
+                     17.04.03 - Energia Hidrelétrica       0.00      0.00      0.00         0
+                         18.01.03 - Inclusão Digital       0.00      0.00      0.00         1
+                        18.03.01 - Interação Digital       0.00      0.00      0.00         1
+                19.03.01 - Preparação para Desastres       0.00      0.00      0.00         0
+                     19.03.03 - Resposta a Desastres       0.00      0.00      0.00         0
+                         20.01.01 - Controle Interno       0.00      0.00      0.00         0
+                         20.03.01 - Recursos Humanos       0.00      0.00      0.00         0
+                   20.03.03 - Licitações e Contratos       0.00      0.00      0.00         0
+                  20.04.03 - Atendimento à População       0.00      0.00      0.00         0
+                          20.05.01 - Sociedade Civil       0.00      0.00      0.00         0
+                  20.05.02 - Transparência e Diálogo       0.00      0.00      0.00         0
+                      24.01.01 - Igualdade de Gênero       0.00      0.00      0.00         0
+                24.01.03 - Violência contra Mulheres       0.00      0.00      0.00         0
+                        24.02.03 - Educação Indígena       0.00      0.00      0.00         0
+                              24.04.01 - Quilombolas       0.00      0.00      0.00         0
+
+                                            accuracy                           0.24       200
+                                           macro avg       0.18      0.19      0.17       200
+                                        weighted avg       0.36      0.24      0.23       200
+
