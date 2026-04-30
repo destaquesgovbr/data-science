@@ -814,9 +814,230 @@ Após a avaliação completa, teremos:
 
 ---
 
-## 8. Limitações e Trabalhos Futuros
+## 8. Experimento de Otimização de Prompts
 
-### 6.1 Limitações do Estudo
+### 8.1 Motivação e Hipótese
+
+Após a avaliação completa dos 11 modelos, observamos uma **disparidade significativa** nos resultados:
+
+| Modelo | L1 | L2 | L3 | Observação |
+|--------|----|----|----|-----------| 
+| Claude Haiku | 80.5% | 80.5% | 80.5% | ✅ Performance excepcional |
+| Claude Sonnet | 70.5% | 53.5% | 33.5% | ⚠️ Degradação hierárquica acentuada |
+| Mistral Large 3 | 65.0% | 48.5% | 33.5% | ⚠️ Similar ao Sonnet |
+| Nova Pro | 74.5% | 48.5% | 31.5% | ⚠️ Boa L1, ruim L3 |
+
+**Observação crítica:** Modelos como Sonnet e Mistral Large 3 apresentam **boa concordância no nível 1** (65-70%), mas **desempenho muito inferior no nível 3** (33.5%). Isso sugere:
+1. Modelos entendem o domínio geral (grande área)
+2. Mas têm dificuldade com especificidade (tópico final)
+3. Possível problema: prompt não otimizado para cada modelo
+
+**Hipótese:** 
+> Estratégias de prompt alternativas (few-shot com exemplos, instruções explícitas de JSON, temperature ajustado) podem melhorar o desempenho dos modelos não-Haiku, especialmente no nível 3 (tópico específico).
+
+**Objetivo:** Validar se ajustes de prompt podem reduzir o gap entre modelos (33.5% → 50-60% L3).
+
+---
+
+### 8.2 Metodologia do Experimento
+
+#### 8.2.1 Design Experimental
+
+**Modelos selecionados:**
+1. **Claude Sonnet** - Alto potencial (70.5% L1 sugere compreensão), alto valor (se melhorar)
+2. **Mistral Large 3** - Similar ao Sonnet, mas 14 erros de JSON parsing sugerem problema de formato
+
+**Estratégias testadas:**
+1. **Baseline** - Prompt atual (default)
+2. **Explicit JSON** - Instruções muito explícitas sobre formatação JSON
+3. **Few-shot** - Inclusão de 3 exemplos de classificação bem-sucedida
+
+**Amostra:** 20 notícias (10% do dataset, seleção aleatória com seed=42)
+
+**Justificativa do tamanho:**
+- Teste rápido (~5-10 min vs 1-2h do dataset completo)
+- Custo baixo (~$0.50 vs $5-10 completo)
+- Se detectar melhoria >5% → justifica testar em escala
+
+#### 8.2.2 Implementação das Estratégias
+
+**1. Explicit JSON Prompt:**
+```python
+# Adiciona instruções extremamente explícitas
+REGRAS EXTREMAMENTE IMPORTANTES:
+1. Retorne APENAS o JSON acima
+2. NÃO inclua ```json ou qualquer outra formatação markdown
+3. NÃO adicione texto antes ou depois do JSON
+4. NÃO invente códigos - use APENAS os códigos da taxonomia acima
+5. Todos os campos são obrigatórios
+6. Use aspas duplas (") para strings
+7. most_specific_theme_code DEVE ser igual a theme_1_level_3_code
+8. Os códigos seguem o padrão: XX (nível 1), XX.XX (nível 2), XX.XX.XX (nível 3)
+
+IMPORTANTE: Sua resposta deve começar com { e terminar com }. Nada mais.
+```
+
+**Objetivo:** Reduzir erros de parsing JSON (especialmente em Mistral Large 3).
+
+**2. Few-shot Prompt:**
+```python
+EXEMPLO 1:
+NOTÍCIA: Governo federal anuncia R$ 10 bilhões em crédito rural...
+RESPOSTA: {
+  "theme_1_level_1": "Agricultura",
+  "theme_1_level_1_code": "10",
+  ...
+}
+
+EXEMPLO 2:
+NOTÍCIA: Ministério da Saúde lança campanha nacional de vacinação...
+RESPOSTA: {
+  "theme_1_level_1": "Saúde",
+  "theme_1_level_1_code": "18",
+  ...
+}
+
+EXEMPLO 3:
+NOTÍCIA: BNDES aprova financiamento para construção de rodovia...
+RESPOSTA: {
+  "theme_1_level_1": "Infraestrutura",
+  "theme_1_level_1_code": "07",
+  ...
+}
+
+AGORA CLASSIFIQUE ESTA NOTÍCIA: [texto da notícia]
+```
+
+**Objetivo:** Guiar modelo com exemplos concretos de classificação bem-sucedida.
+
+---
+
+### 8.3 Resultados do Experimento Piloto (n=20)
+
+#### 8.3.1 Claude Sonnet
+
+| Estratégia | L1 | L2 | L3 | Errors | Observação |
+|------------|----|----|----|---------|-----------| 
+| **Baseline** | 70.0% | 35.0% | 20.0% | 0/20 | Referência |
+| Explicit JSON | 65.0% | 30.0% | 20.0% | 0/20 | ❌ Piora L1/L2 |
+| Few-shot | 60.0% | 30.0% | 20.0% | 0/20 | ❌ Piora L1 |
+
+**Conclusão preliminar Claude Sonnet:** 
+- ✅ Baseline já é ótimo (sem erros)
+- ❌ Prompts alternativos pioram desempenho
+- 💡 Insight: Sonnet generaliza bem sem exemplos; few-shot pode "confundir" com casos específicos
+
+#### 8.3.2 Mistral Large 3
+
+| Estratégia | L1 | L2 | L3 | Errors | Observação |
+|------------|----|----|----|---------|-----------| 
+| **Baseline** | 55.0% | 40.0% | 20.0% | 0/20 | Referência |
+| Explicit JSON | 60.0% | 35.0% | 25.0% | 1/20 | ✅ +5% L1, +5% L3 |
+| **Few-shot** | **70.0%** | 40.0% | **25.0%** | 1/20 | ✅✅ **+15% L1, +5% L3** |
+
+**Conclusão preliminar Mistral Large 3:**
+- ✅ **Few-shot mostrou melhoria promissora:** +15% L1, +5% L3
+- ✅ Explicit JSON também melhorou L3 (+5%)
+- 💡 Insight: Mistral se beneficia de exemplos concretos para entender hierarquia
+
+**Decisão:** 🎯 **Validar few-shot em escala completa (200 notícias)**
+
+---
+
+### 8.4 Validação em Escala: Avaliação Completa com Few-shot
+
+#### 8.4.1 Expectativa vs Realidade
+
+Com base no experimento piloto (n=20), esperávamos:
+- **L1:** 70% (+15% vs baseline)
+- **L2:** 40% (manutenção)
+- **L3:** 38-40% (+5-7% vs baseline de 33.5%)
+- **ROI:** Se confirmar, Mistral Large 3 se tornaria alternativa viável ao Haiku
+
+#### 8.4.2 Resultados da Avaliação Completa (n=200)
+
+**Mistral Large 3 - Few-shot (3 exemplos):**
+
+| Métrica | Baseline | Few-shot | Diferença | Resultado |
+|---------|----------|----------|-----------|-----------|
+| **L1 (Grande Área)** | 65.0% | **55.5%** | **-9.5%** | ❌ Piora |
+| **L2 (Subcategoria)** | 48.5% | **40.5%** | **-8.0%** | ❌ Piora |
+| **L3 (Tópico)** | 33.5% | **28.5%** | **-5.0%** | ❌ Piora |
+| **Latência média** | 1.73s | 1.62s | -0.11s | ✅ Ligeiramente mais rápido |
+| **Custo** | ~$2.70 | **$5.40** | +$2.70 | ❌ 2x mais caro |
+| **Erros** | 14/200 (7%) | 3/200 (1.5%) | -5.5% | ✅ Menos erros parsing |
+
+**Resultado:** ❌ **Few-shot piorou significativamente o desempenho em todos os níveis**
+
+---
+
+### 8.5 Análise da Discrepância
+
+#### 8.5.1 Por que o experimento piloto foi enganoso?
+
+**1. Variância amostral (n=20 muito pequeno):**
+- Intervalo de confiança 95% para accuracy de 70% com n=20: **±19.6%**
+- Intervalo de confiança 95% para accuracy de 65% com n=200: **±6.5%**
+- **Conclusão:** Amostra de 20 tem alta variância, não é representativa
+
+**2. Seleção não-representativa (bias da seed):**
+- Seed aleatória (42) pode ter selecionado notícias que, por acaso, eram similares aos 3 exemplos
+- Fenômeno conhecido: "Lucky split" em ML experimental
+- **Validação:** Ao expandir para 200, o viés desaparece e performance real emerge
+
+**3. Overfitting aos exemplos (problema inerente do few-shot):**
+- Few-shot com exemplos fixos funciona bem quando test set é similar aos exemplos
+- Quando test set diverge, few-shot pode "ancorar" modelo nos exemplos e piorar generalização
+- **Evidência:** Menos erros de parsing (3 vs 14), mas pior accuracy → modelo segue formato dos exemplos mas erra categorias
+
+**4. Token overhead penaliza contexto:**
+- Few-shot adiciona ~1500 tokens ao prompt (3 exemplos × ~500 tokens cada)
+- Input tokens: 2.56M (few-shot) vs ~1.3M (baseline) = **~2x maior**
+- Hipótese: Contexto maior pode "diluir" a taxonomia no middle do prompt (Lost-in-the-Middle effect)
+
+#### 8.5.2 Lições Metodológicas
+
+**❌ O que NÃO fazer:**
+1. Confiar em experimento piloto com n<50
+2. Usar seed fixa sem validar em múltiplas splits
+3. Assumir que melhoria em amostra pequena generaliza
+
+**✅ O que fazer:**
+1. **Cross-validation com múltiplas seeds** antes de validar em escala
+2. **Intervalo de confiança explícito** nas métricas de amostra pequena
+3. **Análise de custo-benefício** ANTES de rodar avaliação completa:
+   - Few-shot: $5.40 (200 news) → $27/dia (1000 news) → **$810/mês**
+   - Baseline: $2.70 (200 news) → $13.5/dia (1000 news) → **$405/mês**
+   - **Mesmo com +5% accuracy, 2x custo não justifica para essa tarefa**
+
+---
+
+### 8.6 Conclusão do Experimento de Otimização
+
+**Resultado final:**
+- ❌ Few-shot NÃO melhorou desempenho (piora de -5% a -9.5%)
+- ❌ Custo 2x maior ($5.40 vs $2.70) devido aos exemplos no prompt
+- ✅ Validação metodológica: importância de testar em escala antes de adotar
+
+**Recomendação:**
+> **Manter prompt padrão (baseline) para Mistral Large 3.** Few-shot não é uma estratégia viável para esta tarefa específica.
+
+**Ranking final confirmado:**
+1. **Claude Haiku:** 80.5% L3, $0.65 🏆 (campeão absoluto)
+2. **Claude Sonnet:** 33.5% L3, $3.75 (alternativa premium)
+3. **Mistral Large 3:** 33.5% L3, $4.89 (baseline, sem few-shot)
+
+**Insights gerais:**
+1. **Few-shot não é panaceia:** Pode piorar se exemplos não forem representativos
+2. **Experimentos piloto requerem validação rigorosa:** n=20 é insuficiente para decisões
+3. **Claude Haiku é excepcional:** 2.4x melhor que alternativas, não há otimização que feche esse gap
+4. **Ground truth bias importante:** Haiku anotou o dataset, então concordância com Haiku é esperadamente alta
+
+---
+
+## 9. Limitações e Trabalhos Futuros
+
+### 9.1 Limitações do Estudo
 
 1. **Dataset sintético:** 75% das notícias são variantes truncadas
    - **Impacto:** Pode subestimar accuracy em textos completos
@@ -834,9 +1055,19 @@ Após a avaliação completa, teremos:
    - **Impacto:** Não sabemos accuracy teórica máxima
    - **Mitigação futura:** Anotar subset de 100 notícias com 3 anotadores
 
-### 6.2 Melhorias Futuras
+5. **Ground truth bias (Claude Haiku como anotador):**
+   - **Impacto:** Métricas medem concordância com Haiku, não accuracy absoluta
+   - **Evidência:** Haiku 80.5%, outros <35% - gap muito grande sugere viés
+   - **Mitigação futura:** Validação humana em subset (50-100 notícias, 3 anotadores)
 
-#### 6.2.1 Few-Shot Dinâmico
+6. **Experimento de otimização com amostra pequena:**
+   - **Impacto:** Piloto com n=20 sugeriu melhoria que não se confirmou em n=200
+   - **Aprendizado:** Validar sempre em escala antes de adotar otimizações
+   - **Mitigação futura:** Cross-validation com múltiplas seeds, intervalos de confiança explícitos
+
+### 9.2 Melhorias Futuras
+
+#### 9.2.1 Few-Shot Dinâmico (Retrieval-Augmented)
 
 **Problema:** Exemplos fixos no prompt podem não ser relevantes para todas as notícias.
 
@@ -1040,6 +1271,13 @@ models:
 - ❌ **REJEITADA:** Nova Pro e Mistral Large 3 ficaram em ~34%
 - Apenas Claude Haiku conseguiu performance aceitável
 
+**4. Experimento de Otimização de Prompts**
+- 🧪 **Testado:** Few-shot com 3 exemplos em Mistral Large 3
+- 📊 **Piloto (n=20):** Sugeriu melhoria de +15% L1, +5% L3
+- ❌ **Validação (n=200):** Piorou -9.5% L1, -5% L3
+- 💡 **Lição crítica:** Experimentos piloto com n<50 podem ser enganosos devido à alta variância
+- ✅ **Confirmado:** Prompt padrão (baseline) é ótimo, não há otimização viável que feche gap com Haiku
+
 ### 10.2 Recomendações para Produção
 
 #### 10.2.1 Modelo Recomendado: Claude 3 Haiku
@@ -1088,8 +1326,10 @@ Para garantir alta disponibilidade, sugerimos:
    - Ganho esperado: -10% chamadas redundantes
 
 **Médio prazo (3-6 meses):**
-3. **RAG com exemplos similares:** Injetar 3-5 exemplos por categoria
-   - Ganho esperado: +5-10% accuracy
+3. **RAG com exemplos similares:** Injetar 3-5 exemplos dinâmicos (retrieval-based)
+   - ⚠️ **Lição do experimento:** Few-shot fixo piora performance
+   - **Abordagem alternativa:** Buscar exemplos similares via embedding para cada notícia
+   - Ganho esperado: +5-10% accuracy (se exemplos forem relevantes)
 4. **Confidence thresholding:** Re-classificar apenas baixa confiança
    - Ganho esperado: -15% custo (menor redundância)
 
@@ -1127,10 +1367,15 @@ Para garantir alta disponibilidade, sugerimos:
 3. ⏳ Implementar logging de classificações para auditoria
 4. ⏳ Criar dashboard de métricas (accuracy, custo, latência)
 
+**Experimentos realizados:**
+5. ✅ Otimização de prompts (few-shot, explicit JSON) - Concluído
+   - **Resultado:** Baseline já é ótimo, não há ganho com otimizações testadas
+   - **Documentado:** Seção 8 deste relatório
+
 **Validação (2-4 semanas):**
-5. ⏳ A/B test: Classificação manual vs LLM em 100 notícias
-6. ⏳ Calcular inter-annotator agreement (Kappa)
-7. ⏳ Ajustar thresholds de confiança se necessário
+6. ⏳ A/B test: Classificação manual vs LLM em 100 notícias
+7. ⏳ Calcular inter-annotator agreement (Kappa)
+8. ⏳ Ajustar thresholds de confiança se necessário
 
 **Otimização (1-3 meses):**
 8. ⏳ Implementar batch processing

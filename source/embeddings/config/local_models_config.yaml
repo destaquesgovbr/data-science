@@ -1,0 +1,175 @@
+# Configuração de modelos open source para deployment local
+# Foco: Modelos médios e pequenos (inspiração Claude Haiku)
+
+models:
+  # ============================================================================
+  # TIER B - MODELOS MÉDIOS (7-15B parâmetros)
+  # ============================================================================
+
+  - name: "Llama 3.1 8B"
+    model_id: "llama3.1:8b-instruct-q4_K_M"
+    provider: "ollama"
+    parameters: 8_000_000_000
+    quantization: "Q4_K_M"  # 4-bit quantizado
+    context_limit: 128000
+    expected_vram_gb: 6
+    expected_latency_sec: 1.0
+    license: "Llama 3"
+    tier: "B"
+    notes: "Baseline obrigatório - Meta's latest"
+
+  - name: "Mistral 7B v0.3"
+    model_id: "mistral:7b-instruct-v0.3-q4_K_M"
+    provider: "ollama"
+    parameters: 7_000_000_000
+    quantization: "Q4_K_M"
+    context_limit: 32768
+    expected_vram_gb: 5
+    expected_latency_sec: 0.9
+    license: "Apache 2.0"
+    tier: "B"
+    notes: "Rápido e eficiente, conhece português"
+
+  - name: "Qwen 2.5 14B"
+    model_id: "qwen2.5:14b-instruct-q4_K_M"
+    provider: "ollama"
+    parameters: 14_000_000_000
+    quantization: "Q4_K_M"
+    context_limit: 131072
+    expected_vram_gb: 10
+    expected_latency_sec: 1.5
+    license: "Apache 2.0"
+    tier: "B"
+    notes: "Alibaba, excelente com multilíngue, maior contexto"
+
+  - name: "Gemma 2 9B"
+    model_id: "gemma2:9b-instruct-q4_K_M"
+    provider: "ollama"
+    parameters: 9_000_000_000
+    quantization: "Q4_K_M"
+    context_limit: 8192
+    expected_vram_gb: 7
+    expected_latency_sec: 1.1
+    license: "Gemma"
+    tier: "B"
+    notes: "Google, bom reasoning, contexto menor"
+
+  - name: "Phi-4 14B"
+    model_id: "phi4:14b-instruct-q4_K_M"
+    provider: "ollama"
+    parameters: 14_000_000_000
+    quantization: "Q4_K_M"
+    context_limit: 16384
+    expected_vram_gb: 10
+    expected_latency_sec: 1.4
+    license: "MIT"
+    tier: "B"
+    notes: "Microsoft, compacto mas poderoso"
+
+  # ============================================================================
+  # TIER C - MODELOS PEQUENOS (2-4B parâmetros)
+  # ============================================================================
+
+  - name: "Llama 3.2 3B"
+    model_id: "llama3.2:3b-instruct-q4_K_M"
+    provider: "ollama"
+    parameters: 3_000_000_000
+    quantization: "Q4_K_M"
+    context_limit: 131072
+    expected_vram_gb: 3
+    expected_latency_sec: 0.5
+    license: "Llama 3"
+    tier: "C"
+    notes: "Meta's small, pode rodar em CPU"
+
+  - name: "Phi-3.5 Mini"
+    model_id: "phi3.5:3.8b-instruct-q4_K_M"
+    provider: "ollama"
+    parameters: 3_800_000_000
+    quantization: "Q4_K_M"
+    context_limit: 131072
+    expected_vram_gb: 3
+    expected_latency_sec: 0.6
+    license: "MIT"
+    tier: "C"
+    notes: "Microsoft, SLM especializado"
+
+  - name: "Gemma 2 2B"
+    model_id: "gemma2:2b-instruct-q4_K_M"
+    provider: "ollama"
+    parameters: 2_000_000_000
+    quantization: "Q4_K_M"
+    context_limit: 8192
+    expected_vram_gb: 2
+    expected_latency_sec: 0.4
+    license: "Gemma"
+    tier: "C"
+    notes: "Google, extremamente leve, viável para CPU"
+
+# ============================================================================
+# CONFIGURAÇÕES DE AVALIAÇÃO
+# ============================================================================
+
+evaluation:
+  dataset_path: "data/classification/news_classification_test_annotated.csv"
+  sample_size: 200  # Todas as notícias
+  batch_size: 1     # Processar 1 por vez (medir latência real)
+  temperature: 0.3  # Mesma do experimento API
+  max_tokens: 1000  # Suficiente para JSON
+  timeout_sec: 60   # Timeout por classificação
+
+  # Prompt strategy
+  prompt_strategy: "json"  # Usar mesmo prompt JSON dos experimentos API
+
+  # Performance monitoring
+  measure_vram: true
+  measure_latency: true
+  measure_throughput: true
+  log_errors: true
+
+# ============================================================================
+# CONFIGURAÇÕES DE INFRAESTRUTURA
+# ============================================================================
+
+infrastructure:
+  # Ollama settings
+  ollama_host: "http://localhost:11434"
+  ollama_timeout: 300
+
+  # Resource limits (para deployment futuro)
+  max_concurrent_requests: 1  # Começar conservador
+  gpu_memory_fraction: 0.9    # Usar 90% da VRAM disponível
+
+  # Cost estimation (para TCO analysis)
+  # AWS g5.xlarge (A10G 24GB) - suporta todos os modelos Tier B/C
+  instance_type: "g5.xlarge"
+  hourly_cost_usd: 1.01
+  reserved_hourly_cost_usd: 0.60  # 1 ano reserved
+  spot_hourly_cost_usd: 0.30       # Spot instance
+
+# ============================================================================
+# NOTAS TÉCNICAS
+# ============================================================================
+
+notes: |
+  Quantização Q4_K_M (4-bit):
+  - Reduz VRAM em ~8x vs FP16
+  - Perda de accuracy: ~2-5%
+  - Todos os modelos cabem em GPU consumidor (RTX 3090/4090) ou A10G
+
+  Tier B (7-15B):
+  - Target: 50-70% accuracy (inspirado no gap Haiku vs Sonnet)
+  - VRAM: 5-10GB
+  - Latência esperada: 0.9-1.5s
+  - Pode rodar em g5.xlarge ($730/mês) ou GPU consumidor
+
+  Tier C (2-4B):
+  - Target: 40-60% accuracy
+  - VRAM: 2-3GB (viável em CPU com quantização)
+  - Latência esperada: 0.4-0.6s
+  - Custo mínimo, ideal para volume altíssimo
+
+  Modelos excluídos (Tier A - 70B+):
+  - Experiência com APIs mostra que "maior" não significa "melhor"
+  - Claude Sonnet (grande) teve 33.5% vs Haiku (médio) 80.5%
+  - Hardware muito caro (2-4x A100) sem garantia de ROI
