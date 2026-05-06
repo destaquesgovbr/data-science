@@ -114,6 +114,21 @@ class LocalClassifier(BaseClassifier):
 
         return response_text, input_tokens, output_tokens
 
+    def _call_ollama_raw(self, prompt: str) -> str:
+        """
+        Chama Ollama e retorna apenas o texto da resposta.
+
+        Método simplificado para classificação hierárquica.
+
+        Args:
+            prompt: Prompt completo
+
+        Returns:
+            response_text: Texto da resposta
+        """
+        response_text, _, _ = self._call_ollama(prompt)
+        return response_text
+
     def _parse_json_response(self, response: str) -> Optional[Dict]:
         """
         Extrai e valida JSON da resposta do modelo.
