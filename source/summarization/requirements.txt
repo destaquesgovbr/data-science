@@ -1,0 +1,30 @@
+# Dependências para Issue #4 - Estratégias de Sumarização
+
+# Extractive Summarization
+sumy==0.11.0                    # TextRank, LexRank
+nltk==3.8.1                     # Tokenização PT-BR
+spacy==3.7.2                    # NLP avançado
+
+# Abstractive Summarization
+transformers==4.36.0            # mT5, BART
+torch==2.1.0                    # PyTorch backend
+sentencepiece==0.1.99           # Tokenizer para mT5
+
+# Embeddings e BERT
+sentence-transformers==2.2.2    # BERT embeddings
+bert-extractive-summarizer==0.10.1  # BERT Extractive
+
+# Métricas de Avaliação
+rouge-score==0.1.2              # ROUGE-1, ROUGE-2, ROUGE-L
+bert-score==0.3.13              # BERTScore
+sacrebleu==2.3.1                # BLEU (opcional)
+
+# Utilities
+pandas==2.1.4                   # Data manipulation
+numpy==1.24.3                   # Numerical operations
+matplotlib==3.8.2               # Visualizações
+seaborn==0.13.0                 # Gráficos estatísticos
+tqdm==4.66.1                    # Progress bars
+
+# AWS Bedrock (já instalado da Issue #3)
+boto3>=1.34.0                   # Claude via Bedrock
