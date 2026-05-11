@@ -16,8 +16,8 @@ import time
 from tqdm import tqdm
 
 # Configuração
-# Usar Haiku 4.5 (ACTIVE)
-BEDROCK_MODEL_ID = "anthropic.claude-haiku-4-5-20251001-v1:0"
+# Usar Claude 3 Haiku (testado e funcional)
+BEDROCK_MODEL_ID = "anthropic.claude-3-haiku-20240307-v1:0"
 BEDROCK_REGION = "us-east-1"
 
 def call_bedrock_claude(text: str, max_retries: int = 3) -> str:
