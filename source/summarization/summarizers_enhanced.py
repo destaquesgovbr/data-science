@@ -1,8 +1,13 @@
 """
 Versões melhoradas das técnicas extractive com quick wins
+Inclui BERT Extractive com embeddings semânticos
 """
 
 from summarizers import BaseSummarizer
+import numpy as np
+from sklearn.metrics.pairwise import cosine_similarity
+import warnings
+warnings.filterwarnings('ignore')
 from sumy.parsers.plaintext import PlaintextParser
 from sumy.nlp.tokenizers import Tokenizer
 from sumy.summarizers.text_rank import TextRankSummarizer as SumyTextRank
@@ -237,3 +242,193 @@ class PositionBiasedTextRank(BaseSummarizer):
         selected = [s for s, _ in weighted[:sentences_count]]
 
         return " ".join(str(s) for s in selected)
+
+
+class BERTExtractiveSummarizer(BaseSummarizer):
+    """
+    BERT Extractive usando embeddings semânticos
+    
+    Diferenças vs TextRank:
+    - TextRank: grafo baseado em overlap de palavras
+    - BERT: similaridade semântica via embeddings contextuais
+    
+    Algoritmo:
+    1. Gera embedding BERT para cada sentença
+    2. Gera embedding para documento inteiro (centroid)
+    3. Calcula similaridade coseno: sentença <-> documento
+    4. Seleciona sentenças mais representativas
+    """
+
+    def __init__(self, model_name: str = "BAAI/bge-m3"):
+        super().__init__("BGE-M3-Extractive")
+        self.model_name = model_name
+        self._model = None
+        
+    def _load_model(self):
+        """Lazy loading do modelo (só carrega quando necessário)"""
+        if self._model is None:
+            from sentence_transformers import SentenceTransformer
+            print(f"   Carregando modelo BERT: {self.model_name}...")
+            self._model = SentenceTransformer(self.model_name)
+        return self._model
+    
+    def _split_sentences(self, text: str):
+        """Split simples em sentenças"""
+        import re
+        # Split por pontuação final
+        sentences = re.split(r'(?<=[.!?])\s+', text)
+        # Filtrar sentenças muito curtas
+        sentences = [s.strip() for s in sentences if len(s.strip()) > 20]
+        return sentences
+    
+    def _clean_sentence(self, sentence: str) -> str:
+        """Limpeza básica de sentença"""
+        import re
+        text = str(sentence)
+        text = re.sub(r'\s+', ' ', text)
+        text = re.sub(r'\[(.*?)\]\(.*?\)', r'\1', text)
+        text = re.sub(r'<.*?>', '', text)
+        return text.strip()
+    
+    def summarize(
+        self,
+        text: str,
+        num_sentences: int = 3,
+        ratio: float = None,
+        use_mmr: bool = True,
+        diversity_lambda: float = 0.5,
+        **kwargs
+    ) -> str:
+        """
+        Gera resumo usando embeddings BERT
+        
+        Args:
+            text: Texto completo
+            num_sentences: Número de sentenças (se ratio=None)
+            ratio: Alternativa: fração do texto (0.0-1.0)
+            use_mmr: Usar Maximal Marginal Relevance para diversidade
+            diversity_lambda: Trade-off relevância vs diversidade (0=só relevância, 1=só diversidade)
+            
+        Returns:
+            Resumo extractive
+        """
+        # Carregar modelo
+        model = self._load_model()
+        
+        # Split em sentenças
+        sentences = self._split_sentences(text)
+        
+        if len(sentences) == 0:
+            return ""
+        
+        # Calcular num_sentences se ratio especificado
+        if ratio is not None:
+            num_sentences = max(1, int(len(sentences) * ratio))
+        
+        num_sentences = min(num_sentences, len(sentences))
+        
+        # Limpar sentenças
+        clean_sentences = [self._clean_sentence(s) for s in sentences]
+        
+        # Gerar embeddings
+        sentence_embeddings = model.encode(clean_sentences, show_progress_bar=False)
+        
+        # Embedding do documento (centroid)
+        doc_embedding = np.mean(sentence_embeddings, axis=0).reshape(1, -1)
+        
+        # Calcular similaridade de cada sentença com documento
+        similarities = cosine_similarity(sentence_embeddings, doc_embedding).flatten()
+        
+        if use_mmr:
+            # Maximal Marginal Relevance: balanço relevância + diversidade
+            selected_indices = self._mmr_selection(
+                sentence_embeddings,
+                similarities,
+                num_sentences,
+                diversity_lambda
+            )
+        else:
+            # Simples: top-k por similaridade
+            selected_indices = np.argsort(similarities)[-num_sentences:][::-1]
+        
+        # Ordenar por posição original (manter fluxo narrativo)
+        selected_indices = sorted(selected_indices)
+        
+        # Construir resumo
+        summary_sentences = [sentences[i] for i in selected_indices]
+        summary = " ".join(summary_sentences)
+        
+        return summary
+    
+    def _mmr_selection(
+        self,
+        embeddings: np.ndarray,
+        relevance_scores: np.ndarray,
+        k: int,
+        lambda_param: float = 0.5
+    ):
+        """
+        Maximal Marginal Relevance: seleciona sentenças relevantes E diversas
+        
+        MMR = λ * Relevance - (1-λ) * max(Similarity com já selecionadas)
+        
+        Args:
+            embeddings: Embeddings das sentenças
+            relevance_scores: Scores de relevância (similaridade com documento)
+            k: Número de sentenças a selecionar
+            lambda_param: Trade-off relevância vs diversidade
+            
+        Returns:
+            Índices das sentenças selecionadas
+        """
+        selected = []
+        remaining = list(range(len(embeddings)))
+        
+        # Primeira sentença: mais relevante
+        first = np.argmax(relevance_scores)
+        selected.append(first)
+        remaining.remove(first)
+        
+        # Demais sentenças: balancear relevância + diversidade
+        while len(selected) < k and remaining:
+            mmr_scores = []
+            
+            for idx in remaining:
+                # Relevância
+                relevance = relevance_scores[idx]
+                
+                # Similaridade máxima com sentenças já selecionadas
+                selected_embeddings = embeddings[selected]
+                current_embedding = embeddings[idx].reshape(1, -1)
+                similarities = cosine_similarity(current_embedding, selected_embeddings).flatten()
+                max_similarity = np.max(similarities)
+                
+                # MMR score
+                mmr = lambda_param * relevance - (1 - lambda_param) * max_similarity
+                mmr_scores.append((idx, mmr))
+            
+            # Selecionar sentença com maior MMR
+            best_idx = max(mmr_scores, key=lambda x: x[1])[0]
+            selected.append(best_idx)
+            remaining.remove(best_idx)
+        
+        return selected
+
+
+class SimpleBERTSummarizer(BaseSummarizer):
+    """
+    Versão simplificada do BERT para comparação
+    Apenas top-k por similaridade, sem MMR
+    """
+    
+    def __init__(self, model_name: str = "BAAI/bge-m3"):
+        super().__init__("BGE-M3-Simple")
+        self.bert = BERTExtractiveSummarizer(model_name)
+    
+    def summarize(self, text: str, num_sentences: int = 3, **kwargs) -> str:
+        return self.bert.summarize(
+            text,
+            num_sentences=num_sentences,
+            use_mmr=False,  # Sem MMR
+            **kwargs
+        )
