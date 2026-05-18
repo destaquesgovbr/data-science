@@ -97,3 +97,57 @@ class Llama33SummarizerV2(BedrockAbstractiveSummarizerV2):
             model_id="us.meta.llama3-3-70b-instruct-v1:0",
             model_name="Llama 3.3 70B V2"
         )
+
+
+class ClaudeSonnet46SummarizerV2(BedrockAbstractiveSummarizerV2):
+    """Claude Sonnet 4.6 V2 - Com prompt otimizado"""
+    def __init__(self):
+        super().__init__(
+            model_id="anthropic.claude-sonnet-4-6",
+            model_name="Claude Sonnet 4.6 V2"
+        )
+
+
+class ClaudeOpus47SummarizerV2(BedrockAbstractiveSummarizerV2):
+    """Claude Opus 4.7 V2 - Com prompt otimizado"""
+    def __init__(self):
+        super().__init__(
+            model_id="anthropic.claude-opus-4-7",
+            model_name="Claude Opus 4.7 V2"
+        )
+
+
+class NovaProSummarizerV2(BedrockAbstractiveSummarizerV2):
+    """Amazon Nova Pro V2 - Com prompt otimizado (top tier Amazon)"""
+    def __init__(self):
+        super().__init__(
+            model_id="amazon.nova-pro-v1:0",
+            model_name="Nova Pro V2"
+        )
+
+
+class Llama4MaverickSummarizerV2(BedrockAbstractiveSummarizerV2):
+    """Llama 4 Maverick V2 - Com prompt otimizado"""
+    def __init__(self):
+        super().__init__(
+            model_id="meta.llama4-maverick-17b-instruct-v1:0",
+            model_name="Llama 4 Maverick V2"
+        )
+
+
+class DeepSeekR1SummarizerV2(BedrockAbstractiveSummarizerV2):
+    """DeepSeek R1 V2 - Com prompt otimizado"""
+    def __init__(self):
+        super().__init__(
+            model_id="us.deepseek.r1-v1:0",
+            model_name="DeepSeek R1 V2"
+        )
+
+
+class MistralLarge3SummarizerV2(BedrockAbstractiveSummarizerV2):
+    """Mistral Large 3 V2 - Com prompt otimizado"""
+    def __init__(self):
+        super().__init__(
+            model_id="mistral.mistral-large-3-675b-instruct",
+            model_name="Mistral Large 3 V2"
+        )
