@@ -74,7 +74,9 @@ Testar múltiplos modelos AWS Bedrock com prompt otimizado (3 exemplos few-shot)
 
 **Características:**
 - ~800 tokens
-- Custo adicional desprezível (+$0.0002/resumo)
+- Custo adicional desprezível (+$0.002/resumo)
+
+**OBS** foram testados diversas versões e abordagens para o prompt, tendo a V2 alcançado os melhores resultados. 
 
 ### 3.3 Correção de Model IDs
 
@@ -223,6 +225,74 @@ aws bedrock list-foundation-models --region us-east-1
 
 **Conclusão:** ROUGE-L é proxy confiável de qualidade
 
+### 5.4 Validação Comparativa: Llama 3.3 70B V2
+
+**Objetivo:** Avaliar se Llama 70B, apesar de ROUGE-L inferior (0.469 vs 0.518), também produz resumos qualitativamente aceitáveis.
+
+**Metodologia:**
+- Mesmas 15 notícias avaliadas com Nova Pro V2
+- Prompt V2 (3-shot) idêntico
+- Mesmos critérios de avaliação
+
+**Resultados ROUGE:**
+
+| Modelo | ROUGE-L | ROUGE-1 | ROUGE-2 | vs Nova Pro |
+|--------|---------|---------|---------|-------------|
+| Nova Pro V2 | 0.537 | - | - | baseline |
+| Llama 70B V2 | 0.308 | 0.393 | 0.266 | -42.7% |
+
+**Análise qualitativa (15 notícias):**
+
+| Critério | Nova Pro V2 | Llama 70B V2 | Observação |
+|----------|-------------|--------------|------------|
+| Fidelidade | 100% (15/15) | 100% (15/15) | Empate: nenhuma alucinação |
+| Completude | 100% (15/15) | 100% (15/15) | Empate: pontos principais capturados |
+| Concisão | 53% (8/15) | 13% (2/15) | Llama mais verboso |
+| Clareza | 100% (15/15) | 100% (15/15) | Empate: linguagem objetiva |
+| **Qualidade geral** | **100% (15/15)** | **100% (15/15)** | **Ambos aceitáveis** |
+
+**Distribuição de qualidade:**
+
+| Classificação | Nova Pro V2 | Llama 70B V2 |
+|---------------|-------------|--------------|
+| Excelente | 53% (8/15) | 13% (2/15) |
+| Bom (verboso) | 13% (2/15) | 40% (6/15) |
+| Aceitável | 33% (5/15) | 47% (7/15) |
+| **TOTAL ACEITÁVEL** | **100%** | **100%** |
+
+**Descobertas importantes:**
+
+1. **Gap enorme de ROUGE (-42.7%) ≠ gap de qualidade**
+   - ROUGE-L: Llama tem 0.308 vs 0.537 do Nova Pro na amostra
+   - Qualidade humana: ambos 100% aceitáveis
+   - Confirma que ROUGE não é métrica perfeita
+
+2. **Problema comum: verbosidade**
+   - Nova Pro: 47% verboso (7/15)
+   - Llama 70B: 87% verboso (13/15)
+   - Ambos têm dificuldade em controlar comprimento
+
+3. **Fidelidade e completude idênticas**
+   - 100% em ambos os modelos
+   - Nenhuma alucinação detectada
+   - Todos os pontos principais capturados
+
+4. **Clareza mantida**
+   - 100% em ambos
+   - Linguagem objetiva e compreensível
+
+**Conclusão:**
+
+Llama 3.3 70B V2, apesar de ROUGE-L significativamente inferior na amostra (-42.7% vs Nova Pro), **também produz resumos aceitáveis para produção** (100% de aceitabilidade). O gap de métrica não se refletiu em gap de qualidade percebida.
+
+**Implicação para escolha de modelo:**
+
+Esta validação confirma que a opção de infraestrutura própria com Llama 70B é viável para volumes altos (>500k resumos/mês), onde a economia de 50% nos custos pode justificar uma leve perda de qualidade na métrica ROUGE (mas não na qualidade percebida).
+
+**Trade-off validado:**
+- **Nova Pro V2:** ROUGE-L 0.518, 53% excelente, $80 para 10k/mês
+- **Llama 70B V2:** ROUGE-L 0.469 (dataset completo), 13% excelente na amostra, mas 100% aceitável, economia de 50% em volumes >500k/mês
+
 ---
 
 ## 6. DECISÃO: MODELO ACEITO
@@ -233,7 +303,7 @@ aws bedrock list-foundation-models --region us-east-1
 
 **Especificações:**
 - Model ID: `amazon.nova-pro-v1:0`
-- ROUGE-L: **0.518** ✅ **Supera benchmarks públicos** (CNN/DailyMail: 0.44)
+- ROUGE-L: **0.518 - Supera benchmarks públicos** (CNN/DailyMail: 0.44)
 - Latência: 1.95s
 - Custo: $0.008/resumo ($80 para 10k/mês)
 - Taxa de sucesso: 100% (300/300)
@@ -247,7 +317,7 @@ aws bedrock list-foundation-models --region us-east-1
 **2. Supera benchmarks validados**
 - CNN/DailyMail (PEGASUS/BART): 0.44
 - Multi-News: 0.45-0.50
-- **Nosso resultado: 0.518** (+17% acima do estado da arte público)
+- **Nosso resultado: 0.518** 
 
 **3. Ganho substancial sobre baseline**
 - Baseline: 0.381 → Nova Pro V2: 0.518
@@ -269,8 +339,8 @@ aws bedrock list-foundation-models --region us-east-1
 
 ### 6.3 Alternativas (Custo Reduzido)
 
-1. **Nova 2 Lite V2:** ROUGE-L 0.502 (-3.1%), custo $6/mês (-92.5%)
-2. **Haiku 4.5 V2:** ROUGE-L 0.485 (-6.4%), custo $8/mês (-90%)
+1. **Nova 2 Lite V2:** ROUGE-L 0.502 (-3.1%), custo $40-60/mês 
+2. **Haiku 4.5 V2:** ROUGE-L 0.485 (-6.4%), custo $50-80/mês
 
 ---
 
@@ -324,8 +394,8 @@ Notícia
 ### 9.1 Metodológicas
 
 - Dataset de 300 notícias (não 10k completo)
-- Referências geradas por LLM, não humanas
-- Análise humana em 15 amostras
+- Referências geradas por LLM, com validação humana
+- Análise humana em 15 amostras com os resultados finais
 
 ### 9.2 Claims Sem Validação
 
@@ -338,7 +408,7 @@ Notícia
 - Convergência ROUGE ↔ análise humana (15/15)
 - Ganho de 36% robusto (300 notícias)
 - Tentativas de melhoria falharam
-- 100% aceitável para produção
+- 100% aceitável para produção -> baseado na análise humana dos resumos
 
 ---
 
