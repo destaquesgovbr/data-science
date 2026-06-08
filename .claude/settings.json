@@ -1,0 +1,45 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python scripts/test_prompt_v3.py)",
+      "Bash(tee /tmp/prompt_v3.log)",
+      "Bash(python scripts/test_prompt_v2_5.py)",
+      "Bash(tee /tmp/prompt_v2_5.log)",
+      "Bash(python scripts/test_hybrid.py)",
+      "Bash(tee /tmp/hybrid.log)",
+      "Bash(python scripts/generate_human_sample.py)",
+      "Bash(python source/summarization/scripts/fill_human_evaluation.py)",
+      "Bash(python source/summarization/scripts/evaluate_llama_human_sample.py)",
+      "Bash(gh repo *)",
+      "Bash(PGPASSWORD=rag_password_2024 psql -h localhost -U rag_user -d news_db -c 'SELECT version\\(\\);' --gssencmode=disable)",
+      "Bash(psql -h localhost -U rag_user -d news_db -c 'SELECT version\\(\\);')",
+      "Bash(python scripts/test_generation.py --provider bedrock --model anthropic.claude-sonnet-4-6 --query \"Qual foi o valor destinado ao Plano Safra 2025/2026?\" --top-k 3)",
+      "Bash(chmod +x /l/disk0/lpmoraes/environments/data-science/source/rag/deploy/setup_ec2_simple.sh)",
+      "Bash(chmod +x /l/disk0/lpmoraes/environments/data-science/source/rag/deploy/batch_indexing_safe.py)",
+      "Bash(python deploy/batch_indexing.py --cpu --batch-size 4 --clean)",
+      "Bash(python scripts/index_corpus.py --input data/corpus_flat.json --format json)",
+      "Bash(chmod +x /l/disk0/lpmoraes/environments/data-science/source/rag/deploy/transfer_to_ec2.sh)",
+      "Bash(PGPASSWORD=rag_pass psql -h localhost -p 5433 -U rag_user -d news_db -c \"SELECT COUNT\\(*\\) as docs FROM news_documents; SELECT COUNT\\(*\\) as chunks FROM document_chunks;\")",
+      "Bash(curl -s http://localhost:8000/health)",
+      "Bash(python3 -m json.tool)",
+      "Bash(pkill -f \"api/server.py\")",
+      "Bash(python api/server.py)",
+      "Bash(curl http://localhost:8000/health)",
+      "Bash(cat /tmp/rag_api_local.log | tail -20)",
+      "Read(//tmp/**)",
+      "Bash(curl -X POST http://localhost:8000/query -H 'Content-Type: application/json' -d '{ *)",
+      "Bash(ssh lpmoraes@aws-insp-7-01 'curl -s -X POST http://localhost:8000/query   -H '\\\\''Content-Type: application/json'\\\\''   -d '\\\\''{ *)",
+      "Bash(PGPASSWORD=rag_password_2024 psql -h localhost -p 5433 -U rag_user -d news_db -c \"SELECT COUNT\\(*\\) as docs, \\(SELECT COUNT\\(*\\) FROM document_chunks\\) as chunks FROM news_documents;\")",
+      "Bash(PGPASSWORD=rag_password_2024 psql -h localhost -p 5433 -U rag_user -d news_db -c \"SELECT id, title, LEFT\\(content, 100\\) FROM news_documents WHERE content ILIKE '%estupro%' OR title ILIKE '%estupro%';\")",
+      "Bash(PGPASSWORD=rag_password_2024 psql -h localhost -p 5433 -U rag_user -d news_db -c \"SELECT COUNT\\(*\\) FROM document_chunks WHERE document_id = 239;\")",
+      "Bash(python3 -c ' *)",
+      "Bash(python api/client.py)",
+      "Bash(python scripts/download_corpus.py --limit 50000)",
+      "Bash(git add *)",
+      "Bash(git commit -m 'docs: consolidar documentação de todas as issues em branch doc-data-science *)"
+    ],
+    "additionalDirectories": [
+      "/tmp"
+    ]
+  }
+}

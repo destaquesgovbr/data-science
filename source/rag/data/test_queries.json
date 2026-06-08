@@ -1,0 +1,122 @@
+[
+  {
+    "query": "Plano Safra crédito rural agricultura",
+    "expected_category": "Agricultura",
+    "expected_keywords": ["Plano Safra", "crédito rural", "R$ 354 bilhões"],
+    "type": "factual",
+    "difficulty": "easy",
+    "notes": "Query sobre financiamento agrícola"
+  },
+  {
+    "query": "microcrédito MEIs renda",
+    "expected_category": "Agricultura",
+    "expected_keywords": ["Contrata+Brasil", "MEIs", "R$ 13,7 milhões"],
+    "type": "factual",
+    "difficulty": "easy",
+    "notes": "Plataforma de contratação para microempreendedores"
+  },
+  {
+    "query": "proteção social assistência periferias",
+    "expected_category": "Assistência Social",
+    "expected_keywords": ["proteção social", "favelas", "periferias"],
+    "type": "summary",
+    "difficulty": "medium",
+    "notes": "Políticas sociais para comunidades vulneráveis"
+  },
+  {
+    "query": "violência contra mulher Ligue 180",
+    "expected_category": "Assistência Social",
+    "expected_keywords": ["Ligue 180", "violência", "mulher", "Neoenergia"],
+    "type": "factual",
+    "difficulty": "easy",
+    "notes": "Serviço de proteção à mulher"
+  },
+  {
+    "query": "inteligência artificial IA guia nacional",
+    "expected_category": "Ciência e Tecnologia",
+    "expected_keywords": ["IA", "MJSP", "USP", "responsável"],
+    "type": "factual",
+    "difficulty": "medium",
+    "notes": "Regulamentação de IA no Brasil"
+  },
+  {
+    "query": "reator multipropósito brasileiro nuclear",
+    "expected_category": "Ciência e Tecnologia",
+    "expected_keywords": ["reator", "nuclear", "ANSN"],
+    "type": "factual",
+    "difficulty": "medium",
+    "notes": "Projeto de energia nuclear"
+  },
+  {
+    "query": "conectividade digital agricultura familiar territórios",
+    "expected_category": "Ciência e Tecnologia",
+    "expected_keywords": ["conectividade", "inclusão digital", "agricultura familiar", "MDA"],
+    "type": "summary",
+    "difficulty": "medium",
+    "notes": "Inclusão digital no campo"
+  },
+  {
+    "query": "chuvas enchentes Zona da Mata Mineira",
+    "expected_category": "Assistência Social",
+    "expected_keywords": ["chuvas", "enchentes", "Minas Gerais", "famílias"],
+    "type": "factual",
+    "difficulty": "easy",
+    "notes": "Desastre natural e assistência"
+  },
+  {
+    "query": "cuidadores informais mulheres Brasil",
+    "expected_category": "Assistência Social",
+    "expected_keywords": ["cuidadores", "mulheres", "90%", "tarefas domésticas"],
+    "type": "factual",
+    "difficulty": "easy",
+    "notes": "Estudo sobre trabalho de cuidado"
+  },
+  {
+    "query": "pesca amadora esportiva plano nacional",
+    "expected_category": "Agricultura",
+    "expected_keywords": ["pesca amadora", "esportiva", "plano nacional"],
+    "type": "factual",
+    "difficulty": "easy",
+    "notes": "Desenvolvimento da pesca recreativa"
+  },
+  {
+    "query": "Garantia-Safra agricultores perda produção",
+    "expected_category": "Agricultura",
+    "expected_keywords": ["Garantia-Safra", "agricultores", "perda", "produção"],
+    "type": "factual",
+    "difficulty": "easy",
+    "notes": "Programa de seguro agrícola"
+  },
+  {
+    "query": "cooperação FAO agricultura alimentação",
+    "expected_category": "Agricultura",
+    "expected_keywords": ["FAO", "alimentação", "agricultura", "ONU"],
+    "type": "summary",
+    "difficulty": "medium",
+    "notes": "Conferência internacional sobre alimentação"
+  },
+  {
+    "query": "yanomami proteção indígena equipamentos",
+    "expected_category": "Assistência Social",
+    "expected_keywords": ["yanomami", "proteção", "indígena", "equipamentos"],
+    "type": "summary",
+    "difficulty": "medium",
+    "notes": "Políticas para povos indígenas"
+  },
+  {
+    "query": "previdência social atendimento Teresina",
+    "expected_category": "Assistência Social",
+    "expected_keywords": ["Previdência Social", "atendimento", "Teresina", "perícias"],
+    "type": "factual",
+    "difficulty": "easy",
+    "notes": "Serviços previdenciários itinerantes"
+  },
+  {
+    "query": "envelhecimento população LGBTQIA+",
+    "expected_category": "Assistência Social",
+    "expected_keywords": ["envelhecimento", "LGBTQIA+", "políticas públicas", "discriminação"],
+    "type": "summary",
+    "difficulty": "medium",
+    "notes": "Políticas para idosos LGBTQIA+"
+  }
+]

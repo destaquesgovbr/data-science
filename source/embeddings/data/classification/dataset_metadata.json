@@ -1,0 +1,21 @@
+{
+  "total_docs": 1000,
+  "train_size": 700,
+  "val_size": 100,
+  "test_size": 200,
+  "n_categories": 10,
+  "categories": [
+    "Agricultura",
+    "Assistência Social",
+    "Ciência e Tecnologia",
+    "Cultura",
+    "Economia",
+    "Educação",
+    "Infraestrutura",
+    "Meio Ambiente",
+    "Saúde",
+    "Segurança Pública"
+  ],
+  "n_synthetic": 750,
+  "n_original": 250
+}

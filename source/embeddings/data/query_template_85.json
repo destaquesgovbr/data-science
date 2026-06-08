@@ -1,0 +1,2487 @@
+[
+  {
+    "query_id": "q001",
+    "anchor_doc_id": "doc_01_08",
+    "category": "Agricultura",
+    "title": "DNOCS realiza peixamento no Açude Ema em Iracema/CE",
+    "length": 2469,
+    "size_category": "Curta",
+    "agency": "dnocs",
+    "suggested_type": "jargao_br",
+    "variants": [
+      {
+        "text": "tilápia açude ema",
+        "type": "from_title",
+        "has_jargon": true
+      },
+      {
+        "text": "alevinos dnocs iracema",
+        "type": "with_jargon",
+        "has_jargon": true
+      },
+      {
+        "text": "piscicultura alevinos tilápia Iracema",
+        "type": "without_jargon",
+        "has_jargon": false
+      }
+    ],
+    "recommended_query": "tilápia açude ema",
+    "query_text": ""
+  },
+  {
+    "query_id": "q002",
+    "anchor_doc_id": "doc_01_15",
+    "category": "Agricultura",
+    "title": "Microcrédito e equipamentos chegam a pescadores de Calçoene (AP)",
+    "length": 1306,
+    "size_category": "Curta",
+    "agency": "mdr",
+    "suggested_type": "geral",
+    "variants": [
+      {
+        "text": "crédito pescadores calçoene",
+        "type": "from_title",
+        "has_jargon": false
+      },
+      {
+        "text": "mutirão MDIR microcrédito calçoene",
+        "type": "with_jargon",
+        "has_jargon": true
+      },
+      {
+        "text": "calçoene pertinho da gente crédito",
+        "type": "without_jargon",
+        "has_jargon": false
+      }
+    ],
+    "recommended_query": "crédito pescadores calçoene",
+    "query_text": ""
+  },
+  {
+    "query_id": "q003",
+    "anchor_doc_id": "doc_01_21",
+    "category": "Agricultura",
+    "title": "Já está valendo: selo garante origem aos pescados da pesca artesanal",
+    "length": 2408,
+    "size_category": "Curta",
+    "agency": "mpa",
+    "suggested_type": "geral",
+    "variants": [
+      {
+        "text": "selo de pesca artesanal",
+        "type": "from_title",
+        "has_jargon": false
+      },
+      {
+        "text": "MDA selo de pesca artesanal",
+        "type": "with_jargon",
+        "has_jargon": true
+      },
+      {
+        "text": "como obter o selo de pesca artesanal",
+        "type": "without_jargon",
+        "has_jargon": false
+      }
+    ],
+    "recommended_query": "selo de pesca artesanal",
+    "query_text": ""
+  },
+  {
+    "query_id": "q004",
+    "anchor_doc_id": "doc_01_03",
+    "category": "Agricultura",
+    "title": "Portaria interministerial amplia prazo para adesão ao PREPS; confira",
+    "length": 3050,
+    "size_category": "Média",
+    "agency": "mpa",
+    "suggested_type": "jargao_br",
+    "variants": [
+      {
+        "text": "prazo adesão preps",
+        "type": "from_title",
+        "has_jargon": true
+      },
+      {
+        "text": "mda e mma prazo preps",
+        "type": "with_jargon",
+        "has_jargon": true
+      },
+      {
+        "text": "rastreamento de embarcações pesqueiras prazo",
+        "type": "without_jargon",
+        "has_jargon": true
+      }
+    ],
+    "recommended_query": "prazo adesão preps",
+    "query_text": ""
+  },
+  {
+    "query_id": "q005",
+    "anchor_doc_id": "doc_01_06",
+    "category": "Agricultura",
+    "title": "Acordo põe fim a conflito agrário histórico no oeste do Paraná",
+    "length": 4679,
+    "size_category": "Média",
+    "agency": "agu",
+    "suggested_type": "geral",
+    "variants": [
+      {
+        "text": "assentamento celso furtado paraná",
+        "type": "from_title",
+        "has_jargon": false
+      },
+      {
+        "text": "agu pnra rio das cobras acordo",
+        "type": "with_jargon",
+        "has_jargon": true
+      },
+      {
+        "text": "conflito agrário paraná acordo",
+        "type": "without_jargon",
+        "has_jargon": false
+      }
+    ],
+    "recommended_query": "conflito agrário paraná acordo",
+    "query_text": ""
+  },
+  {
+    "query_id": "q006",
+    "anchor_doc_id": "doc_01_10",
+    "category": "Agricultura",
+    "title": "Microcrédito movimenta R$ 69 milhões em mais de 5 mil novos contratos em janeiro",
+    "length": 3572,
+    "size_category": "Média",
+    "agency": "mdr",
+    "suggested_type": "geral",
+    "variants": [
+      {
+        "text": "credito familiar agricultores Norte",
+        "type": "from_title",
+        "has_jargon": false
+      },
+      {
+        "text": "MPO Pronaf microcrédito caixa econômica",
+        "type": "with_jargon",
+        "has_jargon": true
+      },
+      {
+        "text": "microcredito Pronaf rural Centro-Oeste e Norte",
+        "type": "without_jargon",
+        "has_jargon": true
+      }
+    ],
+    "recommended_query": "credito para famílias de agricultores",
+    "query_text": ""
+  },
+  {
+    "query_id": "q007",
+    "anchor_doc_id": "doc_01_12",
+    "category": "Agricultura",
+    "title": "Dias destaca papel da agricultura familiar e avanços na luta contra a fome em seminário internacional",
+    "length": 4708,
+    "size_category": "Média",
+    "agency": "mds",
+    "suggested_type": "geral",
+    "variants": [
+      {
+        "text": "agricultura familiar mapa da fome",
+        "type": "from_title",
+        "has_jargon": false
+      },
+      {
+        "text": "Ministério do desenvolvimento, agricultura familiar",
+        "type": "with_jargon",
+        "has_jargon": true
+      },
+      {
+        "text": "políticas mapa da fome agricultura familiar",
+        "type": "without_jargon",
+        "has_jargon": false
+      }
+    ],
+    "recommended_query": "agricultura familiar mapa da fome",
+    "query_text": ""
+  },
+  {
+    "query_id": "q008",
+    "anchor_doc_id": "doc_01_13",
+    "category": "Agricultura",
+    "title": "Receita Federal esclarece processamento das solicitações ao Simples Nacional e ao Simei",
+    "length": 3241,
+    "size_category": "Média",
+    "agency": "receitafederal",
+    "suggested_type": "geral",
+    "variants": [
+      {
+        "text": "adesão simples nacional",
+        "type": "from_title",
+        "has_jargon": false
+      },
+      {
+        "text": "receita pico solicitações simples nacional",
+        "type": "with_jargon",
+        "has_jargon": true
+      },
+      {
+        "text": "solicitações simples nacional simei",
+        "type": "without_jargon",
+        "has_jargon": true
+      }
+    ],
+    "recommended_query": "receita pico solicitações simples nacional",
+    "query_text": ""
+  },
+  {
+    "query_id": "q009",
+    "anchor_doc_id": "doc_01_02",
+    "category": "Agricultura",
+    "title": "Brasil atinge novo recorde na safra de grãos, com 346,1 milhões de toneladas em 2025",
+    "length": 6426,
+    "size_category": "Longa",
+    "agency": "secom",
+    "suggested_type": "doc_longo",
+    "variants": [
+      {
+        "text": "brasil safra recorde 2025",
+        "type": "from_title",
+        "has_jargon": false
+      },
+      {
+        "text": "IBGE safra 2025",
+        "type": "with_jargon",
+        "has_jargon": true
+      },
+      {
+        "text": "dados LPSA safra de grãos 2025",
+        "type": "with_jargon",
+        "has_jargon": true
+      },
+      {
+        "text": "leguminosas safra 2025",
+        "type": "long_doc",
+        "has_jargon": false
+      }
+    ],
+    "recommended_query": "brasil safra recorde 2025",
+    "query_text": ""
+  },
+  {
+    "query_id": "q010",
+    "anchor_doc_id": "doc_03_02",
+    "category": "Assistência Social",
+    "title": "Em documento, governo sintetiza políticas, equipamentos e serviços públicos de proteção social voltados ao povo yanomami",
+    "length": 2982,
+    "size_category": "Curta",
+    "agency": "casacivil",
+    "suggested_type": "geral",
+    "variants": [
+      {
+        "text": "políticas sociais povos yanamami",
+        "type": "from_title",
+        "has_jargon": false
+      },
+      {
+        "text": "MPI e FUNAI proteção social yanomami",
+        "type": "with_jargon",
+        "has_jargon": true
+      },
+      {
+        "text": "políticas sociais povos recém-contato",
+        "type": "without_jargon",
+        "has_jargon": false
+      }
+    ],
+    "recommended_query": "políticas sociais povos yanamami",
+    "query_text": ""
+  },
+  {
+    "query_id": "q011",
+    "anchor_doc_id": "doc_03_04",
+    "category": "Assistência Social",
+    "title": "Sudene e MDS vão lançar projetos de proteção social nos estados do Nordeste",
+    "length": 2748,
+    "size_category": "Curta",
+    "agency": "sudene",
+    "suggested_type": "geral",
+    "variants": [
+      {
+        "text": "programa de educação continuada Nordeste",
+        "type": "from_title",
+        "has_jargon": false
+      },
+      {
+        "text": "SUDENE e MDS educação continuada",
+        "type": "with_jargon",
+        "has_jargon": true
+      },
+      {
+        "text": "universidades participantes programa Aprimora Rede",
+        "type": "without_jargon",
+        "has_jargon": false
+      }
+    ],
+    "recommended_query": "programa de educação continuada Nordeste",
+    "query_text": ""
+  },
+  {
+    "query_id": "q012",
+    "anchor_doc_id": "doc_03_16",
+    "category": "Assistência Social",
+    "title": "Iniciativas de reintegração social de mulheres no Espírito Santo recebem visita da Secretaria-Geral da PR",
+    "length": 2904,
+    "size_category": "Curta",
+    "agency": "secretariageral",
+    "suggested_type": "geral",
+    "variants": [
+      {
+        "text": "iniciativas reintegração social mulheres",
+        "type": "from_title",
+        "has_jargon": false
+      },
+      {
+        "text": "secretaria geral presidência república reintegração mulheres",
+        "type": "with_jargon",
+        "has_jargon": true
+      },
+      {
+        "text": "reintegração social no espírito santo",
+        "type": "without_jargon",
+        "has_jargon": false
+      }
+    ],
+    "recommended_query": "reintegração social no espírito santo",
+    "query_text": ""
+  },
+  {
+    "query_id": "q013",
+    "anchor_doc_id": "doc_03_00",
+    "category": "Assistência Social",
+    "title": "Programa Abdias Nascimento: CAPES publica edital de renovação de projetos para 2026",
+    "length": 3265,
+    "size_category": "Média",
+    "agency": "capes",
+    "suggested_type": "geral",
+    "variants": [
+      {
+        "text": "programa abdias nascimento",
+        "type": "from_title",
+        "has_jargon": false
+      },
+      {
+        "text": "MEC e CAPES estudantes pretos, pardos, indígenas",
+        "type": "with_jargon",
+        "has_jargon": true
+      },
+      {
+        "text": "projetos abdias nascimento diversidade direitos sociais",
+        "type": "without_jargon",
+        "has_jargon": false
+      }
+    ],
+    "recommended_query": "programa abdias nascimento",
+    "query_text": ""
+  },
+  {
+    "query_id": "q014",
+    "anchor_doc_id": "doc_03_06",
+    "category": "Assistência Social",
+    "title": "MDHC fortalece diálogo sobre envelhecimento da população LGBTQIA+ com o Fonges-LGBT",
+    "length": 3516,
+    "size_category": "Média",
+    "agency": "mdh",
+    "suggested_type": "geral",
+    "variants": [
+      {
+        "text": "mdhc envelhecimento população lgbtqia+",
+        "type": "from_title",
+        "has_jargon": false
+      },
+      {
+        "text": "SNDPI MDHC diálogo envelhecimento LGBTQIA+",
+        "type": "with_jargon",
+        "has_jargon": true
+      },
+      {
+        "text": "lgbtqia envelhecimento população",
+        "type": "without_jargon",
+        "has_jargon": false
+      }
+    ],
+    "recommended_query": "mdhc envelhecimento população lgbtqia+",
+    "query_text": ""
+  },
+  {
+    "query_id": "q015",
+    "anchor_doc_id": "doc_03_07",
+    "category": "Assistência Social",
+    "title": "Tesouro Nacional recebe certificado do Pnud e lança estratégia de igualdade de gênero",
+    "length": 4544,
+    "size_category": "Média",
+    "agency": "fazenda",
+    "suggested_type": "geral",
+    "variants": [
+      {
+        "text": "tesouro nacional igualdade de gênero",
+        "type": "from_title",
+        "has_jargon": false
+      },
+      {
+        "text": "Tesouro nacional Pnud",
+        "type": "with_jargon",
+        "has_jargon": true
+      },
+      {
+        "text": "PNUD igualdade de gênero tesouro nacional",
+        "type": "with_jargon",
+        "has_jargon": true
+      }
+    ],
+    "recommended_query": "tesouro nacional igualdade de gênero",
+    "query_text": ""
+  },
+  {
+    "query_id": "q016",
+    "anchor_doc_id": "doc_03_08",
+    "category": "Assistência Social",
+    "title": "Programa Computadores para Inclusão beneficia organizações sociais na Paraíba",
+    "length": 3945,
+    "size_category": "Média",
+    "agency": "mdh",
+    "suggested_type": "geral",
+    "variants": [
+      {
+        "text": "programa catador digital paraíba",
+        "type": "from_title",
+        "has_jargon": false
+      },
+      {
+        "text": "mdhc e mcom parceria inclusão digital",
+        "type": "with_jargon",
+        "has_jargon": true
+      },
+      {
+        "text": "programas de uso de computadores para cooperativas de reciclagem",
+        "type": "without_jargon",
+        "has_jargon": false
+      }
+    ],
+    "recommended_query": "programa catador digital paraíba",
+    "query_text": ""
+  },
+  {
+    "query_id": "q017",
+    "anchor_doc_id": "doc_03_09",
+    "category": "Assistência Social",
+    "title": "Ministério do Turismo lança pesquisa inédita para conhecer o perfil de turistas neurodivergentes",
+    "length": 3332,
+    "size_category": "Média",
+    "agency": "turismo",
+    "suggested_type": "jargao_br",
+    "variants": [
+      {
+        "text": "turismo para Pessoas Neurodivergentes",
+        "type": "from_title",
+        "has_jargon": true
+      },
+      {
+        "text": "Ministério do Turismo e UEA pesquisa neurodivergentes",
+        "type": "with_jargon",
+        "has_jargon": true
+      },
+      {
+        "text": "estudo boas práticas turismo neurodivergentes",
+        "type": "without_jargon",
+        "has_jargon": false
+      }
+    ],
+    "recommended_query": "turismo para Pessoas Neurodivergentes",
+    "query_text": ""
+  },
+  {
+    "query_id": "q018",
+    "anchor_doc_id": "doc_03_20",
+    "category": "Assistência Social",
+    "title": "Estudo mostra que 90% dos cuidadores informais no Brasil são mulheres",
+    "length": 6638,
+    "size_category": "Longa",
+    "agency": "agencia_brasil",
+    "suggested_type": "doc_longo",
+    "variants": [
+      {
+        "text": "estudo sobre cuidadores informais",
+        "type": "from_title",
+        "has_jargon": false
+      },
+      {
+        "text": "PNAD IBGE cuidadores informais",
+        "type": "with_jargon",
+        "has_jargon": true
+      },
+      {
+        "text": "tendência mulheres são maioria dos cuidadores informais",
+        "type": "without_jargon",
+        "has_jargon": false
+      },
+      {
+        "text": "estudo PUCPR sobre cuidadores informais",
+        "type": "long_doc",
+        "has_jargon": false
+      }
+    ],
+    "recommended_query": "estudo sobre cuidadores informais",
+    "query_text": ""
+  },
+  {
+    "query_id": "q019",
+    "anchor_doc_id": "doc_05_03",
+    "category": "Ciência e Tecnologia",
+    "title": "Inovação normativa da Conitec: entenda o que mudou",
+    "length": 1255,
+    "size_category": "Curta",
+    "agency": "conitec",
+    "suggested_type": "geral",
+    "variants": [
+      {
+        "text": "normativa da Conitec novo decreto",
+        "type": "from_title",
+        "has_jargon": false
+      },
+      {
+        "text": "nova portaria MS e decreto Conitec",
+        "type": "with_jargon",
+        "has_jargon": true
+      },
+      {
+        "text": "conitec cartilha inovação",
+        "type": "without_jargon",
+        "has_jargon": false
+      }
+    ],
+    "recommended_query": "normativa da Conitec novo decreto",
+    "query_text": ""
+  },
+  {
+    "query_id": "q020",
+    "anchor_doc_id": "doc_05_10",
+    "category": "Ciência e Tecnologia",
+    "title": "CBPF abre inscrições abertas para a I Escola Teórica de Campos e Partículas do Rio de Janeiro",
+    "length": 1413,
+    "size_category": "Curta",
+    "agency": "cbpf",
+    "suggested_type": "geral",
+    "variants": [
+      {
+        "text": "Escola Teórica de Campos inscrições",
+        "type": "from_title",
+        "has_jargon": false
+      },
+      {
+        "text": "EsCamPa 2026-CBPF quando?",
+        "type": "with_jargon",
+        "has_jargon": true
+      }
+    ],
+    "recommended_query": "Escola Teórica de Campos inscrições",
+    "query_text": ""
+  },
+  {
+    "query_id": "q021",
+    "anchor_doc_id": "doc_05_11",
+    "category": "Ciência e Tecnologia",
+    "title": "ABIN firma parceria estratégica com Laboratório de Inovação da Enap",
+    "length": 2171,
+    "size_category": "Curta",
+    "agency": "abin",
+    "suggested_type": "geral",
+    "variants": [
+      {
+        "text": "parceria limitações dos modelos de ia",
+        "type": "from_title",
+        "has_jargon": false
+      },
+      {
+        "text": "Abin e LIIA parceria IA",
+        "type": "with_jargon",
+        "has_jargon": true
+      },
+      {
+        "text": "Abin e Enap capacidades modelos ia inteligência",
+        "type": "with_jargon",
+        "has_jargon": true
+      }
+    ],
+    "recommended_query": "Abin e Enap capacidades modelos ia",
+    "query_text": ""
+  },
+  {
+    "query_id": "q022",
+    "anchor_doc_id": "doc_05_00",
+    "category": "Ciência e Tecnologia",
+    "title": "Ministra Luciana Santos destaca projeto do Reator Multipropósito Brasileiro, em reunião do CCT",
+    "length": 3469,
+    "size_category": "Média",
+    "agency": "ien",
+    "suggested_type": "geral",
+    "variants": [
+      {
+        "text": "reator nuclear brasileiro",
+        "type": "from_title",
+        "has_jargon": false
+      },
+      {
+        "text": "MGI e CNEN reator multipropósito brasileiro",
+        "type": "with_jargon",
+        "has_jargon": true
+      },
+      {
+        "text": "reator multipropósito brasileiro saúde",
+        "type": "without_jargon",
+        "has_jargon": false
+      }
+    ],
+    "recommended_query": "reator nuclear brasileiro MGI",
+    "query_text": ""
+  },
+  {
+    "query_id": "q023",
+    "anchor_doc_id": "doc_05_01",
+    "category": "Ciência e Tecnologia",
+    "title": "Brasil aprofunda debate sobre responsabilidade civil nuclear em workshop co-organizado pela ANSN e AIEA",
+    "length": 4756,
+    "size_category": "Média",
+    "agency": "ird",
+    "suggested_type": "geral",
+    "variants": [
+      {
+        "text": "brasil aprofunda debate",
+        "type": "from_title",
+        "has_jargon": false
+      },
+      {
+        "text": "ministério agência nuclear ansn",
+        "type": "with_jargon",
+        "has_jargon": true
+      },
+      {
+        "text": "nuclear ansn nucleares",
+        "type": "without_jargon",
+        "has_jargon": false
+      }
+    ],
+    "recommended_query": "brasil aprofunda debate",
+    "query_text": ""
+  },
+  {
+    "query_id": "q024",
+    "anchor_doc_id": "doc_05_02",
+    "category": "Ciência e Tecnologia",
+    "title": "Deputado Júlio Lopes propõe transformação da ANSN em Agência Reguladora Nuclear",
+    "length": 4057,
+    "size_category": "Média",
+    "agency": "ird",
+    "suggested_type": "geral",
+    "variants": [
+      {
+        "text": "agencia reguladora nuclear proposta",
+        "type": "from_title",
+        "has_jargon": false
+      },
+      {
+        "text": "proposta ANSN como ARN",
+        "type": "with_jargon",
+        "has_jargon": true
+      },
+      {
+        "text": "proposta de uma agencia reguladora nuclear no brasil",
+        "type": "without_jargon",
+        "has_jargon": false
+      }
+    ],
+    "recommended_query": "agencia reguladora nuclear proposta",
+    "query_text": ""
+  },
+  {
+    "query_id": "q025",
+    "anchor_doc_id": "doc_05_05",
+    "category": "Ciência e Tecnologia",
+    "title": "Seminário do CENTENA divulga resultados e pesquisas desenvolvidas em 2025",
+    "length": 4731,
+    "size_category": "Média",
+    "agency": "cdtn",
+    "suggested_type": "geral",
+    "variants": [
+      {
+        "text": "gestão de rejeitos nucleares",
+        "type": "from_title",
+        "has_jargon": false
+      },
+      {
+        "text": "seminário GSI nuclear abadia de goiás",
+        "type": "from_title",
+        "has_jargon": true
+      },
+      {
+        "text": "seminário projeto CENTENA",
+        "type": "with_jargon",
+        "has_jargon": true
+      },
+      {
+        "text": "projetos nucleares e gestão de rejeitos",
+        "type": "without_jargon",
+        "has_jargon": false
+      }
+    ],
+    "recommended_query": "seminário projeto CENTENA resultados",
+    "query_text": ""
+  },
+  {
+    "query_id": "q026",
+    "anchor_doc_id": "doc_05_06",
+    "category": "Ciência e Tecnologia",
+    "title": "Embraer faz primeiro voo de aeronave elétrica de decolagem e pouso vertical",
+    "length": 3324,
+    "size_category": "Média",
+    "agency": "portos-e-aeroportos",
+    "suggested_type": "geral",
+    "variants": [
+      {
+        "text": "embraer primeiro aeronave elétrica vertical",
+        "type": "from_title",
+        "has_jargon": false
+      },
+      {
+        "text": "MPor e ANAC preparo aeronaves elétricas",
+        "type": "with_jargon",
+        "has_jargon": true
+      },
+      {
+        "text": "eVTOL embraer testes",
+        "type": "with_jargon",
+        "has_jargon": true
+      },
+      {
+        "text": "aeronave de decolagem e pouso vertical embraer",
+        "type": "without_jargon",
+        "has_jargon": false
+      }
+    ],
+    "recommended_query": "aeronave de decolagem e pouso vertical embraer",
+    "query_text": ""
+  },
+  {
+    "query_id": "q027",
+    "anchor_doc_id": "doc_05_13",
+    "category": "Ciência e Tecnologia",
+    "title": "Diretor-Geral do CENSIPAM realiza visita técnica ao Centro Tecnológico da Marinha e ao Instituto de Pesquisa da Marinha no Rio de Janeiro",
+    "length": 6660,
+    "size_category": "Longa",
+    "agency": "censipam",
+    "suggested_type": "doc_longo",
+    "variants": [
+      {
+        "text": "defesa amazônia azul marinha",
+        "type": "from_title",
+        "has_jargon": false
+      },
+      {
+        "text": "Diretor CENSIPAM visita Marinha e IPqM",
+        "type": "with_jargon",
+        "has_jargon": true
+      },
+      {
+        "text": "SisGAAz e defesa da Amazônia Azul",
+        "type": "with_jargon",
+        "has_jargon": true
+      },
+      {
+        "text": "tecnologia nacional defesa da amazonia",
+        "type": "long_doc",
+        "has_jargon": false
+      }
+    ],
+    "recommended_query": "censipam visita Marinha e IPqM",
+    "query_text": ""
+  },
+  {
+    "query_id": "q028",
+    "anchor_doc_id": "doc_07_06",
+    "category": "Cultura",
+    "title": "Mais de 800 obras disputam as premiações do 3º Concurso de Fotos e Vídeos da Anatel",
+    "length": 2484,
+    "size_category": "Curta",
+    "agency": "anatel",
+    "suggested_type": "geral",
+    "variants": [
+      {
+        "text": "concurso de fotos mundo digital",
+        "type": "from_title",
+        "has_jargon": false
+      },
+      {
+        "text": "concurso de fotos anatel",
+        "type": "with_jargon",
+        "has_jargon": true
+      },
+      {
+        "text": "qual o tema do concurso de videos da anatel",
+        "type": "without_jargon",
+        "has_jargon": false
+      }
+    ],
+    "recommended_query": "concurso de fotos anatel",
+    "query_text": ""
+  },
+  {
+    "query_id": "q029",
+    "anchor_doc_id": "doc_07_08",
+    "category": "Cultura",
+    "title": "Mostra vai premiar trabalhos fotográficos e audiovisuais das favelas brasileiras",
+    "length": 2454,
+    "size_category": "Curta",
+    "agency": "cidades",
+    "suggested_type": "geral",
+    "variants": [
+      {
+        "text": "mostra nós, fotos periferias",
+        "type": "from_title",
+        "has_jargon": false
+      },
+      {
+        "text": "secretaria das periferias mostra nós",
+        "type": "with_jargon",
+        "has_jargon": true
+      },
+      {
+        "text": "fotos para concurso de fotos periferias",
+        "type": "without_jargon",
+        "has_jargon": false
+      }
+    ],
+    "recommended_query": "mostra nós, fotos periferias",
+    "query_text": ""
+  },
+  {
+    "query_id": "q030",
+    "anchor_doc_id": "doc_07_10",
+    "category": "Cultura",
+    "title": "Cerimônia do Chá e “Harmonias brasileiras” na programação da Casa Pacheco Leão",
+    "length": 2512,
+    "size_category": "Curta",
+    "agency": "jbrj",
+    "suggested_type": "geral",
+    "variants": [
+      {
+        "text": "cerimônia do chá e orquestra de flautas",
+        "type": "from_title",
+        "has_jargon": false
+      },
+      {
+        "text": "apresentação flautas harmonias brasileiras",
+        "type": "without_jargon",
+        "has_jargon": false
+      },
+      {
+        "text": "onde cerimonia de chá Rio de Janeiro",
+        "type": "without_jargon",
+        "has_jargon": false
+      }
+    ],
+    "recommended_query": "cerimônia do chá e orquestra de flautas",
+    "query_text": ""
+  },
+  {
+    "query_id": "q031",
+    "anchor_doc_id": "doc_07_00",
+    "category": "Cultura",
+    "title": "Heróis da Pátria são reconhecidos durante 7a edição do Rede Capoeira em Cachoeira (BA)",
+    "length": 5246,
+    "size_category": "Média",
+    "agency": "cultura",
+    "suggested_type": "geral",
+    "variants": [
+      {
+        "text": "herois da pátria capoeira Bahia",
+        "type": "from_title",
+        "has_jargon": false
+      },
+      {
+        "text": "Ministério da Cultura reconhecimento de mestres",
+        "type": "with_jargon",
+        "has_jargon": true
+      },
+      {
+        "text": "capoeira ancestralidade e reconhecimento de mestres",
+        "type": "without_jargon",
+        "has_jargon": false
+      }
+    ],
+    "recommended_query": "herois da pátria capoeira Bahia",
+    "query_text": ""
+  },
+  {
+    "query_id": "q032",
+    "anchor_doc_id": "doc_07_02",
+    "category": "Cultura",
+    "title": "Rumo à 6ª Teia Nacional, Mato Grosso do Sul realiza encontro estadual da rede dos pontos de cultura",
+    "length": 5310,
+    "size_category": "Média",
+    "agency": "culturaviva",
+    "suggested_type": "geral",
+    "variants": [
+      {
+        "text": "teia nacional corumbá",
+        "type": "from_title",
+        "has_jargon": false
+      },
+      {
+        "text": "MinC 6 teia nacional cultura",
+        "type": "with_jargon",
+        "has_jargon": true
+      },
+      {
+        "text": "pontão moinho cultural Corumbá",
+        "type": "without_jargon",
+        "has_jargon": false
+      }
+    ],
+    "recommended_query": "teia nacional corumbá",
+    "query_text": ""
+  },
+  {
+    "query_id": "q033",
+    "anchor_doc_id": "doc_07_05",
+    "category": "Cultura",
+    "title": "Seleção TV Brasil anuncia projetos selecionados no maior investimento da história da TV pública no Brasil",
+    "length": 4176,
+    "size_category": "Média",
+    "agency": "cultura",
+    "suggested_type": "geral",
+    "variants": [
+      {
+        "text": "tv brasil conteúdo para jovens e crianças",
+        "type": "from_title",
+        "has_jargon": false
+      },
+      {
+        "text": "TV brasil e EBC seleção de projetos",
+        "type": "with_jargon",
+        "has_jargon": true
+      },
+      {
+        "text": "programas crianças e jovens tv aberta brasil",
+        "type": "without_jargon",
+        "has_jargon": false
+      }
+    ],
+    "recommended_query": "tv brasil conteúdo para jovens e crianças",
+    "query_text": ""
+  },
+  {
+    "query_id": "q034",
+    "anchor_doc_id": "doc_07_12",
+    "category": "Cultura",
+    "title": "MinC convoca candidaturas suplentes do Edital Sérgio Mamberti para assumir vagas remanescentes",
+    "length": 4911,
+    "size_category": "Média",
+    "agency": "culturaviva",
+    "suggested_type": "geral",
+    "variants": [
+      {
+        "text": "premio Cultura Viva suplentes convocados",
+        "type": "from_title",
+        "has_jargon": true
+      },
+      {
+        "text": "MINC e SCDC convocação suplentes edital Sérgio Mamberti",
+        "type": "with_jargon",
+        "has_jargon": true
+      },
+      {
+        "text": "prêmio cultura viva edital",
+        "type": "without_jargon",
+        "has_jargon": false
+      }
+    ],
+    "recommended_query": "premio Cultura Viva suplentes convocados",
+    "query_text": ""
+  },
+  {
+    "query_id": "q035",
+    "anchor_doc_id": "doc_07_13",
+    "category": "Cultura",
+    "title": "Oficinas de arte rupestre impulsionam conexão de estudantes de Monte Alegre com o território",
+    "length": 4597,
+    "size_category": "Média",
+    "agency": "museugoeldi",
+    "suggested_type": "geral",
+    "variants": [
+      {
+        "text": "arte rupestre Arqueologia de Monte Alegre",
+        "type": "from_title",
+        "has_jargon": false
+      },
+      {
+        "text": "Eventos AMA arte rupestre",
+        "type": "with_jargon",
+        "has_jargon": true
+      },
+      {
+        "text": "proteção amazônia arte rupestre projetos arqueologia",
+        "type": "without_jargon",
+        "has_jargon": false
+      }
+    ],
+    "recommended_query": "arte rupestre Arqueologia de Monte Alegre",
+    "query_text": ""
+  },
+  {
+    "query_id": "q036",
+    "anchor_doc_id": "doc_07_03",
+    "category": "Cultura",
+    "title": "Campanha nacional articula cultura, direitos humanos e combate ao racismo no Carnaval de BH",
+    "length": 5622,
+    "size_category": "Longa",
+    "agency": "mdh",
+    "suggested_type": "doc_longo",
+    "variants": [
+      {
+        "text": "sem racismo carnaval de bh",
+        "type": "from_title",
+        "has_jargon": false
+      },
+      {
+        "text": "MDHC e MIR carnaval racismo",
+        "type": "with_jargon",
+        "has_jargon": true
+      },
+      {
+        "text": "carnaval campanha racismo",
+        "type": "without_jargon",
+        "has_jargon": false
+      }
+    ],
+    "recommended_query": "campanha carnaval racismo",
+    "query_text": ""
+  },
+  {
+    "query_id": "q037",
+    "anchor_doc_id": "doc_09_02",
+    "category": "Economia",
+    "title": "Cade seleciona consultor para apoiar elaboração do Guia de Abuso de Poder Econômico",
+    "length": 2018,
+    "size_category": "Curta",
+    "agency": "cade",
+    "suggested_type": "geral",
+    "variants": [
+      {
+        "text": "seleção consultor técnico guia",
+        "type": "from_title",
+        "has_jargon": false
+      },
+      {
+        "text": "cade inscrição consultores técnicos",
+        "type": "with_jargon",
+        "has_jargon": true
+      },
+      {
+        "text": "inscrição consultores guia de abuso de poder econômico",
+        "type": "without_jargon",
+        "has_jargon": false
+      }
+    ],
+    "recommended_query": "seleção consultor técnico guia",
+    "query_text": ""
+  },
+  {
+    "query_id": "q038",
+    "anchor_doc_id": "doc_09_03",
+    "category": "Economia",
+    "title": "Investimento, indústria e empregos: novas locomotivas impulsionam a ferrovia brasileira",
+    "length": 2045,
+    "size_category": "Curta",
+    "agency": "antt",
+    "suggested_type": "geral",
+    "variants": [
+      {
+        "text": "Novas locomotivas Ferrovia Centro-Atlântica",
+        "type": "from_title",
+        "has_jargon": true
+      },
+      {
+        "text": "ANTT progress tails novas locomotivas FCA",
+        "type": "with_jargon",
+        "has_jargon": true
+      },
+      {
+        "text": "entrega de novas locomotivas brasil",
+        "type": "without_jargon",
+        "has_jargon": false
+      }
+    ],
+    "recommended_query": "Novas locomotivas Ferrovia Centro-Atlântica",
+    "query_text": ""
+  },
+  {
+    "query_id": "q039",
+    "anchor_doc_id": "doc_09_05",
+    "category": "Economia",
+    "title": "CVM e ANBIMA divulgam resultados do Acordo de Cooperação Técnica entre as instituições no 2° semestre de 2025",
+    "length": 1815,
+    "size_category": "Curta",
+    "agency": "cvm",
+    "suggested_type": "geral",
+    "variants": [
+      {
+        "text": "monitoramento do acordo de cooperação técnica",
+        "type": "from_title",
+        "has_jargon": false
+      },
+      {
+        "text": "cvm ambina acordo de cooperação",
+        "type": "with_jargon",
+        "has_jargon": true
+      },
+      {
+        "text": "Gestão de Recursos de Terceiros ANBIMA",
+        "type": "without_jargon",
+        "has_jargon": true
+      }
+    ],
+    "recommended_query": "monitoramento do acordo de cooperação técnica",
+    "query_text": ""
+  },
+  {
+    "query_id": "q040",
+    "anchor_doc_id": "doc_09_00",
+    "category": "Economia",
+    "title": "União honra R$ 11,08 bilhões em dívidas garantidas de entes subnacionais em 2025",
+    "length": 3276,
+    "size_category": "Média",
+    "agency": "tesouronacional",
+    "suggested_type": "geral",
+    "variants": [
+      {
+        "text": "estados honram dívidas garantidas",
+        "type": "from_title",
+        "has_jargon": false
+      },
+      {
+        "text": "tesouro nacional estados RRF",
+        "type": "with_jargon",
+        "has_jargon": true
+      },
+      {
+        "text": "estados honram bilhoes de dividas",
+        "type": "without_jargon",
+        "has_jargon": false
+      }
+    ],
+    "recommended_query": "estados honram dívidas garantidas",
+    "query_text": ""
+  },
+  {
+    "query_id": "q041",
+    "anchor_doc_id": "doc_09_01",
+    "category": "Economia",
+    "title": "Ano de 2025 encerra com número recorde de regulados pela CVM",
+    "length": 4070,
+    "size_category": "Média",
+    "agency": "cvm",
+    "suggested_type": "geral",
+    "variants": [
+      {
+        "text": "regulados CVM no ano",
+        "type": "from_title",
+        "has_jargon": true
+      },
+      {
+        "text": "cvm aumento de participantes 2025",
+        "type": "with_jargon",
+        "has_jargon": true
+      },
+      {
+        "text": "crescimento de regulados pela cvm",
+        "type": "without_jargon",
+        "has_jargon": true
+      }
+    ],
+    "recommended_query": "regulados CVM no ano",
+    "query_text": ""
+  },
+  {
+    "query_id": "q042",
+    "anchor_doc_id": "doc_09_04",
+    "category": "Economia",
+    "title": "Cade divulga Anuário 2025 com balanço da atuação em defesa da concorrência",
+    "length": 3288,
+    "size_category": "Média",
+    "agency": "cade",
+    "suggested_type": "geral",
+    "variants": [
+      {
+        "text": "cade balanço anual atuação",
+        "type": "from_title",
+        "has_jargon": false
+      },
+      {
+        "text": "cade anuario 2025",
+        "type": "with_jargon",
+        "has_jargon": true
+      },
+      {
+        "text": "cade operações notificadas 2025",
+        "type": "without_jargon",
+        "has_jargon": false
+      }
+    ],
+    "recommended_query": "cade divulga anuário",
+    "query_text": ""
+  },
+  {
+    "query_id": "q043",
+    "anchor_doc_id": "doc_09_06",
+    "category": "Economia",
+    "title": "Aplicativo do Gás do Povo é o mais baixado do Brasil e consolida adesão recorde ao programa",
+    "length": 3625,
+    "size_category": "Média",
+    "agency": "mme",
+    "suggested_type": "jargao_br",
+    "variants": [
+      {
+        "text": "Aplicativo Gás do Povo",
+        "type": "from_title",
+        "has_jargon": false
+      },
+      {
+        "text": "programa gas do povo aplicativo",
+        "type": "with_jargon",
+        "has_jargon": true
+      },
+      {
+        "text": "o que é o aplicativo gás do povo",
+        "type": "without_jargon",
+        "has_jargon": false
+      }
+    ],
+    "recommended_query": "programa gas do povo aplicativo",
+    "query_text": ""
+  },
+  {
+    "query_id": "q044",
+    "anchor_doc_id": "doc_09_07",
+    "category": "Economia",
+    "title": "MME abre consulta pública para modernizar a formação de preços de energia elétrica e a contabilização no mercado de curto prazo",
+    "length": 3207,
+    "size_category": "Média",
+    "agency": "mme",
+    "suggested_type": "jargao_br",
+    "variants": [
+      {
+        "text": "consulta publica precos energia eletrica",
+        "type": "from_title",
+        "has_jargon": false
+      },
+      {
+        "text": "mme formação de preços energia elétrica",
+        "type": "with_jargon",
+        "has_jargon": true
+      },
+      {
+        "text": "consulta pública formação de preços de energia elétrica",
+        "type": "without_jargon",
+        "has_jargon": false
+      }
+    ],
+    "recommended_query": "consulta publica precos energia eletrica",
+    "query_text": ""
+  },
+  {
+    "query_id": "q045",
+    "anchor_doc_id": "doc_09_09",
+    "category": "Economia",
+    "title": "MIDR iniciará escuta ativa de demandas da população do Vale do Jequitinhonha",
+    "length": 5853,
+    "size_category": "Longa",
+    "agency": "mdr",
+    "suggested_type": "doc_longo",
+    "variants": [
+      {
+        "text": "demandas população Vale do Jequitinhonha",
+        "type": "from_title",
+        "has_jargon": false
+      },
+      {
+        "text": "MIDR demandas população Vale do Jequitinhonha",
+        "type": "with_jargon",
+        "has_jargon": true
+      },
+      {
+        "text": "governo federal aproximação população",
+        "type": "without_jargon",
+        "has_jargon": false
+      }
+    ],
+    "recommended_query": "demandas população Vale do Jequitinhonha",
+    "query_text": ""
+  },
+  {
+    "query_id": "q046",
+    "anchor_doc_id": "doc_11_02",
+    "category": "Educação",
+    "title": "Vem ser CDTN: seleção aberta para os cursos de Mestrado e Doutorado",
+    "length": 2629,
+    "size_category": "Curta",
+    "agency": "cdtn",
+    "suggested_type": "jargao_br",
+    "variants": [
+      {
+        "text": "cdtn seleção mestrado",
+        "type": "from_title",
+        "has_jargon": true
+      },
+      {
+        "text": "mestrado e doutorado cdtn cnen",
+        "type": "with_jargon",
+        "has_jargon": true
+      },
+      {
+        "text": "processo seletivo doutorado area nuclear",
+        "type": "without_jargon",
+        "has_jargon": false
+      }
+    ],
+    "recommended_query": "cdtn seleção mestrado",
+    "query_text": ""
+  },
+  {
+    "query_id": "q047",
+    "anchor_doc_id": "doc_11_04",
+    "category": "Educação",
+    "title": "Anvisa conclui curso de formação para novos especialistas em regulação",
+    "length": 1470,
+    "size_category": "Curta",
+    "agency": "anvisa",
+    "suggested_type": "jargao_br",
+    "variants": [
+      {
+        "text": "curso especialistas em regulação",
+        "type": "from_title",
+        "has_jargon": true
+      },
+      {
+        "text": "curso regulação anvisa",
+        "type": "with_jargon",
+        "has_jargon": true
+      },
+      {
+        "text": "prova final curso de formação vigilância sanitária",
+        "type": "without_jargon",
+        "has_jargon": false
+      }
+    ],
+    "recommended_query": "curso especialistas em regulação",
+    "query_text": ""
+  },
+  {
+    "query_id": "q048",
+    "anchor_doc_id": "doc_11_10",
+    "category": "Educação",
+    "title": "Salvador recebe Oficina de Classificação de Documentos Arquivísticos",
+    "length": 1541,
+    "size_category": "Curta",
+    "agency": "arquivonacional",
+    "suggested_type": "jargao_br",
+    "variants": [
+      {
+        "text": "oficina classificação documentos arquivísticos",
+        "type": "from_title",
+        "has_jargon": false
+      },
+      {
+        "text": "salvador MGI oficina classificação de documentos",
+        "type": "with_jargon",
+        "has_jargon": true
+      },
+      {
+        "text": "classificação de documentos arquivísticos Salvador",
+        "type": "without_jargon",
+        "has_jargon": false
+      }
+    ],
+    "recommended_query": "oficina classificação documentos arquivísticos",
+    "query_text": ""
+  },
+  {
+    "query_id": "q049",
+    "anchor_doc_id": "doc_11_08",
+    "category": "Educação",
+    "title": "Programa de Pós-Graduação do CDTN alcança nota 6 na Capes",
+    "length": 3282,
+    "size_category": "Média",
+    "agency": "cdtn",
+    "suggested_type": "jargao_br",
+    "variants": [
+      {
+        "text": "programa pós-graduação cdtn nota capes",
+        "type": "from_title",
+        "has_jargon": true
+      },
+      {
+        "text": "PPG-CDTN nota capes",
+        "type": "with_jargon",
+        "has_jargon": true
+      },
+      {
+        "text": "pós graduação nuclear nota capes",
+        "type": "without_jargon",
+        "has_jargon": false
+      }
+    ],
+    "recommended_query": "programa pós-graduação cdtn nota capes",
+    "query_text": ""
+  },
+  {
+    "query_id": "q050",
+    "anchor_doc_id": "doc_11_11",
+    "category": "Educação",
+    "title": "ANA convoca aprovados em seu concurso público para quinta chamada da segunda turma do curso de formação",
+    "length": 4640,
+    "size_category": "Média",
+    "agency": "ana",
+    "suggested_type": "jargao_br",
+    "variants": [
+      {
+        "text": "convocação candidados ANA segunda turma",
+        "type": "from_title",
+        "has_jargon": true
+      },
+      {
+        "text": "CEBRASPE convocação regulação hídrica ANA",
+        "type": "with_jargon",
+        "has_jargon": true
+      },
+      {
+        "text": "saneamento e regulação hídrica convocação",
+        "type": "without_jargon",
+        "has_jargon": false
+      }
+    ],
+    "recommended_query": "convocação candidados ANA segunda turma",
+    "query_text": ""
+  },
+  {
+    "query_id": "q051",
+    "anchor_doc_id": "doc_11_12",
+    "category": "Educação",
+    "title": "Programa Jovem Cientista da Pesca Artesanal: CNPq e Ministério da Pesca oferecem 700 bolsas para jovens de comunidades pesqueiras",
+    "length": 3680,
+    "size_category": "Média",
+    "agency": "cnpq",
+    "suggested_type": "jargao_br",
+    "variants": [
+      {
+        "text": "programa jovem cientista pesca artesanal",
+        "type": "from_title",
+        "has_jargon": false
+      },
+      {
+        "text": "MPA CNPQ jovem cientista pesca",
+        "type": "with_jargon",
+        "has_jargon": true
+      },
+      {
+        "text": "bolsa comunidades pesca artesanal",
+        "type": "without_jargon",
+        "has_jargon": false
+      }
+    ],
+    "recommended_query": "programa jovem cientista pesca artesanal",
+    "query_text": ""
+  },
+  {
+    "query_id": "q052",
+    "anchor_doc_id": "doc_11_13",
+    "category": "Educação",
+    "title": "Olimpíadas Nucleares da América Latina abrem inscrições para a edição 2026",
+    "length": 3255,
+    "size_category": "Média",
+    "agency": "ien",
+    "suggested_type": "jargao_br",
+    "variants": [
+      {
+        "text": "olimpíadas nucleares inscrição",
+        "type": "from_title",
+        "has_jargon": false
+      },
+      {
+        "text": "cdtn olimpíadas nucleares AL",
+        "type": "with_jargon",
+        "has_jargon": true
+      },
+      {
+        "text": "tema da olímpiada nuclear de 2026",
+        "type": "without_jargon",
+        "has_jargon": false
+      }
+    ],
+    "recommended_query": "olimpíadas nucleares inscrição",
+    "query_text": ""
+  },
+  {
+    "query_id": "q053",
+    "anchor_doc_id": "doc_11_14",
+    "category": "Educação",
+    "title": "Doutorado em Ciências de Florestas Tropicais do Inpa recebe inscrições em fluxo contínuo",
+    "length": 3118,
+    "size_category": "Média",
+    "agency": "inpa",
+    "suggested_type": "jargao_br",
+    "variants": [
+      {
+        "text": "doutorado ciências florestas tropicais",
+        "type": "from_title",
+        "has_jargon": false
+      },
+      {
+        "text": "inpa mcti doutorado ciências florestais",
+        "type": "with_jargon",
+        "has_jargon": true
+      },
+      {
+        "text": "período de inscrição doutorado ciências florestais",
+        "type": "without_jargon",
+        "has_jargon": false
+      }
+    ],
+    "recommended_query": "doutorado ciências florestas tropicais",
+    "query_text": ""
+  },
+  {
+    "query_id": "q054",
+    "anchor_doc_id": "doc_11_00",
+    "category": "Educação",
+    "title": "“Governo do Brasil na Rua”: veja os atendimentos e serviços gratuitos que serão levados ao Sol Nascente (DF) neste sábado (13)",
+    "length": 5577,
+    "size_category": "Longa",
+    "agency": "secretariageral",
+    "suggested_type": "doc_longo",
+    "variants": [
+      {
+        "text": "atendimentos brasil na rua sol nascente”:",
+        "type": "from_title",
+        "has_jargon": false
+      },
+      {
+        "text": "Sol nascente DF, governo brasil na rua serviços gratuitos",
+        "type": "with_jargon",
+        "has_jargon": true
+      },
+      {
+        "text": "serviços que estarao no brasil na rua sol nascente",
+        "type": "without_jargon",
+        "has_jargon": false
+      }
+    ],
+    "recommended_query": "atendimentos brasil na rua sol nascente",
+    "query_text": ""
+  },
+  {
+    "query_id": "q055",
+    "anchor_doc_id": "doc_13_02",
+    "category": "Infraestrutura",
+    "title": "Implantação de segmento na BR-020/BA chega a 76% de execução",
+    "length": 2324,
+    "size_category": "Curta",
+    "agency": "dnit",
+    "suggested_type": "jargao_br",
+    "variants": [
+      {
+        "text": "implantação segmento br 020 ba",
+        "type": "from_title",
+        "has_jargon": false
+      },
+      {
+        "text": "dnit implantação da BR 020 BA",
+        "type": "with_jargon",
+        "has_jargon": true
+      },
+      {
+        "text": "br020 implantação BA",
+        "type": "without_jargon",
+        "has_jargon": false
+      }
+    ],
+    "recommended_query": "implantação segmento br 020 ba",
+    "query_text": ""
+  },
+  {
+    "query_id": "q056",
+    "anchor_doc_id": "doc_13_03",
+    "category": "Infraestrutura",
+    "title": "DNIT executa reconstrução de bueiro hidráulico na BR-174/RR",
+    "length": 1733,
+    "size_category": "Curta",
+    "agency": "dnit",
+    "suggested_type": "jargao_br",
+    "variants": [
+      {
+        "text": "reconstrução de bueiro pacaraima",
+        "type": "from_title",
+        "has_jargon": true
+      },
+      {
+        "text": "dnit bueiro hidráulico br 174 rr",
+        "type": "with_jargon",
+        "has_jargon": true
+      },
+      {
+        "text": "reconstrução do bueiro na cidade de pacaraima RR",
+        "type": "without_jargon",
+        "has_jargon": false
+      }
+    ],
+    "recommended_query": "reconstrução de bueiro pacaraima",
+    "query_text": ""
+  },
+  {
+    "query_id": "q057",
+    "anchor_doc_id": "doc_13_07",
+    "category": "Infraestrutura",
+    "title": "Justiça suspende decisão do TCE-MG e garante teto nacional dos exames da CNH do Brasil",
+    "length": 2581,
+    "size_category": "Curta",
+    "agency": "transportes",
+    "suggested_type": "jargao_br",
+    "variants": [
+      {
+        "text": "justiça garante teto exame CNH",
+        "type": "from_title",
+        "has_jargon": true
+      },
+      {
+        "text": "TCE MG garante teto nacional exames CNH",
+        "type": "with_jargon",
+        "has_jargon": true
+      },
+      {
+        "text": "cobrança acima do teto nacional exames cnh",
+        "type": "without_jargon",
+        "has_jargon": false
+      }
+    ],
+    "recommended_query": "justiça garante teto exame CNH",
+    "query_text": ""
+  },
+  {
+    "query_id": "q058",
+    "anchor_doc_id": "doc_13_00",
+    "category": "Infraestrutura",
+    "title": "Simone Tebet participa da apresentação do contrato de concessão da Rota da Celulose",
+    "length": 3203,
+    "size_category": "Média",
+    "agency": "planejamento",
+    "suggested_type": "jargao_br",
+    "variants": [
+      {
+        "text": "rota da celulose",
+        "type": "from_title",
+        "has_jargon": false
+      },
+      {
+        "text": "MInistra do planejamento contrato rota da celulose",
+        "type": "with_jargon",
+        "has_jargon": true
+      },
+      {
+        "text": "corredor rodoviário rota da celulose",
+        "type": "without_jargon",
+        "has_jargon": false
+      }
+    ],
+    "recommended_query": "corredor rodoviário rota da celulose",
+    "query_text": ""
+  },
+  {
+    "query_id": "q059",
+    "anchor_doc_id": "doc_13_01",
+    "category": "Infraestrutura",
+    "title": "As Rotas de Integração Sul-Americana são agora um Programa formal do MPO",
+    "length": 5076,
+    "size_category": "Média",
+    "agency": "planejamento",
+    "suggested_type": "jargao_br",
+    "variants": [
+      {
+        "text": "Simone Tebet integração sul-americana",
+        "type": "from_title",
+        "has_jargon": false
+      },
+      {
+        "text": "MPO rotas integração sul-americana",
+        "type": "with_jargon",
+        "has_jargon": true
+      },
+      {
+        "text": "programa de integração sul americana",
+        "type": "without_jargon",
+        "has_jargon": false
+      }
+    ],
+    "recommended_query": "programa de integração sul americana",
+    "query_text": ""
+  },
+  {
+    "query_id": "q060",
+    "anchor_doc_id": "doc_13_04",
+    "category": "Infraestrutura",
+    "title": "AVISO DE PAUTA: Prêmio ANTAQ 2025 acontecerá na próxima terça-feira (10)",
+    "length": 3510,
+    "size_category": "Média",
+    "agency": "antaq",
+    "suggested_type": "jargao_br",
+    "variants": [
+      {
+        "text": "categorias premio antaq aquaviários",
+        "type": "from_title",
+        "has_jargon": true
+      },
+      {
+        "text": "premio antaq 2025",
+        "type": "with_jargon",
+        "has_jargon": true
+      },
+      {
+        "text": "categorias premio transporte aquaviário",
+        "type": "without_jargon",
+        "has_jargon": false
+      }
+    ],
+    "recommended_query": "categorias premio antaq aquaviários",
+    "query_text": ""
+  },
+  {
+    "query_id": "q061",
+    "anchor_doc_id": "doc_13_13",
+    "category": "Infraestrutura",
+    "title": "Governos do Brasil e de Minas Gerais dão partida ao projeto de concessão de saneamento na Bacia do Rio Doce",
+    "length": 4358,
+    "size_category": "Média",
+    "agency": "casacivil",
+    "suggested_type": "jargao_br",
+    "variants": [
+      {
+        "text": "agua e esgoto bacia do rio doce governo",
+        "type": "from_title",
+        "has_jargon": false
+      },
+      {
+        "text": "bacia hidrográfica rio doce saneamento",
+        "type": "with_jargon",
+        "has_jargon": true
+      },
+      {
+        "text": "municipios rio doce agua e esgoto",
+        "type": "without_jargon",
+        "has_jargon": false
+      }
+    ],
+    "recommended_query": "agua e esgoto bacia do rio doce governo",
+    "query_text": ""
+  },
+  {
+    "query_id": "q062",
+    "anchor_doc_id": "doc_13_14",
+    "category": "Infraestrutura",
+    "title": "Jader Filho: governo estuda novo modelo para reduzir tarifas e ampliar acesso ao transporte público",
+    "length": 4385,
+    "size_category": "Média",
+    "agency": "secom",
+    "suggested_type": "jargao_br",
+    "variants": [
+      {
+        "text": "redução tarifas transporte público",
+        "type": "from_title",
+        "has_jargon": false
+      },
+      {
+        "text": "novo pac mobilidade urbana tarifas",
+        "type": "with_jargon",
+        "has_jargon": true
+      },
+      {
+        "text": "novo modelo transporte público tarifas",
+        "type": "without_jargon",
+        "has_jargon": false
+      }
+    ],
+    "recommended_query": "redução tarifas transporte público",
+    "query_text": ""
+  },
+  {
+    "query_id": "q063",
+    "anchor_doc_id": "doc_15_05",
+    "category": "Meio Ambiente",
+    "title": "Justiça mantém multa aplicada pelo Ibama por pesquisa sísmica sem licença",
+    "length": 2343,
+    "size_category": "Curta",
+    "agency": "agu",
+    "suggested_type": "jargao_br",
+    "variants": [
+      {
+        "text": "AGU mantém multa Spectrum",
+        "type": "from_title",
+        "has_jargon": true
+      },
+      {
+        "text": "agu ibama mantém infração empresa",
+        "type": "with_jargon",
+        "has_jargon": true
+      },
+      {
+        "text": "spectrum tem multa mantida",
+        "type": "without_jargon",
+        "has_jargon": false
+      }
+    ],
+    "recommended_query": "AGU mantém multa Spectrum",
+    "query_text": ""
+  },
+  {
+    "query_id": "q064",
+    "anchor_doc_id": "doc_15_11",
+    "category": "Meio Ambiente",
+    "title": "Construção de barragem avança no Rio Grande do Sul",
+    "length": 2146,
+    "size_category": "Curta",
+    "agency": "mdr",
+    "suggested_type": "jargao_br",
+    "variants": [
+      {
+        "text": "construção barragem Rio grande do sul",
+        "type": "from_title",
+        "has_jargon": false
+      },
+      {
+        "text": "Ministério da Integração barragem da arvorezinha Novo PAC",
+        "type": "with_jargon",
+        "has_jargon": true
+      },
+      {
+        "text": "barragem arvorezinha rio grande",
+        "type": "without_jargon",
+        "has_jargon": false
+      }
+    ],
+    "recommended_query": "construção barragem Rio grande do sul",
+    "query_text": ""
+  },
+  {
+    "query_id": "q065",
+    "anchor_doc_id": "doc_15_15",
+    "category": "Meio Ambiente",
+    "title": "Projeto AdaptAÇÃO desembarca no Pará para discutir mudanças climáticas e planejamento urbano",
+    "length": 2353,
+    "size_category": "Curta",
+    "agency": "cidades",
+    "suggested_type": "jargao_br",
+    "variants": [
+      {
+        "text": "seminário mudanças climáticas Pará",
+        "type": "from_title",
+        "has_jargon": false
+      },
+      {
+        "text": "projeto adaptação auditório UFPA",
+        "type": "with_jargon",
+        "has_jargon": true
+      },
+      {
+        "text": "planejamento urbado mudanças climáticas adaptacao pará",
+        "type": "without_jargon",
+        "has_jargon": false
+      }
+    ],
+    "recommended_query": "seminário mudanças climáticas Pará",
+    "query_text": ""
+  },
+  {
+    "query_id": "q066",
+    "anchor_doc_id": "doc_15_02",
+    "category": "Meio Ambiente",
+    "title": "Em Belém (PA), Iphan apresenta estudo sobre dinâmicas econômicas associadas ao Círio de Nazaré",
+    "length": 3035,
+    "size_category": "Média",
+    "agency": "iphan",
+    "suggested_type": "jargao_br",
+    "variants": [
+      {
+        "text": "patrimônio cultural cirio de nazaré estudo",
+        "type": "from_title",
+        "has_jargon": false
+      },
+      {
+        "text": "iphan UFRB pesquisa patrimônio cultural",
+        "type": "with_jargon",
+        "has_jargon": true
+      },
+      {
+        "text": "patrimônio cultural pesquisa cirio de nazaré",
+        "type": "without_jargon",
+        "has_jargon": false
+      }
+    ],
+    "recommended_query": "patrimônio cultura cirio de nazaré estudo",
+    "query_text": ""
+  },
+  {
+    "query_id": "q067",
+    "anchor_doc_id": "doc_15_03",
+    "category": "Meio Ambiente",
+    "title": "SFB e CNI fortalecem cooperação para Prêmio em Estudos de Economia e Mercado Florestal",
+    "length": 3342,
+    "size_category": "Média",
+    "agency": "florestal",
+    "suggested_type": "jargao_br",
+    "variants": [
+      {
+        "text": "Prêmio Estudos Florestal",
+        "type": "from_title",
+        "has_jargon": false
+      },
+      {
+        "text": "SFB CNI cooperação cnpq prêmio florestal",
+        "type": "with_jargon",
+        "has_jargon": true
+      },
+      {
+        "text": "setor florestal transição climática",
+        "type": "without_jargon",
+        "has_jargon": false
+      }
+    ],
+    "recommended_query": "Prêmio Estudos Florestal",
+    "query_text": ""
+  },
+  {
+    "query_id": "q068",
+    "anchor_doc_id": "doc_15_06",
+    "category": "Meio Ambiente",
+    "title": "Iniciativa do Inpa transforma resíduos de bambu em decoração natalina sustentável",
+    "length": 4782,
+    "size_category": "Média",
+    "agency": "inpa",
+    "suggested_type": "jargao_br",
+    "variants": [
+      {
+        "text": "projeto Natal com Bambu",
+        "type": "from_title",
+        "has_jargon": false
+      },
+      {
+        "text": "Inpa MCTI, projeto com bambu natal",
+        "type": "with_jargon",
+        "has_jargon": true
+      },
+      {
+        "text": "projetos com resíduos e refugos de bambu",
+        "type": "without_jargon",
+        "has_jargon": false
+      }
+    ],
+    "recommended_query": "projetos com resíduos e refugos de bambu",
+    "query_text": ""
+  },
+  {
+    "query_id": "q069",
+    "anchor_doc_id": "doc_15_07",
+    "category": "Meio Ambiente",
+    "title": "ICMBio e órgãos estaduais de meio ambiente realizam a 1ª Oficina de Integração com Foco na Conservação de Insetos Polinizadores",
+    "length": 4723,
+    "size_category": "Média",
+    "agency": "icmbio",
+    "suggested_type": "jargao_br",
+    "variants": [
+      {
+        "text": "oficina insetos polinizadores icmbio",
+        "type": "from_title",
+        "has_jargon": true
+      },
+      {
+        "text": "icmbio OEMas PAN Insetos Polinizadores",
+        "type": "with_jargon",
+        "has_jargon": true
+      },
+      {
+        "text": "ações insetos polinizadores",
+        "type": "without_jargon",
+        "has_jargon": false
+      }
+    ],
+    "recommended_query": "oficina insetos polinizadores icmbio",
+    "query_text": ""
+  },
+  {
+    "query_id": "q070",
+    "anchor_doc_id": "doc_15_16",
+    "category": "Meio Ambiente",
+    "title": "Governo do Brasil abre inscrições para o Comitê Nacional de Enfrentamento ao Racismo Ambiental e Climático",
+    "length": 5137,
+    "size_category": "Média",
+    "agency": "igualdaderacial",
+    "suggested_type": "jargao_br",
+    "variants": [
+      {
+        "text": "inscrições Comitê Nacional de Enfrentamento ao Racismo Ambiental",
+        "type": "from_title",
+        "has_jargon": false
+      },
+      {
+        "text": "COP30 inscriçoes comitê",
+        "type": "with_jargon",
+        "has_jargon": true
+      },
+      {
+        "text": "comitê nacional de enfrentamento ambiental e climático",
+        "type": "without_jargon",
+        "has_jargon": false
+      }
+    ],
+    "recommended_query": "comitê nacional de enfrentamento ambiental e climático",
+    "query_text": ""
+  },
+  {
+    "query_id": "q071",
+    "anchor_doc_id": "doc_17_02",
+    "category": "Saúde",
+    "title": "Prorrogado o prazo para envio de textos para a composição do dossiê “Participação e controle social na execução penal”",
+    "length": 1941,
+    "size_category": "Curta",
+    "agency": "senappen",
+    "suggested_type": "jargao_br",
+    "variants": [
+      {
+        "text": "prazo de envio textos RBEP",
+        "type": "from_title",
+        "has_jargon": true
+      },
+      {
+        "text": "senappen concurso de texto",
+        "type": "with_jargon",
+        "has_jargon": true
+      },
+      {
+        "text": "Participação e controle social na execução penal",
+        "type": "without_jargon",
+        "has_jargon": false
+      }
+    ],
+    "recommended_query": "prazo de envio textos RBEP",
+    "query_text": ""
+  },
+  {
+    "query_id": "q072",
+    "anchor_doc_id": "doc_17_04",
+    "category": "Saúde",
+    "title": "CGU e PF apuram irregularidades na área da saúde em Alagoas",
+    "length": 2663,
+    "size_category": "Curta",
+    "agency": "cgu",
+    "suggested_type": "jargao_br",
+    "variants": [
+      {
+        "text": "irregularidades saúde alagoas pernambuco",
+        "type": "from_title",
+        "has_jargon": false
+      },
+      {
+        "text": "CGU e PF Operação Estágio IV",
+        "type": "with_jargon",
+        "has_jargon": true
+      },
+      {
+        "text": "crimes secretaria da saúde alagoas",
+        "type": "without_jargon",
+        "has_jargon": false
+      }
+    ],
+    "recommended_query": "irregularidades saúde alagoas pernambuco",
+    "query_text": ""
+  },
+  {
+    "query_id": "q073",
+    "anchor_doc_id": "doc_17_10",
+    "category": "Saúde",
+    "title": "Receita Federal em Foz do Iguaçu encontra medicamentos emagrecedores em condições impróprias durante deslacração de ônibus retido",
+    "length": 2511,
+    "size_category": "Curta",
+    "agency": "receitafederal",
+    "suggested_type": "geral",
+    "variants": [
+      {
+        "text": "medicamentos apreendidos condições impróprias",
+        "type": "from_title",
+        "has_jargon": false
+      },
+      {
+        "text": "receita federal iguaçu medicamentos",
+        "type": "with_jargon",
+        "has_jargon": true
+      },
+      {
+        "text": "medicamentos emagrecedores receita federal",
+        "type": "without_jargon",
+        "has_jargon": false
+      }
+    ],
+    "recommended_query": "medicamentos apreendidos condições impróprias",
+    "query_text": ""
+  },
+  {
+    "query_id": "q074",
+    "anchor_doc_id": "doc_17_00",
+    "category": "Saúde",
+    "title": "Conselho Nacional de Previdência Social: em última reunião do ano, ministro Wolney Queiroz destaca ressarcimento a 4 milhões de aposentados",
+    "length": 3496,
+    "size_category": "Média",
+    "agency": "previdencia",
+    "suggested_type": "jargao_br",
+    "variants": [
+      {
+        "text": "ressarcimento dos descontos não autorizados aposentados",
+        "type": "from_title",
+        "has_jargon": false
+      },
+      {
+        "text": "CNPS e MPS novos médicos e ressarcimento",
+        "type": "with_jargon",
+        "has_jargon": true
+      },
+      {
+        "text": "descontos aposentados e novos médicos",
+        "type": "without_jargon",
+        "has_jargon": false
+      }
+    ],
+    "recommended_query": "ressarcimento dos descontos não autorizados aposentados",
+    "query_text": ""
+  },
+  {
+    "query_id": "q075",
+    "anchor_doc_id": "doc_17_06",
+    "category": "Saúde",
+    "title": "Projeto promove testagem para ISTs, cuidados com a tuberculose e educação em saúde para comunidade ribeirinha de Rondônia",
+    "length": 3465,
+    "size_category": "Média",
+    "agency": "aids",
+    "suggested_type": "jargao_br",
+    "variants": [
+      {
+        "text": "ribeirinhos testagem tuberculose",
+        "type": "from_title",
+        "has_jargon": false
+      },
+      {
+        "text": "opas/OMS Mobiliza TB Rondônia",
+        "type": "with_jargon",
+        "has_jargon": true
+      },
+      {
+        "text": "cuidados tuberculose populações ribeirinhas Mobiliza TB",
+        "type": "without_jargon",
+        "has_jargon": true
+      }
+    ],
+    "recommended_query": "ribeirinhos testagem tuberculose",
+    "query_text": ""
+  },
+  {
+    "query_id": "q076",
+    "anchor_doc_id": "doc_17_07",
+    "category": "Saúde",
+    "title": "SST Fácil aproxima a ISO 45001 do dia a dia do trabalho",
+    "length": 4209,
+    "size_category": "Média",
+    "agency": "fundacentro",
+    "suggested_type": "geral",
+    "variants": [
+      {
+        "text": "aprender sobre saúde e segurança ocupacional",
+        "type": "from_title",
+        "has_jargon": false
+      },
+      {
+        "text": "SST Fácil ISO 45001",
+        "type": "with_jargon",
+        "has_jargon": true
+      },
+      {
+        "text": "iso para melhora de eficiencia em saúde e segurança ocupacional",
+        "type": "without_jargon",
+        "has_jargon": false
+      }
+    ],
+    "recommended_query": "aprender sobre saúde e segurança ocupacional",
+    "query_text": ""
+  },
+  {
+    "query_id": "q077",
+    "anchor_doc_id": "doc_17_13",
+    "category": "Saúde",
+    "title": "Em paralelo com atenção básica, entregas do Novo PAC Saúde levam média e alta complexidade aos rincões da Bahia e do Brasil, afirma Rui Costa",
+    "length": 4428,
+    "size_category": "Média",
+    "agency": "casacivil",
+    "suggested_type": "jargao_br",
+    "variants": [
+      {
+        "text": "PAC Saúde entregas bahia",
+        "type": "from_title",
+        "has_jargon": true
+      },
+      {
+        "text": "Rui Costa, PAC Saúde, entregas Bahia",
+        "type": "with_jargon",
+        "has_jargon": true
+      },
+      {
+        "text": "entregas ambulâncias e combos de equipamentos",
+        "type": "without_jargon",
+        "has_jargon": false
+      }
+    ],
+    "recommended_query": "PAC Saúde entregas bahia",
+    "query_text": ""
+  },
+  {
+    "query_id": "q078",
+    "anchor_doc_id": "doc_17_14",
+    "category": "Saúde",
+    "title": "Alckmin e Padilha aplicam primeiras doses da vacina contra a dengue fabricada no Brasil",
+    "length": 5223,
+    "size_category": "Média",
+    "agency": "mdic",
+    "suggested_type": "jargao_br",
+    "variants": [
+      {
+        "text": "vacina dengue primeiras doses",
+        "type": "from_title",
+        "has_jargon": false
+      },
+      {
+        "text": "mdic butantan vacina dengue",
+        "type": "with_jargon",
+        "has_jargon": true
+      },
+      {
+        "text": "vacina dentre desenvolvida butantan",
+        "type": "without_jargon",
+        "has_jargon": false
+      }
+    ],
+    "recommended_query": "vacina dengue primeiras doses",
+    "query_text": ""
+  },
+  {
+    "query_id": "q079",
+    "anchor_doc_id": "doc_19_17",
+    "category": "Segurança Pública",
+    "title": "Susep orienta população após fortes chuvas em Minas Gerais",
+    "length": 2614,
+    "size_category": "Curta",
+    "agency": "susep",
+    "suggested_type": "jargao_br",
+    "variants": [
+      {
+        "text": "orientações seguros chuvas",
+        "type": "from_title",
+        "has_jargon": true
+      },
+      {
+        "text": "susep duvidas chuvas minas gerais",
+        "type": "with_jargon",
+        "has_jargon": true
+      },
+      {
+        "text": "Susep orienta população chuvas minas gerais",
+        "type": "without_jargon",
+        "has_jargon": true
+      }
+    ],
+    "recommended_query": "orientações seguros chuvas",
+    "query_text": ""
+  },
+  {
+    "query_id": "q080",
+    "anchor_doc_id": "doc_19_24",
+    "category": "Segurança Pública",
+    "title": "Cade condena representado em processo de cartel em licitações de aeroportos",
+    "length": 2761,
+    "size_category": "Curta",
+    "agency": "cade",
+    "suggested_type": "geral",
+    "variants": [
+      {
+        "text": "cartel em licitações em aeroportos",
+        "type": "from_title",
+        "has_jargon": false
+      },
+      {
+        "text": "CADE condena por cartel 2014",
+        "type": "with_jargon",
+        "has_jargon": true
+      },
+      {
+        "text": "cartel de cafés e lanchonetes em aeroportos",
+        "type": "without_jargon",
+        "has_jargon": false
+      }
+    ],
+    "recommended_query": "cartel em licitações em aeroportos",
+    "query_text": ""
+  },
+  {
+    "query_id": "q081",
+    "anchor_doc_id": "doc_19_27",
+    "category": "Segurança Pública",
+    "title": "Estupro coletivo no Rio de Janeiro reforça urgência do debate sobre consentimento e educação para prevenção da violência",
+    "length": 1606,
+    "size_category": "Curta",
+    "agency": "mulheres",
+    "suggested_type": "geral",
+    "variants": [
+      {
+        "text": "estupro coletivo rio de janeiro",
+        "type": "from_title",
+        "has_jargon": false
+      },
+      {
+        "text": "Ministério das Mulheres estupro coletivo",
+        "type": "with_jargon",
+        "has_jargon": true
+      },
+      {
+        "text": "investigação estupro coletivo rio de janeiro",
+        "type": "without_jargon",
+        "has_jargon": false
+      }
+    ],
+    "recommended_query": "estupro coletivo rio de janeiro",
+    "query_text": ""
+  },
+  {
+    "query_id": "q082",
+    "anchor_doc_id": "doc_19_00",
+    "category": "Segurança Pública",
+    "title": "Megaoperação: Anatel e Receita Federal apreendem quase meio milhão de produtos irregulares no Porto de Imbituba (SC)",
+    "length": 3811,
+    "size_category": "Média",
+    "agency": "anatel",
+    "suggested_type": "geral",
+    "variants": [
+      {
+        "text": "operação porto imbituba",
+        "type": "from_title",
+        "has_jargon": false
+      },
+      {
+        "text": "Imbituba anatel e rfb produtos irregulares",
+        "type": "with_jargon",
+        "has_jargon": true
+      },
+      {
+        "text": "produtos ação anatel em porto em santa catarina",
+        "type": "with_jargon",
+        "has_jargon": true
+      }
+    ],
+    "recommended_query": "porto imbituba ação pirataria",
+    "query_text": ""
+  },
+  {
+    "query_id": "q083",
+    "anchor_doc_id": "doc_19_04",
+    "category": "Segurança Pública",
+    "title": "Justiça condena empresa a ressarcir pensão por morte ao INSS",
+    "length": 3305,
+    "size_category": "Média",
+    "agency": "agu",
+    "suggested_type": "geral",
+    "variants": [
+      {
+        "text": "empresa pensão por morte",
+        "type": "from_title",
+        "has_jargon": false
+      },
+      {
+        "text": "agu inss Bramix pensão",
+        "type": "with_jargon",
+        "has_jargon": true
+      },
+      {
+        "text": "AGU manda empresa ressarcir cofres do INSS por pensão por morte",
+        "type": "without_jargon",
+        "has_jargon": true
+      }
+    ],
+    "recommended_query": "concreteira pensão por morte",
+    "query_text": ""
+  },
+  {
+    "query_id": "q084",
+    "anchor_doc_id": "doc_19_05",
+    "category": "Segurança Pública",
+    "title": "Regiões Nordeste e Sul são monitoradas pelo MIDR após previsão de chuvas intensas",
+    "length": 4088,
+    "size_category": "Média",
+    "agency": "mdr",
+    "suggested_type": "geral",
+    "variants": [
+      {
+        "text": "regiões risco de desastre chuva",
+        "type": "from_title",
+        "has_jargon": false
+      },
+      {
+        "text": "MIDR e DPS alerta laranja",
+        "type": "with_jargon",
+        "has_jargon": true
+      },
+      {
+        "text": "Sul e Nordeste monitorados chuva",
+        "type": "without_jargon",
+        "has_jargon": false
+      }
+    ],
+    "recommended_query": "Sul e Nordeste monitorados chuva",
+    "query_text": ""
+  },
+  {
+    "query_id": "q085",
+    "anchor_doc_id": "doc_19_08",
+    "category": "Segurança Pública",
+    "title": "“Todo apoio será dado”: Alckmin faz balanço das ações do Governo do Brasil na Zona da Mata Mineira, região atingida por fortes chuvas",
+    "length": 4007,
+    "size_category": "Média",
+    "agency": "planalto",
+    "suggested_type": "geral",
+    "variants": [
+      {
+        "text": "“chuva zona da mata",
+        "type": "from_title",
+        "has_jargon": false
+      },
+      {
+        "text": "MDIC ajuda chuvas minas",
+        "type": "with_jargon",
+        "has_jargon": true
+      },
+      {
+        "text": "Alckmin chuvas minas",
+        "type": "without_jargon",
+        "has_jargon": false
+      }
+    ],
+    "recommended_query": "chuva zona da mata",
+    "query_text": ""
+  }
+]

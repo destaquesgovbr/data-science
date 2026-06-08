@@ -1,0 +1,60 @@
+========================================================================
+EXPERIMENTO DE FINE-TUNING - fewshot
+========================================================================
+
+Dataset: fewshot
+Output: models/bge-m3-fewshot-20260414_085413
+Results: results/finetuning/fewshot_20260414_085413_results.json
+
+========================================================================
+ETAPA 1: FINE-TUNING
+========================================================================
+
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+================================================================================
+FINE-TUNING DE MODELO DE EMBEDDING
+================================================================================
+
+🖥️  Device: cpu
+
+📥 Carregando modelo base: BAAI/bge-m3
+Loading weights:   0%|          | 0/391 [00:00<?, ?it/s]Loading weights: 100%|██████████| 391/391 [00:00<00:00, 15251.31it/s]
+  ✅ Modelo carregado
+  📊 Dimensão: 1024
+  📏 Max sequence length: 8192
+
+📂 Carregando dataset: fewshot
+  ✅ Train: 500 triplas
+  ✅ Val: 329 triplas
+
+🔧 Configuração de treino:
+  Épocas: 2
+  Batch size: 16
+  Learning rate: 2e-05
+  Warmup steps: 50
+  Steps por época: 32
+  Total steps: 64
+
+📉 Loss function: MultipleNegativesRankingLoss
+   (Aproxima query de positive, afasta de negative)
+
+Traceback (most recent call last):
+  File "/l/disk0/lpmoraes/environments/data-science/source/embeddings/scripts/finetune_model.py", line 321, in <module>
+    main()
+  File "/l/disk0/lpmoraes/environments/data-science/source/embeddings/scripts/finetune_model.py", line 308, in main
+    finetune(
+  File "/l/disk0/lpmoraes/environments/data-science/source/embeddings/scripts/finetune_model.py", line 179, in finetune
+    evaluator = create_evaluator(val_queries, val_corpus, val_relevant_docs)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/l/disk0/lpmoraes/environments/data-science/source/embeddings/scripts/finetune_model.py", line 94, in create_evaluator
+    return InformationRetrievalEvaluator(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/l/disk0/lpmoraes/environments/data-science/.venv/lib/python3.12/site-packages/sentence_transformers/evaluation/InformationRetrievalEvaluator.py", line 184, in __init__
+    self.main_score_function = SimilarityFunction(main_score_function) if main_score_function else None
+                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/enum.py", line 757, in __call__
+    return cls.__new__(cls, value)
+           ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/enum.py", line 1171, in __new__
+    raise ve_exc
+ValueError: 'cos_sim' is not a valid SimilarityFunction

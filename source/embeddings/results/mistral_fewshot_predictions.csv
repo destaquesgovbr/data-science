@@ -1,0 +1,201 @@
+id,ground_truth,prediction,match_l3
+doc_03_07_syn_extract_middle_2320,01.02.01 - Fiscalização Econômica,24.01.01 - Igualdade de Gênero,False
+doc_01_36_syn_extract_middle_2976,10.03.02 - Crédito Agrícola,10.03.01 - Incentivos e Subsídios,False
+doc_13_03_syn_extract_first_9728,07.01.01 - Construção de Estradas,07.01.01 - Construção de Estradas,True
+doc_11_47_syn_extract_middle_2674,02.01.02 - Ensino Fundamental,20.04.02 - Serviços Públicos,False
+doc_01_10,01.04.01 - Apoio Financeiro a Pequenas Empresas,10.03.02 - Crédito Agrícola,False
+doc_05_13_syn_extract_first_3705,06.01.03 - Inteligência em Dados,06.02.03 - Novas Tecnologias,False
+doc_19_06_syn_extract_first_7570,01.02.01 - Fiscalização Econômica,07.04.03 - Segurança e Regulamentação,False
+doc_05_02_syn_short_2122,17.03.01 - Regulação e Legislação Energética,21.02.01 - Propostas de Reforma,False
+doc_09_00_syn_extract_first_3683,01.02.01 - Fiscalização Econômica,01.01.01 - Política Fiscal,False
+doc_11_13_syn_short_1964,06.01.01 - Ciência Aberta,06.03.01 - Inovação e Startups,False
+doc_01_44,10.04.03 - Apoio a Pequenos Produtores,10.04.03 - Apoio a Pequenos Produtores,True
+doc_01_22_syn_extract_middle_4995,15.02.02 - Combate à Fome,15.01.02 - Iniciativa Social,False
+doc_17_16_syn_extract_middle_5557,01.02.01 - Fiscalização Econômica,01.02.02 - Tributação e Impostos,False
+doc_01_02_syn_extract_first_6155,10.01.01 - Produção de Alimentos,10.01.01 - Produção de Alimentos,True
+doc_19_16_syn_extract_middle_3073,15.02.01 - Combate à Desigualdade,19.03.03 - Resposta a Desastres,False
+doc_07_00_syn_extract_middle_6529,08.04.03 - Tradições e Costumes,08.02.02 - Patrimônio Imaterial,False
+doc_17_36,03.01.02 - Assistência em Saúde,12.02.02 - Cooperação Técnica para o Desenvolvimento,False
+doc_11_08_syn_short_6574,06.01.01 - Ciência Aberta,06.01.01 - Ciência Aberta,True
+doc_07_24_syn_extract_middle_4733,15.01.02 - Iniciativa Social,24.03.03 - Combate à Discriminação,False
+doc_19_27_syn_short_5563,13.02.03 - Combate à Violência,04.03.03 - Enfrentamento à Violência Doméstica,False
+doc_05_39,01.05.02 - Economia Digital,06.02.03 - Novas Tecnologias,False
+doc_13_30_syn_extract_first_6419,16.01.03 - Promoção de Destinos Nacionais,16.02.02 - Transporte e Acessibilidade,False
+doc_01_22,15.01.02 - Iniciativa Social,10.02.01 - Abastecimento e Distribuição de Alimentos,False
+doc_05_02_syn_extract_first_2312,01.02.01 - Fiscalização Econômica,21.01.01 - Publicação de Leis e Decretos,False
+doc_01_08_syn_extract_middle_4788,10.05.01 - Sanidade Animal,10.01.03 - Agricultura e Pecuária,False
+doc_03_04_syn_extract_middle_5658,15.01.01 - Bolsa Família,15.01.02 - Iniciativa Social,False
+doc_15_05,05.01.03 - Qualidade da Água,05.04.02 - Licenciamento Ambiental,False
+doc_17_17_syn_extract_middle_6576,03.01.03 - Atenção Integral,06.02.03 - Novas Tecnologias,False
+doc_11_20,02.04.03 - Bolsas e Incentivos,02.04.03 - Bolsas e Incentivos,True
+doc_11_16_syn_extract_first_8144,01.02.01 - Fiscalização Econômica,06.03.01 - Inovação e Startups,False
+doc_13_07_syn_extract_middle_5345,01.02.02 - Tributação e Impostos,01.02.02 - Tributação e Impostos,True
+doc_05_34_syn_extract_first_6442,05.01.01 - Proteção da Vida Selvagem,05.01.02 - Conservação Marinha,False
+doc_11_28,02.03.01 - Aprendizagem Profissional,14.03.01 - Qualificação Profissional,False
+doc_09_01_syn_extract_first_6169,01.02.01 - Fiscalização Econômica,01.02.01 - Fiscalização Econômica,True
+doc_03_16_syn_extract_first_9666,15.01.01 - Bolsa Família,13.02.03 - Liberdade Religiosa,False
+doc_13_11_syn_extract_middle_5173,14.04.01 - Auditoria Fiscal do Trabalho,20.03.01 - Recursos Humanos,False
+doc_19_30_syn_extract_first_2535,04.03.03 - Enfrentamento à Violência Doméstica,24.01.03 - Violência contra Mulheres,False
+doc_09_02,01.02.01 - Fiscalização Econômica,01.02.01 - Fiscalização Econômica,True
+doc_05_05_syn_extract_first_5552,06.01.01 - Ciência Aberta,06.01.03 - Inteligência em Dados,False
+doc_07_12,08.03.02 - Financiamento e Editais,08.03.02 - Financiamento e Editais,True
+doc_17_00_syn_extract_first_7267,15.03.01 - Benefícios Previdenciários,15.03.01 - Benefícios Previdenciários,True
+doc_19_17_syn_short_1058,01.02.01 - Fiscalização Econômica,01.02.01 - Fiscalização Econômica,True
+doc_15_03_syn_extract_first_7291,01.03.01 - Atração de Investimentos,05.03.01 - Energia Renovável,False
+doc_01_15_syn_short_2988,01.04.01 - Apoio Financeiro a Pequenas Empresas,01.04.01 - Apoio Financeiro a Pequenas Empresas,True
+doc_11_47_syn_extract_first_6514,02.01.02 - Ensino Fundamental,20.04.02 - Serviços Públicos,False
+doc_11_39_syn_extract_first_6344,02.04.03 - Bolsas e Incentivos,02.04.03 - Bolsas e Incentivos,True
+doc_13_21_syn_extract_first_2129,07.03.01 - Transporte Aéreo,12.03.03 - Relações Multilaterais,False
+doc_03_27_syn_extract_first_2489,15.02.03 - Apoio Emergencial,15.02.03 - Apoio Emergencial,True
+doc_09_07,01.01.03 - Análise Econômica,17.03.03 - Planejamento Energético Nacional,False
+doc_15_36_syn_extract_first_6464,05.01.01 - Proteção da Vida Selvagem,05.01.01 - Proteção da Vida Selvagem,True
+doc_09_09,15.01.01 - Bolsa Família,20.02.01 - Fortalecimento Institucional,False
+doc_13_01_syn_extract_middle_8239,07.03.02 - Transporte Ferroviário,07.03.01 - Transporte Rodoviário,False
+doc_09_04_syn_short_5114,01.02.01 - Fiscalização Econômica,01.02.01 - Fiscalização Econômica,True
+doc_11_27_syn_extract_middle_7906,02.04.03 - Bolsas e Incentivos,01.01.03 - Análise Econômica,False
+doc_17_29_syn_short_3938,10.02.02 - Combate à Fome,10.02.02 - Combate à Fome,True
+doc_07_11,08.03.01 - Apoio a Artistas,08.03.02 - Financiamento e Editais,False
+doc_07_12_syn_extract_middle_7735,01.02.01 - Fiscalização Econômica,08.03.02 - Financiamento e Editais,False
+doc_03_20,15.01.01 - Bolsa Família,24.01.01 - Igualdade de Gênero,False
+doc_03_45_syn_extract_first_1152,15.02.01 - Combate à Desigualdade,19.03.03 - Resposta a Desastres,False
+doc_17_14_syn_extract_first_6183,03.02.01 - Combate à Dengue,03.01.02 - Assistência em Saúde,False
+doc_13_21,07.03.01 - Transporte Rodoviário,12.03.02 - Relações Bilaterais,False
+doc_17_25_syn_extract_first_4978,03.01.02 - Assistência em Saúde,15.03.01 - Benefícios Previdenciários,False
+doc_17_06,03.02.02 - Saúde da Criança,03.01.03 - Atenção Integral,False
+doc_19_08,15.01.02 - Iniciativa Social,19.03.03 - Resposta a Desastres,False
+doc_07_19_syn_extract_first_4946,08.04.03 - Tradições e Costumes,24.01.03 - Violência contra Mulheres,False
+doc_19_38,04.02.01 - Investigação de Organizações Criminosas,19.01.01 - Inteligência e Contrainteligência,False
+doc_19_15_syn_short_9565,14.04.03 - Combate ao Trabalho Infantil,14.04.03 - Combate ao Trabalho Infantil,True
+doc_03_41_syn_short_7065,15.01.02 - Iniciativa Social,15.01.02 - Iniciativa Social,True
+doc_19_05_syn_extract_middle_6325,05.01.03 - Qualidade da Água,19.03.01 - Preparação para Desastres,False
+doc_15_47_syn_short_9423,03.04.01 - Políticas de Saúde Pública,03.01.03 - Atenção Integral,False
+doc_13_16_syn_short_6733,07.03.03 - Transporte Aquaviário,07.03.03 - Transporte Aquaviário,True
+doc_17_04_syn_short_5930,03.01.02 - Assistência em Saúde,13.01.03 - Justiça e Lei,False
+doc_03_02,15.01.01 - Bolsa Família,24.02.01 - Direitos Territoriais,False
+doc_15_10_syn_extract_first_7797,05.02.03 - Educação Ambiental,05.02.03 - Educação Ambiental,True
+doc_17_11,03.04.01 - Políticas de Saúde Pública,03.04.02 - Epidemiologia,False
+doc_09_05,01.02.01 - Fiscalização Econômica,01.02.01 - Fiscalização Econômica,True
+doc_07_47_syn_extract_middle_3724,08.02.01 - Patrimônio Histórico,08.04.02 - Língua e Cultura,False
+doc_15_10,05.02.03 - Educação Ambiental,05.02.02 - Justiça Climática,False
+doc_15_20_syn_extract_middle_5033,06.04.03 - Tecnologias Verdes,17.04.03 - Energia Hidrelétrica,False
+doc_15_04_syn_extract_middle_4657,05.01.03 - Proteção de Terras Indígenas,24.02.01 - Direitos Territoriais,False
+doc_07_17,08.04.02 - Língua e Cultura,24.01.03 - Violência contra Mulheres,False
+doc_15_09,05.01.01 - Proteção da Vida Selvagem,05.01.01 - Proteção da Vida Selvagem,True
+doc_17_14_syn_extract_middle_5272,03.01.02 - Assistência em Saúde,03.01.02 - Assistência em Saúde,True
+doc_09_42_syn_short_2232,03.01.02 - Assistência em Saúde,06.02.02 - Propriedade Intelectual,False
+doc_11_23_syn_short_3591,02.04.01 - Políticas Educacionais,24.05.01 - Acessibilidade e Inclusão,False
+doc_19_24_syn_extract_first_3579,01.02.01 - Fiscalização Econômica,13.01.03 - Justiça e Lei,False
+doc_17_10_syn_extract_middle_3496,01.02.01 - Fiscalização Econômica,03.03.01 - Vigilância em Saúde,False
+doc_09_48_syn_short_4492,01.02.01 - Fiscalização Econômica,03.03.01 - Vigilância em Saúde,False
+doc_19_21_syn_short_8953,04.02.01 - Investigação de Organizações Criminosas,04.02.02 - Operações Contra o Tráfico de Drogas,False
+doc_11_25_syn_extract_middle_1096,02.04.01 - Políticas Educacionais,01.05.02 - Economia Digital,False
+doc_13_48_syn_extract_first_9698,02.01.02 - Ensino Fundamental,02.04.03 - Bolsas e Incentivos,False
+doc_17_26,01.04.03 - Financiamento de Infraestrutura,01.04.03 - Financiamento de Infraestrutura,True
+doc_13_02_syn_short_8749,07.01.01 - Construção de Estradas,07.01.01 - Construção de Estradas,True
+doc_07_02_syn_short_4566,08.04.03 - Tradições e Costumes,08.04.01 - Artesanato Brasileiro,False
+doc_05_03,03.01.02 - Assistência em Saúde,03.03.02 - Inovação em Saúde,False
+doc_11_30,02.04.01 - Políticas Educacionais,02.04.03 - Bolsas e Incentivos,False
+doc_11_04_syn_extract_first_2679,03.03.02 - Inovação em Saúde,03.03.02 - Inovação em Saúde,True
+doc_05_11,06.02.01 - Inteligência Artificial,06.02.01 - Inteligência Artificial,True
+doc_17_42_syn_extract_first_8827,03.01.02 - Assistência em Saúde,03.01.02 - Assistência em Saúde,True
+doc_17_20_syn_short_4180,04.03.02 - Campanhas de Conscientização,24.01.03 - Violência contra Mulheres,False
+doc_13_27,07.01.01 - Construção de Estradas,20.01.01 - Controle Interno,False
+doc_01_29_syn_short_9976,10.01.03 - Agricultura e Pecuária,06.02.02 - Propriedade Intelectual,False
+doc_17_44,03.02.01 - Combate à Dengue,03.04.02 - Epidemiologia,False
+doc_15_06_syn_short_2235,05.01.03 - Qualidade da Água,06.04.01 - Inovação e Sustentabilidade,False
+doc_13_12_syn_extract_middle_3144,07.03.01 - Transporte Rodoviário,07.01.03 - Infraestrutura de Qualidade,False
+doc_19_15_syn_extract_first_2343,14.04.03 - Combate ao Trabalho Infantil,14.04.03 - Combate ao Trabalho Infantil,True
+doc_07_16_syn_extract_middle_4139,08.02.01 - Patrimônio Histórico,08.02.01 - Patrimônio Histórico,True
+doc_07_35_syn_short_8041,15.01.02 - Iniciativa Social,24.01.03 - Violência contra Mulheres,False
+doc_13_14_syn_short_6688,07.02.01 - Transporte Público,07.02.01 - Transporte Público,True
+doc_07_24_syn_short_5741,15.01.01 - Bolsa Família,24.01.01 - Igualdade de Gênero,False
+doc_01_22_syn_short_8613,15.01.02 - Iniciativa Social,10.02.03 - Nutrição e Sustentabilidade,False
+doc_01_36_syn_extract_first_4777,10.03.02 - Crédito Agrícola,10.03.02 - Crédito Agrícola,True
+doc_03_07_syn_short_3267,01.05.02 - Economia Digital,24.01.01 - Igualdade de Gênero,False
+doc_05_23_syn_extract_middle_2375,02.04.01 - Políticas Educacionais,06.03.01 - Inovação e Startups,False
+doc_03_27_syn_short_2796,01.04.03 - Financiamento de Infraestrutura,15.02.03 - Apoio Emergencial,False
+doc_05_23,06.01.02 - Ciência e Democracia,06.03.01 - Inovação e Startups,False
+doc_03_29_syn_extract_middle_6930,15.01.02 - Iniciativa Social,24.01.01 - Igualdade de Gênero,False
+doc_19_34,04.03.01 - Prevenção à Violência,04.03.02 - Campanhas de Conscientização,False
+doc_17_18_syn_short_2790,06.05.02 - Regulação Tecnológica,06.05.02 - Regulação Tecnológica,True
+doc_15_22_syn_short_8939,05.01.01 - Proteção da Vida Selvagem,05.01.01 - Proteção da Vida Selvagem,True
+doc_07_30_syn_extract_middle_2512,08.02.01 - Patrimônio Histórico,08.02.01 - Patrimônio Histórico,True
+doc_01_49,10.01.03 - Agricultura e Pecuária,10.01.03 - Agricultura e Pecuária,True
+doc_11_37_syn_extract_first_9818,02.04.03 - Bolsas e Incentivos,02.04.03 - Bolsas e Incentivos,True
+doc_19_28_syn_extract_middle_7548,04.03.01 - Prevenção à Violência,04.03.03 - Enfrentamento à Violência Doméstica,False
+doc_17_08_syn_short_8119,05.01.03 - Qualidade da Água,05.01.03 - Qualidade da Água,True
+doc_03_29_syn_short_4593,10.04.01 - Assistência Técnica e Extensão Rural,24.01.01 - Igualdade de Gênero,False
+doc_13_04_syn_short_8618,07.03.03 - Transporte Aquaviário,07.03.03 - Transporte Aquaviário,True
+doc_09_08,01.02.01 - Fiscalização Econômica,13.01.03 - Justiça e Lei,False
+doc_13_05_syn_extract_middle_7232,01.03.01 - Atração de Investimentos,07.03.03 - Transporte Aquaviário,False
+doc_07_11_syn_short_4841,08.03.01 - Apoio a Artistas,08.03.02 - Financiamento e Editais,False
+doc_13_23_syn_short_4262,12.01.03 - Acordos Ambientais,12.03.02 - Relações Bilaterais,False
+doc_09_05_syn_extract_middle_2894,01.02.01 - Fiscalização Econômica,01.02.01 - Fiscalização Econômica,True
+doc_15_07_syn_extract_middle_7046,05.01.01 - Proteção da Vida Selvagem,05.01.03 - Qualidade da Água,False
+doc_11_18_syn_extract_first_2824,06.03.01 - Inovação e Startups,06.02.02 - Propriedade Intelectual,False
+doc_15_03,01.05.02 - Economia Digital,20.01.01 - Controle Interno,False
+doc_05_11_syn_extract_middle_1841,06.02.01 - Inteligência Artificial,06.02.03 - Novas Tecnologias,False
+doc_07_06,18.01.03 - Inclusão Digital,08.01.01 - Festivais e Feiras,False
+doc_05_09_syn_short_9595,06.01.01 - Ciência Aberta,06.05.01 - Políticas de Ciência e Tecnologia,False
+doc_07_10,08.01.03 - Apresentações Artísticas,08.01.03 - Apresentações Artísticas,True
+doc_17_06_syn_extract_middle_3573,03.01.02 - Assistência em Saúde,03.05.03 - Saúde do Trabalhador,False
+doc_11_03_syn_extract_first_5853,02.04.02 - Campanhas Educativas,02.04.02 - Campanhas Educativas,True
+doc_01_40_syn_short_6280,15.01.01 - Bolsa Família,24.02.03 - Educação Indígena,False
+doc_07_10_syn_extract_first_9375,08.01.03 - Apresentações Artísticas,08.01.03 - Apresentações Artísticas,True
+doc_01_40_syn_extract_first_8136,10.04.03 - Apoio a Pequenos Produtores,24.04.01 - Quilombolas,False
+doc_05_08_syn_extract_middle_9977,06.05.02 - Regulação Tecnológica,06.05.01 - Políticas de Ciência e Tecnologia,False
+doc_09_30_syn_extract_middle_1053,01.02.01 - Fiscalização Econômica,21.05.02 - Inovação Jurídica e Regulatória,False
+doc_09_22,01.03.01 - Atração de Investimentos,10.03.02 - Crédito Agrícola,False
+doc_01_06,10.04.03 - Apoio a Pequenos Produtores,13.01.03 - Justiça e Lei,False
+doc_03_00_syn_extract_middle_5616,02.04.03 - Bolsas e Incentivos,02.04.03 - Bolsas e Incentivos,True
+doc_09_42_syn_extract_first_1158,01.04.03 - Financiamento de Infraestrutura,06.02.02 - Propriedade Intelectual,False
+doc_15_04,05.01.01 - Proteção da Vida Selvagem,24.02.01 - Direitos Territoriais,False
+doc_03_04_syn_short_8690,15.01.01 - Bolsa Família,15.01.02 - Iniciativa Social,False
+doc_03_25_syn_extract_middle_2124,10.04.01 - Assistência Técnica e Extensão Rural,24.01.01 - Igualdade de Gênero,False
+doc_01_18,10.01.02 - Desenvolvimento Rural,06.03.01 - Inovação e Startups,False
+doc_19_45_syn_short_5569,01.02.01 - Fiscalização Econômica,01.02.03 - Combate à Evasão Fiscal,False
+doc_01_28_syn_extract_middle_8657,10.02.02 - Combate à Fome,10.02.02 - Combate à Fome,True
+doc_13_48_syn_short_7971,02.01.02 - Ensino Fundamental,02.04.03 - Bolsas e Incentivos,False
+doc_11_30_syn_extract_middle_6507,06.01.01 - Ciência Aberta,06.03.01 - Inovação e Startups,False
+doc_03_00,02.04.03 - Bolsas e Incentivos,24.03.01 - Direitos e Políticas LGBTQIA+,False
+doc_01_12_syn_extract_first_6718,10.02.02 - Combate à Fome,15.02.02 - Combate à Fome,False
+doc_07_02_syn_extract_first_4111,08.04.03 - Tradições e Costumes,08.03.01 - Apoio a Artistas,False
+doc_07_26_syn_short_9701,15.01.01 - Bolsa Família,24.01.03 - Violência contra Mulheres,False
+doc_09_06_syn_extract_middle_6139,01.02.01 - Fiscalização Econômica,01.04.01 - Apoio Financeiro a Pequenas Empresas,False
+doc_11_04,01.02.01 - Fiscalização Econômica,20.03.02 - Capacitação de Servidores,False
+doc_17_07_syn_extract_first_1009,14.05.01 - Normas Regulamentadoras (NRs),14.05.01 - Normas Regulamentadoras (NRs),True
+doc_19_45,01.02.01 - Fiscalização Econômica,01.02.03 - Combate à Evasão Fiscal,False
+doc_19_27_syn_extract_first_7912,04.03.03 - Enfrentamento à Violência Doméstica,04.03.03 - Enfrentamento à Violência Doméstica,True
+doc_05_00_syn_extract_first_3068,06.01.03 - Inteligência em Dados,06.05.01 - Políticas de Ciência e Tecnologia,False
+doc_15_04_syn_extract_first_5012,05.01.02 - Conservação Marinha,24.02.01 - Direitos Territoriais,False
+doc_01_17_syn_short_4502,01.04.01 - Apoio Financeiro a Pequenas Empresas,20.03.03 - Licitações e Contratos,False
+doc_13_30_syn_short_8434,16.01.03 - Promoção de Destinos Nacionais,16.02.02 - Transporte e Acessibilidade,False
+doc_11_23,02.04.01 - Políticas Educacionais,24.05.01 - Acessibilidade e Inclusão,False
+doc_01_49_syn_extract_middle_2584,10.01.03 - Agricultura e Pecuária,10.01.03 - Agricultura e Pecuária,True
+doc_19_01_syn_extract_middle_4150,04.02.01 - Investigação de Organizações Criminosas,13.02.02 - Justiça Social,False
+doc_15_45_syn_extract_first_9856,05.01.03 - Qualidade da Água,05.02.03 - Educação Ambiental,False
+doc_03_09_syn_extract_first_3881,16.05.01 - Formação Profissional em Turismo,24.05.01 - Acessibilidade e Inclusão,False
+doc_15_16_syn_extract_middle_3677,05.02.02 - Justiça Climática,24.02.03 - Educação Indígena,False
+doc_09_01_syn_short_9779,01.02.01 - Fiscalização Econômica,01.02.02 - Tributação e Impostos,False
+doc_05_08_syn_extract_first_7653,06.02.03 - Novas Tecnologias,06.02.03 - Novas Tecnologias,True
+doc_07_33_syn_extract_middle_5554,08.02.01 - Patrimônio Histórico,08.02.02 - Patrimônio Imaterial,False
+doc_13_12,07.01.01 - Construção de Estradas,20.01.01 - Controle Interno,False
+doc_09_48,01.02.01 - Fiscalização Econômica,03.03.01 - Vigilância em Saúde,False
+doc_19_16,15.02.01 - Combate à Desigualdade,19.03.03 - Resposta a Desastres,False
+doc_09_22_syn_extract_first_6617,01.04.01 - Apoio Financeiro a Pequenas Empresas,01.04.01 - Apoio Financeiro a Pequenas Empresas,True
+doc_03_08,18.03.01 - Interação Digital,18.01.03 - Inclusão Digital,False
+doc_15_19_syn_extract_middle_2402,17.02.01 - Extração de Minerais,17.02.03 - Pesquisa e Desenvolvimento Mineral,False
+doc_13_13,05.04.01 - Gestão de Resíduos,25.03.02 - Coleta e Tratamento de Esgoto,False
+doc_05_11_syn_short_5136,06.02.01 - Inteligência Artificial,06.02.01 - Inteligência Artificial,True
+doc_11_39_syn_extract_middle_7592,02.04.01 - Políticas Educacionais,02.04.01 - Políticas Educacionais,True
+doc_05_01,17.03.01 - Regulação e Legislação Energética,17.03.01 - Regulação e Legislação Energética,True
+doc_09_16_syn_extract_first_6491,01.01.03 - Análise Econômica,14.01.01 - Emprego e Renda,False
+doc_03_46_syn_extract_first_6003,15.01.01 - Bolsa Família,24.05.01 - Acessibilidade e Inclusão,False
+doc_15_26_syn_extract_first_6363,05.01.03 - Qualidade da Água,05.02.01 - Catástrofes Climáticas,False
+doc_15_19_syn_extract_first_4130,05.01.03 - Qualidade da Água,10.05.01 - Sanidade Animal,False
+doc_09_40_syn_short_2684,01.03.01 - Atração de Investimentos,12.02.02 - Cooperação Técnica para o Desenvolvimento,False
+doc_05_06_syn_extract_first_1525,06.02.03 - Novas Tecnologias,07.04.02 - Conectividade e Infraestrutura,False
+doc_05_08_syn_short_1006,06.05.02 - Regulação Tecnológica,06.05.02 - Regulação Tecnológica,True
+doc_03_16,15.01.01 - Bolsa Família,24.01.03 - Violência contra Mulheres,False
+doc_19_41_syn_extract_middle_7882,01.02.01 - Fiscalização Econômica,01.02.01 - Fiscalização Econômica,True
+doc_05_09_syn_extract_middle_5530,06.01.02 - Ciência e Democracia,06.01.02 - Ciência e Democracia,True

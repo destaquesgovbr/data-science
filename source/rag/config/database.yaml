@@ -1,0 +1,103 @@
+# PostgreSQL + pgvector Configuration
+
+database:
+  # Connection settings
+  host: ${POSTGRES_HOST:localhost}
+  port: ${POSTGRES_PORT:5432}
+  name: ${POSTGRES_DB:news_db}
+  user: ${POSTGRES_USER:postgres}
+  password: ${POSTGRES_PASSWORD}
+
+  # Connection pool
+  pool:
+    min_connections: ${POSTGRES_POOL_MIN:2}
+    max_connections: ${POSTGRES_POOL_MAX:10}
+    timeout: 30  # seconds
+    max_lifetime: 3600  # seconds
+
+  # SSL (production)
+  ssl:
+    enabled: false
+    mode: prefer  # disable, allow, prefer, require, verify-ca, verify-full
+
+# pgvector configuration
+vector:
+  # Index type: ivfflat or hnsw
+  index_type: ivfflat
+
+  # IVFFlat settings
+  ivfflat:
+    lists: 100  # sqrt(total_rows) is good heuristic
+    probes: ${IVFFLAT_PROBES:10}  # Higher = more accurate, slower
+
+  # Distance metric: cosine, l2, inner_product
+  distance_metric: cosine
+
+  # Embedding dimension (BGE-M3)
+  dimension: 1024
+
+# Full-text search configuration
+fulltext:
+  # Language configuration
+  language: portuguese
+
+  # Search configuration
+  search_type: websearch  # plain, phrase, websearch
+
+  # Ranking function: ts_rank or ts_rank_cd
+  ranking_function: ts_rank_cd
+
+  # Normalization (0-32)
+  # 0 = default
+  # 1 = divides rank by 1 + log(document length)
+  # 2 = divides rank by document length
+  normalization: 1
+
+# Schema management
+schema:
+  # Auto-create tables on startup
+  auto_create: true
+
+  # Auto-migrate on schema changes
+  auto_migrate: false
+
+  # Drop existing tables (DANGEROUS - dev only)
+  drop_existing: false
+
+# Performance tuning
+performance:
+  # Shared buffers (% of RAM, PostgreSQL setting)
+  # Recommended: 25% of RAM
+  shared_buffers: "4GB"
+
+  # Work memory (per operation)
+  work_mem: "256MB"
+
+  # Maintenance work memory (for VACUUM, CREATE INDEX)
+  maintenance_work_mem: "1GB"
+
+  # Effective cache size (hint to planner)
+  # Recommended: 50-75% of RAM
+  effective_cache_size: "12GB"
+
+  # Parallel workers
+  max_parallel_workers_per_gather: 4
+
+  # Enable JIT compilation
+  jit: true
+
+# Monitoring
+monitoring:
+  # Enable query logging
+  log_queries: false
+
+  # Log slow queries (ms)
+  log_min_duration: 1000
+
+  # Track query statistics
+  track_statistics: true
+
+  # Auto-explain (for slow queries)
+  auto_explain:
+    enabled: false
+    min_duration: 1000  # ms

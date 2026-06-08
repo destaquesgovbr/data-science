@@ -1,0 +1,111 @@
+# Embeddings Configuration (BGE-M3 from Issue #1)
+
+model:
+  # Model name (HuggingFace)
+  name: ${EMBEDDING_MODEL:BAAI/bge-m3}
+
+  # Model type: sentence-transformer, custom
+  type: sentence-transformer
+
+  # Device: cuda, cpu, mps (Apple Silicon)
+  device: ${EMBEDDING_DEVICE:cuda}
+
+  # Precision: float32, float16, bfloat16
+  # float16/bfloat16 for GPU (faster, less memory)
+  precision: float16
+
+  # Model cache directory
+  cache_dir: ~/.cache/huggingface/hub
+
+# Encoding settings
+encoding:
+  # Batch size (adjust based on GPU memory)
+  batch_size: ${EMBEDDING_BATCH_SIZE:32}
+
+  # Show progress bar
+  show_progress: true
+
+  # Normalize embeddings (for cosine similarity)
+  normalize: true
+
+  # Convert to numpy (vs torch tensors)
+  convert_to_numpy: true
+
+  # Max sequence length (BGE-M3: 8192)
+  max_length: 8192
+
+  # Truncation strategy: longest_first, only_first, only_second
+  truncation: longest_first
+
+# Model specifications (BGE-M3)
+specifications:
+  # Embedding dimension
+  dimension: 1024
+
+  # Max sequence length
+  max_tokens: 8192
+
+  # Supported languages
+  languages:
+    - multilingual
+    - portuguese
+    - english
+    - spanish
+    - french
+    - german
+    - chinese
+    - japanese
+    - korean
+    # ... 100+ languages
+
+  # Model size
+  parameters: 568M
+
+  # Architecture
+  architecture: XLM-RoBERTa
+
+# Performance optimization
+optimization:
+  # Use multi-process encoding (CPU only)
+  multi_process: false
+
+  # Number of processes (if multi_process)
+  num_processes: 4
+
+  # Warm up model (load to GPU on startup)
+  warm_up: true
+
+  # Compile model with torch.compile (PyTorch 2.0+)
+  # Faster inference after warm-up
+  compile: false
+
+# Caching
+caching:
+  # Cache embeddings to avoid recomputation
+  enabled: ${CACHE_EMBEDDINGS:true}
+
+  # Cache backend: redis, disk, memory
+  backend: redis
+
+  # Redis settings (if backend=redis)
+  redis:
+    host: ${REDIS_HOST:localhost}
+    port: ${REDIS_PORT:6379}
+    db: 1  # Separate DB for embeddings
+    ttl: 604800  # 7 days
+
+  # Disk cache settings (if backend=disk)
+  disk:
+    directory: ./cache/embeddings
+    max_size: 10GB  # Max cache size
+
+# Monitoring
+monitoring:
+  # Track encoding time
+  track_latency: true
+
+  # Log embedding statistics
+  log_stats: true
+
+  # Alert if encoding too slow
+  alert_threshold: 5.0  # seconds per batch

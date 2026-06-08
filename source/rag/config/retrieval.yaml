@@ -1,0 +1,203 @@
+# Retrieval Configuration
+
+# Multi-stage retrieval pipeline
+pipeline:
+  # Stage 1: Initial retrieval
+  stage1:
+    # Vector search (pgvector)
+    vector:
+      enabled: true
+      top_k: ${VECTOR_SEARCH_TOP_K:50}
+      score_threshold: 0.0  # Min similarity (0-1)
+
+    # Full-text search (PostgreSQL tsvector)
+    fulltext:
+      enabled: true
+      top_k: ${FULLTEXT_SEARCH_TOP_K:50}
+      min_score: 0.0
+
+    # Hybrid fusion method: rrf, linear, rank
+    fusion:
+      method: rrf  # Reciprocal Rank Fusion
+      rrf_k: ${HYBRID_RRF_K:60}  # RRF parameter
+
+      # Linear fusion weights (if method=linear)
+      linear_weights:
+        vector: 0.5
+        fulltext: 0.5
+
+  # Stage 2: Re-ranking
+  stage2:
+    enabled: true
+
+    # Re-ranker type: cohere, cross-encoder, none
+    reranker: ${RERANKER_TYPE:cohere}
+
+    # Cohere Rerank API
+    cohere:
+      api_key: ${COHERE_API_KEY}
+      model: rerank-multilingual-v3.0
+      top_n: ${RERANK_TOP_K:10}
+
+    # Local cross-encoder (alternative to Cohere)
+    cross_encoder:
+      model: ${RERANKER_MODEL:cross-encoder/ms-marco-MiniLM-L-12-v2}
+      device: cuda
+      batch_size: 16
+      top_k: ${RERANK_TOP_K:10}
+
+  # Final selection
+  final:
+    top_k: ${FINAL_TOP_K:5}
+    min_score: 0.0  # Min score after re-ranking
+
+# Query processing
+query:
+  # Query expansion
+  expansion:
+    enabled: false
+    method: synonyms  # synonyms, llm, none
+
+    # LLM-based query expansion
+    llm:
+      model: claude-haiku
+      prompt: "Generate 3 alternative phrasings of this query: {query}"
+
+  # Query rewriting
+  rewriting:
+    enabled: false
+    method: none  # llm, rules, none
+
+# Filtering
+filtering:
+  # Available filters
+  available:
+    - category
+    - date_range
+    - agency
+    - keywords
+
+  # Default filters (applied to all queries)
+  default: {}
+
+  # Example filter syntax:
+  # filters:
+  #   category: Saúde
+  #   date_range:
+  #     start: 2024-01-01
+  #     end: 2024-12-31
+  #   agency: MS
+  #   keywords:
+  #     include: [vacinação, covid]
+  #     exclude: [fake news]
+
+# Chunking strategy (used during indexing)
+chunking:
+  # Strategy: fixed, semantic, paragraph, recursive
+  strategy: semantic
+
+  # Fixed-size chunking
+  fixed:
+    chunk_size: 512  # tokens
+    chunk_overlap: 50  # tokens
+
+  # Semantic chunking
+  semantic:
+    # Method: similarity, topic, sentence
+    method: similarity
+
+    # Similarity threshold (0-1)
+    # Higher = larger chunks (more similar sentences grouped)
+    threshold: 0.8
+
+    # Min/max chunk size (characters)
+    min_size: 200
+    max_size: 2000
+
+  # Paragraph chunking
+  paragraph:
+    # Merge small paragraphs
+    merge_threshold: 100  # characters
+
+  # Recursive chunking (LangChain style)
+  recursive:
+    separators:
+      - "\n\n"
+      - "\n"
+      - ". "
+      - "! "
+      - "? "
+    chunk_size: 1000
+    chunk_overlap: 100
+
+# Contextual enrichment (Anthropic pattern)
+# Add context to chunks to improve retrieval
+enrichment:
+  enabled: true
+
+  # Method: llm, template, none
+  method: llm
+
+  # LLM settings
+  llm:
+    model: claude-haiku
+    # Use prompt from llm.yaml
+
+  # Template-based enrichment
+  template: |
+    Documento: {title}
+    Categoria: {category}
+    Órgão: {agency}
+    Data: {date}
+
+    Conteúdo: {chunk}
+
+# Diversity
+# Ensure diverse results (avoid redundancy)
+diversity:
+  enabled: true
+
+  # Method: mmr (Maximal Marginal Relevance), clustering
+  method: mmr
+
+  # MMR settings
+  mmr:
+    lambda_param: 0.5  # 0=max diversity, 1=max relevance
+
+  # Clustering settings
+  clustering:
+    threshold: 0.9  # Similarity threshold for duplicates
+
+# Performance
+performance:
+  # Cache retrieval results
+  cache:
+    enabled: true
+    ttl: 3600  # seconds (1 hour)
+
+  # Timeout for retrieval
+  timeout: 10  # seconds
+
+  # Parallel retrieval (vector + fulltext)
+  parallel: true
+
+# Monitoring
+monitoring:
+  # Track retrieval metrics
+  track_metrics: true
+
+  # Metrics to track
+  metrics:
+    - precision_at_k
+    - recall_at_k
+    - ndcg_at_k
+    - latency
+    - cache_hit_rate
+
+  # Log retrieval details
+  log_details: true
+
+  # Alert thresholds
+  alerts:
+    high_latency: 2.0  # seconds
+    low_precision: 0.5  # < 50% precision

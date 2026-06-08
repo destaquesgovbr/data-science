@@ -1,0 +1,1194 @@
+================================================================================
+AVALIAÇÃO COMPARATIVA DE LLMs - ISSUE #3
+================================================================================
+📋 Carregando configuração...
+  ✅ 12 modelos configurados
+  📂 Test file: data/classification/news_classification_test.csv
+
+📂 Carregando test set...
+  ✅ 200 notícias carregadas
+  🏷️  10 categorias
+
+  📊 Distribuição:
+    Assistência Social: 20
+    Agricultura: 20
+    Infraestrutura: 20
+    Educação: 20
+    Ciência e Tecnologia: 20
+    Segurança Pública: 20
+    Economia: 20
+    Saúde: 20
+    Cultura: 20
+    Meio Ambiente: 20
+
+================================================================================
+MODELO 1/12
+================================================================================
+
+================================================================================
+🤖 Avaliando: Claude 3 Sonnet
+   ID: anthropic.claude-3-sonnet-20240229-v1:0
+   Provider: anthropic
+   Estratégia: chain-of-thought
+================================================================================
+  ⚠️  Categoria inválida 'RACIOCÍNIO:', usando fallback: 20.01.01 - Controle Interno
+  ⚠️  Categoria inválida 'RACIOCÍNIO:', usando fallback: 20.01.01 - Controle Interno
+  ⚠️  Categoria inválida 'PASSO 1 (Grande Área):', usando fallback: 20.01.01 - Controle Interno
+  ⚠️  Categoria inválida 'RACIOCÍNIO:', usando fallback: 20.01.01 - Controle Interno
+  ⚠️  Categoria inválida 'PASSO 1 (Grande Área):', usando fallback: 20.01.01 - Controle Interno
+  ⚠️  Categoria inválida 'RACIOCÍNIO:', usando fallback: 20.01.01 - Controle Interno
+  ⚠️  Categoria inválida 'RACIOCÍNIO:', usando fallback: 20.01.01 - Controle Interno
+  ⚠️  Categoria inválida 'PASSO 1 (Grande Área): Ciência, Tecnologia e Inovação
+A notícia trata principalmente sobre a proposta de transformar a Autoridade Nacional de Segurança Nuclear (ANSN) em uma Agência Reguladora Nuclear (ARN), o que está diretamente relacionado à área de Ciência, Tecnologia e Inovação.
+
+PASSO 2 (', inferindo '06.01.01 - Ciência Aberta' (mesma grande área)
+  ⚠️  Categoria inválida 'RACIOCÍNIO:', usando fallback: 20.01.01 - Controle Interno
+  ⏳ Progresso: 10/200 (5.0%)
+  ⚠️  Categoria inválida 'PASSO 1 (Grande Área):', usando fallback: 20.01.01 - Controle Interno
+  ⚠️  Categoria inválida 'PASSO 1 (Grande Área):', usando fallback: 20.01.01 - Controle Interno
+  ⚠️  Categoria inválida 'RACIOCÍNIO:', usando fallback: 20.01.01 - Controle Interno
+  ⚠️  Categoria inválida 'RACIOCÍNIO:', usando fallback: 20.01.01 - Controle Interno
+  ⚠️  Categoria inválida 'RACIOCÍNIO:', usando fallback: 20.01.01 - Controle Interno
+  ⚠️  Categoria inválida 'RACIOCÍNIO:', usando fallback: 20.01.01 - Controle Interno
+  ⚠️  Categoria inválida 'PASSO 1 (Grande Área):', usando fallback: 20.01.01 - Controle Interno
+  ⚠️  Categoria inválida 'PASSO 1 (Grande Área): Saúde', inferindo '03.01.01 - Atenção Primária' (mesma grande área)
+  ⚠️  Categoria inválida 'PASSO 1 (Grande Área):', usando fallback: 20.01.01 - Controle Interno
+  ⚠️  Categoria inválida 'RACIOCÍNIO:', usando fallback: 20.01.01 - Controle Interno
+  ⏳ Progresso: 20/200 (10.0%)
+  ⚠️  Categoria inválida 'RACIOCÍNIO:', usando fallback: 20.01.01 - Controle Interno
+  ⚠️  Categoria inválida 'PASSO 1 (Grande Área): Agricultura, Pecuária e Abastecimento
+A notícia trata principalmente sobre iniciativas e estudos relacionados à agricultura familiar e aos pequenos produtores rurais.
+
+PASSO 2 (Subcategoria): Políticas e Programas para a Agricultura Familiar
+O foco está nas políticas, programas e ações voltados especificamente para o', inferindo '10.01.01 - Produção de Alimentos' (mesma grande área)
+  ⚠️  Categoria inválida 'RACIOCÍNIO:', usando fallback: 20.01.01 - Controle Interno
+  ⚠️  Categoria inválida 'RACIOCÍNIO:', usando fallback: 20.01.01 - Controle Interno
+  ⚠️  Categoria inválida 'RACIOCÍNIO:', usando fallback: 20.01.01 - Controle Interno
+  ⚠️  Categoria inválida 'RACIOCÍNIO:', usando fallback: 20.01.01 - Controle Interno
+  ⚠️  Categoria inválida 'RACIOCÍNIO:', usando fallback: 20.01.01 - Controle Interno
+  ⚠️  Categoria inválida 'PASSO 1 (Grande Área):', usando fallback: 20.01.01 - Controle Interno
+  ⚠️  Categoria inválida 'PASSO 1 (Grande Área):', usando fallback: 20.01.01 - Controle Interno
+  ⚠️  Categoria inválida 'Passo 1 (Grande Área): Educação', inferindo '02.01.01 - Educação Infantil' (mesma grande área)
+  ⏳ Progresso: 30/200 (15.0%)
+  ⚠️  Categoria inválida 'PASSO 1 (Grande Área):', usando fallback: 20.01.01 - Controle Interno
+  ⚠️  Categoria inválida 'RACIOCÍNIO:', usando fallback: 20.01.01 - Controle Interno
+  ⚠️  Categoria inválida 'RACIOCÍNIO:', usando fallback: 20.01.01 - Controle Interno
+  ⚠️  Categoria inválida 'RACIOCÍNIO:', usando fallback: 20.01.01 - Controle Interno
+  ⚠️  Categoria inválida 'RACIOCÍNIO:', usando fallback: 20.01.01 - Controle Interno
+  ⚠️  Categoria inválida 'RACIOCÍNIO:', usando fallback: 20.01.01 - Controle Interno
+  ⚠️  Categoria inválida 'RACIOCÍNIO:', usando fallback: 20.01.01 - Controle Interno
+  ⚠️  Categoria inválida 'PASSO 1 (Grande Área):', usando fallback: 20.01.01 - Controle Interno
+  ⚠️  Categoria inválida 'RACIOCÍNIO:', usando fallback: 20.01.01 - Controle Interno
+  ⏳ Progresso: 40/200 (20.0%)
+  ⚠️  Categoria inválida 'PASSO 1 (Grande Área): Cultura, Artes e Patrimônio', inferindo '08.01.01 - Festivais e Feiras' (mesma grande área)
+  ⚠️  Categoria inválida 'RACIOCÍNIO:', usando fallback: 20.01.01 - Controle Interno
+  ⚠️  Categoria inválida 'PASSO 1 (Grande Área):', usando fallback: 20.01.01 - Controle Interno
+  ⚠️  Categoria inválida 'RACIOCÍNIO:', usando fallback: 20.01.01 - Controle Interno
+  ⚠️  Categoria inválida 'PASSO 1 (Grande Área):', usando fallback: 20.01.01 - Controle Interno
+  ⚠️  Categoria inválida 'Após analisar a notícia, não há informações suficientes para classificá-la de acordo com a taxonomia hierárquica fornecida. A mensagem parece ser um aviso de autenticação para acessar um site do governo, sem mencionar um tema ou conteúdo específico.
+
+Portanto, não é possível determinar uma Grande Área, Subcategoria ou Tópico Específico relev', usando fallback: 20.01.01 - Controle Interno
+  ⚠️  Categoria inválida 'PASSO 1 (Grande Área):', usando fallback: 20.01.01 - Controle Interno
+  ⚠️  Categoria inválida 'RACIOCÍNIO:', usando fallback: 20.01.01 - Controle Interno
+  ⚠️  Categoria inválida 'RACIOCÍNIO:', usando fallback: 20.01.01 - Controle Interno
+  ⚠️  Categoria inválida 'PASSO 1 (Grande Área):', usando fallback: 20.01.01 - Controle Interno
+  ⏳ Progresso: 50/200 (25.0%)
+  ⚠️  Categoria inválida 'RACIOCÍNIO:', usando fallback: 20.01.01 - Controle Interno
+  ⚠️  Categoria inválida 'Passo 1 (Grande Área): A notícia aborda principalmente temas relacionados ao Desenvolvimento Regional, com foco no Vale do Jequitinhonha em Minas Gerais. Portanto, a grande área é Políticas Públicas e Governança.
+
+Passo 2 (Subcategoria): Dentro da área de Políticas Públicas e Governança, a notícia', inferindo '20.01.01 - Controle Interno' (mesma grande área)
+  ⚠️  Categoria inválida 'RACIOCÍNIO:', usando fallback: 20.01.01 - Controle Interno
+  ⚠️  Categoria inválida 'PASSO 1 (Grande Área):', usando fallback: 20.01.01 - Controle Interno
+  ⚠️  Categoria inválida 'RACIOCÍNIO:', usando fallback: 20.01.01 - Controle Interno
+  ⚠️  Categoria inválida 'PASSO 1 (Grande Área):', usando fallback: 20.01.01 - Controle Interno
+  ⚠️  Categoria inválida 'Passo 1 (Grande Área): Cultura, Artes e Patrimônio', inferindo '08.01.01 - Festivais e Feiras' (mesma grande área)
+  ⚠️  Categoria inválida 'RACIOCÍNIO:', usando fallback: 20.01.01 - Controle Interno
+  ⚠️  Categoria inválida 'PASSO 1 (Grande Área):', usando fallback: 20.01.01 - Controle Interno
+  ⚠️  Categoria inválida 'RACIOCÍNIO:', usando fallback: 20.01.01 - Controle Interno
+  ⏳ Progresso: 60/200 (30.0%)
+  ⚠️  Categoria inválida 'RACIOCÍNIO:', usando fallback: 20.01.01 - Controle Interno
+  ⚠️  Categoria inválida 'PASSO 1 (Grande Área):', usando fallback: 20.01.01 - Controle Interno
+  ⚠️  Categoria inválida 'PASSO 1 (Grande Área):', usando fallback: 20.01.01 - Controle Interno
+  ⚠️  Categoria inválida 'PASSO 1 (Grande Área):', usando fallback: 20.01.01 - Controle Interno
+  ⚠️  Categoria inválida 'PASSO 1 (Grande Área): Desenvolvimento Social', inferindo '15.01.01 - Bolsa Família' (mesma grande área)
+  ⚠️  Categoria inválida 'RACIOCÍNIO:', usando fallback: 20.01.01 - Controle Interno
+  ⚠️  Categoria inválida 'PASSO 1 (Grande Área):', usando fallback: 20.01.01 - Controle Interno
+  ⚠️  Categoria inválida 'PASSO 1 (Grande Área):', usando fallback: 20.01.01 - Controle Interno
+  ⚠️  Categoria inválida 'PASSO 1 (Grande Área):', usando fallback: 20.01.01 - Controle Interno
+  ⚠️  Categoria inválida 'RACIOCÍNIO:', usando fallback: 20.01.01 - Controle Interno
+  ⏳ Progresso: 70/200 (35.0%)
+  ⚠️  Categoria inválida 'PASSO 1 (Grande Área):', usando fallback: 20.01.01 - Controle Interno
+  ⚠️  Categoria inválida 'PASSO 1 (Grande Área):', usando fallback: 20.01.01 - Controle Interno
+  ⚠️  Categoria inválida 'PASSO 1 (Grande Área):', usando fallback: 20.01.01 - Controle Interno
+  ⚠️  Categoria inválida 'PASSO 1 (Grande Área):', usando fallback: 20.01.01 - Controle Interno
+  ⚠️  Categoria inválida 'RACIOCÍNIO:', usando fallback: 20.01.01 - Controle Interno
+  ⚠️  Categoria inválida 'Passo 1 (Grande Área): Saúde', inferindo '03.01.01 - Atenção Primária' (mesma grande área)
+  ⚠️  Categoria inválida 'PASSO 1 (Grande Área):', usando fallback: 20.01.01 - Controle Interno
+  ⚠️  Categoria inválida 'RACIOCÍNIO:', usando fallback: 20.01.01 - Controle Interno
+  ⚠️  Categoria inválida 'PASSO 1 (Grande Área): Meio Ambiente e Sustentabilidade
+A notícia trata principalmente sobre o Plano Nacional sobre Mudança do Clima, que estabelece estratégias para o Brasil atingir suas metas climáticas. Portanto, a grande área é Meio Ambiente e Sustentabilidade.
+
+PASSO 2 (Subcategoria): Políticas Ambient', inferindo '05.01.01 - Proteção da Vida Selvagem' (mesma grande área)
+  ⚠️  Categoria inválida 'RACIOCÍNIO:', usando fallback: 20.01.01 - Controle Interno
+  ⏳ Progresso: 80/200 (40.0%)
+  ⚠️  Categoria inválida 'RACIOCÍNIO:', usando fallback: 20.01.01 - Controle Interno
+  ⚠️  Categoria inválida 'PASSO 1 (Grande Área):', usando fallback: 20.01.01 - Controle Interno
+  ⚠️  Categoria inválida 'Passo 1 (Grande Área): Meio Ambiente e Sustentabilidade
+A notícia trata principalmente sobre a inauguração de uma trilha em uma unidade de conservação ambiental, o Parque Nacional do Superagui, abordando aspectos relacionados à preservação da natureza e ao turismo sustentável.
+
+Passo 2 (Subcategoria): Áreas Protegidas', inferindo '05.01.01 - Proteção da Vida Selvagem' (mesma grande área)
+  ⚠️  Categoria inválida 'RACIOCÍNIO:', usando fallback: 20.01.01 - Controle Interno
+  ⚠️  Categoria inválida 'PASSO 1 (Grande Área):', usando fallback: 20.01.01 - Controle Interno
+  ⚠️  Categoria inválida 'PASSO 1 (Grande Área): Educação', inferindo '02.01.01 - Educação Infantil' (mesma grande área)
+  ⚠️  Categoria inválida 'RACIOCÍNIO:', usando fallback: 20.01.01 - Controle Interno
+  ⚠️  Categoria inválida 'PASSO 1 (Grande Área):', usando fallback: 20.01.01 - Controle Interno
+  ⚠️  Categoria inválida 'PASSO 1 (Grande Área):', usando fallback: 20.01.01 - Controle Interno
+  ⚠️  Categoria inválida 'PASSO 1 (Grande Área): Segurança Pública', inferindo '04.01.01 - Policiamento Ostensivo' (mesma grande área)
+  ⏳ Progresso: 90/200 (45.0%)
+  ⚠️  Categoria inválida 'RACIOCÍNIO:', usando fallback: 20.01.01 - Controle Interno
+  ⚠️  Categoria inválida 'RACIOCÍNIO:', usando fallback: 20.01.01 - Controle Interno
+  ⚠️  Categoria inválida 'RACIOCÍNIO:', usando fallback: 20.01.01 - Controle Interno
+  ⚠️  Categoria inválida 'PASSO 1 (Grande Área):', usando fallback: 20.01.01 - Controle Interno
+  ⚠️  Categoria inválida 'PASSO 1 (Grande Área):', usando fallback: 20.01.01 - Controle Interno
+  ⚠️  Categoria inválida 'PASSO 1 (Grande Área):', usando fallback: 20.01.01 - Controle Interno
+  ⚠️  Categoria inválida 'Passo 1 (Grande Área): Educação', inferindo '02.01.01 - Educação Infantil' (mesma grande área)
+  ⚠️  Categoria inválida 'RACIOCÍNIO:', usando fallback: 20.01.01 - Controle Interno
+  ⚠️  Categoria inválida 'PASSO 1 (Grande Área):', usando fallback: 20.01.01 - Controle Interno
+  ⚠️  Categoria inválida 'RACIOCÍNIO:', usando fallback: 20.01.01 - Controle Interno
+  ⏳ Progresso: 100/200 (50.0%)
+  ⚠️  Categoria inválida 'PASSO 1 (Grande Área):', usando fallback: 20.01.01 - Controle Interno
+  ⚠️  Categoria inválida 'PASSO 1 (Grande Área):', usando fallback: 20.01.01 - Controle Interno
+  ⚠️  Categoria inválida 'PASSO 1 (Grande Área):', usando fallback: 20.01.01 - Controle Interno
+  ⚠️  Categoria inválida 'PASSO 1 (Grande Área):', usando fallback: 20.01.01 - Controle Interno
+  ⚠️  Categoria inválida 'PASSO 1 (Grande Área):', usando fallback: 20.01.01 - Controle Interno
+  ⚠️  Categoria inválida 'RACIOCÍNIO:', usando fallback: 20.01.01 - Controle Interno
+  ⚠️  Categoria inválida 'RACIOCÍNIO:', usando fallback: 20.01.01 - Controle Interno
+  ⚠️  Categoria inválida 'RACIOCÍNIO:', usando fallback: 20.01.01 - Controle Interno
+  ⚠️  Categoria inválida 'RACIOCÍNIO:', usando fallback: 20.01.01 - Controle Interno
+  ⚠️  Categoria inválida 'PASSO 1 (Grande Área):', usando fallback: 20.01.01 - Controle Interno
+  ⏳ Progresso: 110/200 (55.0%)
+  ⚠️  Categoria inválida 'PASSO 1 (Grande Área):', usando fallback: 20.01.01 - Controle Interno
+  ⚠️  Categoria inválida 'PASSO 1 (Grande Área):', usando fallback: 20.01.01 - Controle Interno
+  ⚠️  Categoria inválida 'RACIOCÍNIO:', usando fallback: 20.01.01 - Controle Interno
+  ⚠️  Categoria inválida 'PASSO 1 (Grande Área):', usando fallback: 20.01.01 - Controle Interno
+  ⚠️  Categoria inválida 'PASSO 1 (Grande Área):', usando fallback: 20.01.01 - Controle Interno
+  ⚠️  Categoria inválida 'RACIOCÍNIO:', usando fallback: 20.01.01 - Controle Interno
+  ⚠️  Categoria inválida 'PASSO 1 (Grande Área): Ciência, Tecnologia e Inovação
+A notícia trata principalmente sobre um programa do Ministério da Ciência, Tecnologia e Inovação (MCTI) para promover a educação científica nas escolas públicas.
+
+PASSO 2 (Subcategoria): Educação Científica e Tecnológica
+Dentro da área de', inferindo '02.01.01 - Educação Infantil' (mesma grande área)
+  ⚠️  Categoria inválida 'RACIOCÍNIO:', usando fallback: 20.01.01 - Controle Interno
+  ⚠️  Categoria inválida 'Passo 1 (Grande Área): Segurança Pública', inferindo '04.01.01 - Policiamento Ostensivo' (mesma grande área)
+  ⚠️  Categoria inválida 'PASSO 1 (Grande Área):', usando fallback: 20.01.01 - Controle Interno
+  ⏳ Progresso: 120/200 (60.0%)
+  ⚠️  Categoria inválida 'PASSO 1 (Grande Área):', usando fallback: 20.01.01 - Controle Interno
+  ⚠️  Categoria inválida 'RACIOCÍNIO:', usando fallback: 20.01.01 - Controle Interno
+  ⚠️  Categoria inválida 'PASSO 1 (Grande Área): Agricultura, Pecuária e Abastecimento
+A notícia trata sobre uma homenagem aos ex-secretários executivos do Ministério da Agricultura, Pecuária e Abastecimento (MAPA), portanto, a grande área é claramente Agricultura, Pecuária e Abastecimento.
+
+PASSO 2 (Subcateg', inferindo '10.01.01 - Produção de Alimentos' (mesma grande área)
+  ⚠️  Categoria inválida 'RACIOCÍNIO:', usando fallback: 20.01.01 - Controle Interno
+  ⚠️  Categoria inválida 'PASSO 1 (Grande Área):', usando fallback: 20.01.01 - Controle Interno
+  ⚠️  Categoria inválida 'PASSO 1 (Grande Área):', usando fallback: 20.01.01 - Controle Interno
+  ⚠️  Categoria inválida 'PASSO 1 (Grande Área):', usando fallback: 20.01.01 - Controle Interno
+  ⚠️  Categoria inválida 'PASSO 1 (Grande Área):', usando fallback: 20.01.01 - Controle Interno
+  ⚠️  Categoria inválida 'PASSO 1 (Grande Área): Energia e Recursos Minerais', inferindo '17.01.01 - Exploração de Petróleo' (mesma grande área)
+  ⚠️  Categoria inválida 'RACIOCÍNIO:', usando fallback: 20.01.01 - Controle Interno
+  ⏳ Progresso: 130/200 (65.0%)
+  ⚠️  Categoria inválida 'PASSO 1 (Grande Área):', usando fallback: 20.01.01 - Controle Interno
+  ⚠️  Categoria inválida 'PASSO 1 (Grande Área):', usando fallback: 20.01.01 - Controle Interno
+  ⚠️  Categoria inválida 'RACIOCÍNIO:', usando fallback: 20.01.01 - Controle Interno
+  ⚠️  Categoria inválida 'RACIOCÍNIO:', usando fallback: 20.01.01 - Controle Interno
+  ⚠️  Categoria inválida 'RACIOCÍNIO:', usando fallback: 20.01.01 - Controle Interno
+  ⚠️  Categoria inválida 'PASSO 1 (Grande Área):', usando fallback: 20.01.01 - Controle Interno
+  ⚠️  Categoria inválida 'RACIOCÍNIO:', usando fallback: 20.01.01 - Controle Interno
+  ⚠️  Categoria inválida 'PASSO 1 (Grande Área):', usando fallback: 20.01.01 - Controle Interno
+  ⚠️  Categoria inválida 'RACIOCÍNIO:', usando fallback: 20.01.01 - Controle Interno
+  ⚠️  Categoria inválida 'PASSO 1 (Grande Área):', usando fallback: 20.01.01 - Controle Interno
+  ⏳ Progresso: 140/200 (70.0%)
+  ⚠️  Categoria inválida 'RACIOCÍNIO:', usando fallback: 20.01.01 - Controle Interno
+  ⚠️  Categoria inválida 'RACIOCÍNIO:', usando fallback: 20.01.01 - Controle Interno
+  ⚠️  Categoria inválida 'PASSO 1 (Grande Área):', usando fallback: 20.01.01 - Controle Interno
+  ⚠️  Categoria inválida 'RACIOCÍNIO:', usando fallback: 20.01.01 - Controle Interno
+  ⚠️  Categoria inválida 'RACIOCÍNIO:', usando fallback: 20.01.01 - Controle Interno
+  ⚠️  Categoria inválida 'RACIOCÍNIO:', usando fallback: 20.01.01 - Controle Interno
+  ⚠️  Categoria inválida 'RACIOCÍNIO:', usando fallback: 20.01.01 - Controle Interno
+  ⚠️  Categoria inválida 'Passo 1 (Grande Área): A notícia aborda principalmente temas relacionados ao Desenvolvimento Regional, Economia e Finanças.
+
+Passo 2 (Subcategoria): Dentro da área de Desenvolvimento Regional, a notícia trata especificamente de Políticas de Desenvolvimento Regional e Fundos Constitucionais.
+
+Passo 3 (Tópico Específico): O', inferindo '01.01.01 - Política Fiscal' (mesma grande área)
+  ⚠️  Categoria inválida 'PASSO 1 (Grande Área): Agricultura, Pecuária e Abastecimento
+A notícia trata principalmente de um acordo relacionado à reforma agrária e assentamento de famílias de agricultores, portanto, a grande área mais adequada é Agricultura, Pecuária e Abastecimento.
+
+PASSO 2 (Subcategoria): Reforma Agrária
+Dentro da', inferindo '10.01.01 - Produção de Alimentos' (mesma grande área)
+  ⚠️  Categoria inválida 'RACIOCÍNIO:', usando fallback: 20.01.01 - Controle Interno
+  ⏳ Progresso: 150/200 (75.0%)
+  ⚠️  Categoria inválida 'RACIOCÍNIO:', usando fallback: 20.01.01 - Controle Interno
+  ⚠️  Categoria inválida 'Passo 1 (Grande Área): Meio Ambiente e Sustentabilidade
+A notícia aborda principalmente o Projeto de Carbono do povo Paiter Suruí, que está relacionado à gestão ambiental e territorial sustentável de suas terras indígenas.
+
+Passo 2 (Subcategoria): Políticas e Programas Ambientais
+
+Passo 3', inferindo '05.01.01 - Proteção da Vida Selvagem' (mesma grande área)
+  ⚠️  Categoria inválida 'PASSO 1 (Grande Área):', usando fallback: 20.01.01 - Controle Interno
+  ⚠️  Categoria inválida 'RACIOCÍNIO:', usando fallback: 20.01.01 - Controle Interno
+  ⚠️  Categoria inválida 'PASSO 1 (Grande Área):', usando fallback: 20.01.01 - Controle Interno
+  ⚠️  Categoria inválida 'RACIOCÍNIO:', usando fallback: 20.01.01 - Controle Interno
+  ⚠️  Categoria inválida 'PASSO 1 (Grande Área): Educação', inferindo '02.01.01 - Educação Infantil' (mesma grande área)
+  ⚠️  Categoria inválida 'RACIOCÍNIO:', usando fallback: 20.01.01 - Controle Interno
+  ⚠️  Categoria inválida 'PASSO 1 (Grande Área):', usando fallback: 20.01.01 - Controle Interno
+  ⏳ Progresso: 160/200 (80.0%)
+  ⚠️  Categoria inválida 'PASSO 1 (Grande Área):', usando fallback: 20.01.01 - Controle Interno
+  ⚠️  Categoria inválida 'PASSO 1 (Grande Área):', usando fallback: 20.01.01 - Controle Interno
+  ⚠️  Categoria inválida 'PASSO 1 (Grande Área):', usando fallback: 20.01.01 - Controle Interno
+  ⚠️  Categoria inválida 'RACIOCÍNIO:', usando fallback: 20.01.01 - Controle Interno
+  ⚠️  Categoria inválida 'PASSO 1 (Grande Área):', usando fallback: 20.01.01 - Controle Interno
+  ⚠️  Categoria inválida 'RACIOCÍNIO:', usando fallback: 20.01.01 - Controle Interno
+  ⚠️  Categoria inválida 'PASSO 1 (Grande Área):', usando fallback: 20.01.01 - Controle Interno
+  ⚠️  Categoria inválida 'RACIOCÍNIO:', usando fallback: 20.01.01 - Controle Interno
+  ⚠️  Categoria inválida 'RACIOCÍNIO:', usando fallback: 20.01.01 - Controle Interno
+  ⚠️  Categoria inválida 'RACIOCÍNIO:', usando fallback: 20.01.01 - Controle Interno
+  ⏳ Progresso: 170/200 (85.0%)
+  ⚠️  Categoria inválida 'RACIOCÍNIO:', usando fallback: 20.01.01 - Controle Interno
+  ⚠️  Categoria inválida 'PASSO 1 (Grande Área):', usando fallback: 20.01.01 - Controle Interno
+  ⚠️  Categoria inválida 'Passo 1 (Grande Área): Educação', inferindo '02.01.01 - Educação Infantil' (mesma grande área)
+  ⚠️  Categoria inválida 'RACIOCÍNIO:', usando fallback: 20.01.01 - Controle Interno
+  ⚠️  Categoria inválida 'RACIOCÍNIO:', usando fallback: 20.01.01 - Controle Interno
+  ⚠️  Categoria inválida 'RACIOCÍNIO:', usando fallback: 20.01.01 - Controle Interno
+  ⚠️  Categoria inválida 'RACIOCÍNIO:', usando fallback: 20.01.01 - Controle Interno
+  ⚠️  Categoria inválida 'RACIOCÍNIO:', usando fallback: 20.01.01 - Controle Interno
+  ⚠️  Categoria inválida 'PASSO 1 (Grande Área):', usando fallback: 20.01.01 - Controle Interno
+  ⚠️  Categoria inválida 'RACIOCÍNIO:', usando fallback: 20.01.01 - Controle Interno
+  ⏳ Progresso: 180/200 (90.0%)
+  ⚠️  Categoria inválida 'RACIOCÍNIO:', usando fallback: 20.01.01 - Controle Interno
+  ⚠️  Categoria inválida 'PASSO 1 (Grande Área):', usando fallback: 20.01.01 - Controle Interno
+  ⚠️  Categoria inválida 'PASSO 1 (Grande Área): Saúde', inferindo '03.01.01 - Atenção Primária' (mesma grande área)
+  ⚠️  Categoria inválida 'RACIOCÍNIO:', usando fallback: 20.01.01 - Controle Interno
+  ⚠️  Categoria inválida 'PASSO 1 (Grande Área):', usando fallback: 20.01.01 - Controle Interno
+  ⚠️  Categoria inválida 'PASSO 1 (Grande Área):', usando fallback: 20.01.01 - Controle Interno
+  ⚠️  Categoria inválida 'PASSO 1 (Grande Área):', usando fallback: 20.01.01 - Controle Interno
+  ⚠️  Categoria inválida 'PASSO 1 (Grande Área):', usando fallback: 20.01.01 - Controle Interno
+  ⚠️  Categoria inválida 'RACIOCÍNIO:', usando fallback: 20.01.01 - Controle Interno
+  ⏳ Progresso: 190/200 (95.0%)
+  ⚠️  Categoria inválida 'Passo 1 (Grande Área): Energia e Recursos Minerais', inferindo '17.01.01 - Exploração de Petróleo' (mesma grande área)
+  ⚠️  Categoria inválida 'RACIOCÍNIO:', usando fallback: 20.01.01 - Controle Interno
+  ⚠️  Categoria inválida 'RACIOCÍNIO:', usando fallback: 20.01.01 - Controle Interno
+  ⚠️  Categoria inválida 'RACIOCÍNIO:', usando fallback: 20.01.01 - Controle Interno
+  ⚠️  Categoria inválida 'RACIOCÍNIO:', usando fallback: 20.01.01 - Controle Interno
+  ⚠️  Categoria inválida 'PASSO 1 (Grande Área):', usando fallback: 20.01.01 - Controle Interno
+  ⚠️  Categoria inválida 'RACIOCÍNIO:', usando fallback: 20.01.01 - Controle Interno
+  ⚠️  Categoria inválida 'PASSO 1 (Grande Área):', usando fallback: 20.01.01 - Controle Interno
+  ⚠️  Categoria inválida 'PASSO 1 (Grande Área):', usando fallback: 20.01.01 - Controle Interno
+  ⚠️  Categoria inválida 'RACIOCÍNIO:', usando fallback: 20.01.01 - Controle Interno
+  ⏳ Progresso: 200/200 (100.0%)
+  ⚠️  Categoria inválida 'RACIOCÍNIO:', usando fallback: 20.01.01 - Controle Interno
+  ✅ Classificação completa: 200 notícias
+
+❌ ERRO ao avaliar Claude 3 Sonnet: At least one label specified must be in y_true
+   Pulando este modelo...
+
+================================================================================
+MODELO 2/12
+================================================================================
+
+================================================================================
+🤖 Avaliando: Claude 3 Haiku
+   ID: anthropic.claude-3-haiku-20240307-v1:0
+   Provider: anthropic
+   Estratégia: chain-of-thought
+================================================================================
+  ⚠️  Categoria inválida 'Passo 1 (Grande Área): 11. Agricultura, Pecuária e Abastecimento
+Passo 2 (Subcategoria): 11.02. Programas e Políticas Agrícolas
+Passo 3 (Tópico Específico): 11.02.03 - Programas de Investimento Rural
+
+Classificação Final: 11.02.03', inferindo '10.01.01 - Produção de Alimentos' (mesma grande área)
+  ⚠️  Categoria inválida 'Passo 1 (Grande Área): Infraestrutura e Transportes
+Passo 2 (Subcategoria): Rodovias
+Passo 3 (Tópico Específico): 08.02.01 - Obras e Manutenção de Rodovias
+
+CLASSIFICAÇÃO FINAL: 08.02.01 - Obras e Manutenção de Ro', inferindo '07.01.01 - Construção de Estradas' (mesma grande área)
+  ⚠️  Categoria inválida 'Passo 1 (Grande Área): 14.00.00 - Políticas Públicas e Governança
+Passo 2 (Subcategoria): 14.01.00 - Administração Pública
+Passo 3 (Tópico Específico): 14.01.03 - Atendimento ao Cidadão
+
+CLASSIFICAÇÃO FINAL: 14.01', inferindo '20.01.01 - Controle Interno' (mesma grande área)
+  ⚠️  Categoria inválida 'PASSO 1 (Grande Área):', usando fallback: 20.01.01 - Controle Interno
+  ⚠️  Categoria inválida 'Passo 1 (Grande Área): 10. Ciência, Tecnologia e Inovação
+Passo 2 (Subcategoria): 10.02. Pesquisa e Desenvolvimento
+Passo 3 (Tópico Específico): 10.02.04 - Institutos de Pesquisa
+
+CLASSIFICAÇÃO FINAL: 10.02.04 - Instit', inferindo '06.01.01 - Ciência Aberta' (mesma grande área)
+  ⚠️  Categoria inválida 'Passo 1 (Grande Área): 09. Infraestrutura e Transportes
+Passo 2 (Subcategoria): 09.04. Transporte Aéreo
+Passo 3 (Tópico Específico): 09.04.03 - Segurança da Aviação Civil
+
+CLASSIFICAÇÃO FINAL: 09.04.03 - Segurança', inferindo '07.01.01 - Construção de Estradas' (mesma grande área)
+  ⚠️  Categoria inválida 'Passo 1 (Grande Área): 13. Políticas Públicas e Governança
+Passo 2 (Subcategoria): 13.03. Regulação e Agências Reguladoras
+Passo 3 (Tópico Específico): 13.03.04 - Agência Reguladora Nuclear
+
+CLASSIFICAÇÃO FINAL: 13.03.04 -', inferindo '20.01.01 - Controle Interno' (mesma grande área)
+  ⚠️  Categoria inválida 'Passo 1 (Grande Área): 11. Economia e Finanças', inferindo '01.01.01 - Política Fiscal' (mesma grande área)
+  ⏳ Progresso: 10/200 (5.0%)
+  ⚠️  Categoria inválida 'Passo 1 (Grande Área): 07. Ciência, Tecnologia e Inovação
+Passo 2 (Subcategoria): 07.04. Pesquisa e Desenvolvimento Científico
+Passo 3 (Tópico Específico): 07.04.12 - Competições e Olimpíadas Científicas
+
+CLASSIFICAÇÃO FINAL: 07.04', inferindo '06.01.01 - Ciência Aberta' (mesma grande área)
+  ⚠️  Categoria inválida 'PASSO 1 (Grande Área): 11. Agricultura, Pecuária e Abastecimento
+PASSO 2 (Subcategoria): 11.03. Programas e Políticas Agrícolas
+PASSO 3 (Tópico Específico): 11.03.04 - Garantia-Safra
+
+CLASSIFICAÇÃO FINAL: 11.03.04', inferindo '10.01.01 - Produção de Alimentos' (mesma grande área)
+  ⚠️  Categoria inválida 'PASSO 1 (Grande Área): 11. Desenvolvimento Social', inferindo '15.01.01 - Bolsa Família' (mesma grande área)
+  ⚠️  Categoria inválida 'Passo 1 (Grande Área): Saúde', inferindo '03.01.01 - Atenção Primária' (mesma grande área)
+  ⚠️  Categoria inválida 'Passo 1 (Grande Área): 07. Agricultura, Pecuária e Abastecimento
+Passo 2 (Subcategoria): 07.02. Produção Agrícola
+Passo 3 (Tópico Específico): 07.02.01 - Safra de Grãos
+
+CLASSIFICAÇÃO FINAL: 07.02.01 -', inferindo '10.01.01 - Produção de Alimentos' (mesma grande área)
+  ⚠️  Categoria inválida 'Passo 1 (Grande Área): 09. Políticas Públicas e Governança
+Passo 2 (Subcategoria): 09.04. Gestão de Desastres e Emergências
+Passo 3 (Tópico Específico): 09.04.03 - Solicitação de Recursos Federais em Situações de Emergência
+
+CLASSIFICAÇÃO', inferindo '20.01.01 - Controle Interno' (mesma grande área)
+  ⚠️  Categoria inválida 'Passo 1 (Grande Área): 09. Cultura, Artes e Patrimônio
+Passo 2 (Subcategoria): 09.04. Patrimônio Cultural
+Passo 3 (Tópico Específico): 09.04.03 - Capoeira
+
+CLASSIFICAÇÃO FINAL: 09.04.03 - Capoeira', inferindo '08.01.01 - Festivais e Feiras' (mesma grande área)
+  ⚠️  Categoria inválida 'Passo 1 (Grande Área): 09. Saúde', inferindo '03.01.01 - Atenção Primária' (mesma grande área)
+  ⚠️  Categoria inválida 'PASSO 1 (Grande Área): Ciência, Tecnologia e Inovação
+
+PASSO 2 (Subcategoria): Pós-Graduação
+
+PASSO 3 (Tópico Específico): 07.02.01 - Programas de Pós-Graduação
+
+CLASSIFICAÇÃO FINAL: 07.02.01 - Programas de Pós', inferindo '06.01.01 - Ciência Aberta' (mesma grande área)
+  ⚠️  Categoria inválida 'Passo 1 (Grande Área): 11. Educação', inferindo '02.01.01 - Educação Infantil' (mesma grande área)
+  ⏳ Progresso: 20/200 (10.0%)
+  ⚠️  Categoria inválida 'PASSO 1 (Grande Área): Justiça e Direitos Humanos', inferindo '13.01.01 - Advocacia Pública' (mesma grande área)
+  ⚠️  Categoria inválida 'Passo 1 (Grande Área): 10. Turismo', inferindo '16.01.01 - Campanhas de Divulgação' (mesma grande área)
+  ⚠️  Categoria inválida 'Passo 1 (Grande Área): 11. Agricultura, Pecuária e Abastecimento
+Passo 2 (Subcategoria): 11.02. Agricultura Familiar
+Passo 3 (Tópico Específico): 11.02.04 - Apoio à Produção Agrícola Familiar
+
+Classificação Final: 11.02.04 -', inferindo '10.01.01 - Produção de Alimentos' (mesma grande área)
+  ⚠️  Categoria inválida 'Passo 1 (Grande Área): 07. Ciência, Tecnologia e Inovação
+Passo 2 (Subcategoria): 07.04. Energia Nuclear e Radioatividade
+Passo 3 (Tópico Específico): 07.04.03 - Agências Reguladoras Nucleares
+
+CLASSIFICAÇÃO FINAL: 07.04.03', inferindo '06.01.01 - Ciência Aberta' (mesma grande área)
+  ⚠️  Categoria inválida 'Passo 1 (Grande Área): Agricultura, Pecuária e Abastecimento
+Passo 2 (Subcategoria): Pesca e Aquicultura
+Passo 3 (Tópico Específico): 02.02.03 - Piscicultura
+
+CLASSIFICAÇÃO FINAL: 02.02.03 - Piscicultura', inferindo '10.01.01 - Produção de Alimentos' (mesma grande área)
+  ⚠️  Categoria inválida 'Passo 1 (Grande Área): 13. Desenvolvimento Social', inferindo '15.01.01 - Bolsa Família' (mesma grande área)
+  ⚠️  Categoria inválida 'Passo 1 (Grande Área): 05. Meio Ambiente e Sustentabilidade
+Passo 2 (Subcategoria): 05.02. Fiscalização Ambiental
+Passo 3 (Tópico Específico): 05.02.03 - Multas e Sanções Ambientais
+
+CLASSIFICAÇÃO FINAL: 05.02.03 -', inferindo '05.01.01 - Proteção da Vida Selvagem' (mesma grande área)
+  ⚠️  Categoria inválida 'Passo 1 (Grande Área): 04. Saúde', inferindo '03.01.01 - Atenção Primária' (mesma grande área)
+  ⚠️  Categoria inválida 'Passo 1 (Grande Área): 07. Educação', inferindo '02.01.01 - Educação Infantil' (mesma grande área)
+  ⏳ Progresso: 30/200 (15.0%)
+  ⚠️  Categoria inválida 'Passo 1 (Grande Área): 07. Ciência, Tecnologia e Inovação
+Passo 2 (Subcategoria): 07.04. Pesquisa e Desenvolvimento
+Passo 3 (Tópico Específico): 07.04.03 - Bolsas e Fomento à Pesquisa
+
+CLASSIFICAÇÃO FINAL: 07.04', inferindo '06.01.01 - Ciência Aberta' (mesma grande área)
+  ⚠️  Categoria inválida 'Passo 1 (Grande Área): 06. Ciência, Tecnologia e Inovação
+Passo 2 (Subcategoria): 06.04. Monitoramento Ambiental e Biodiversidade
+Passo 3 (Tópico Específico): 06.04.03 - Tecnologias de Monitoramento Ambiental
+
+CLASSIFICAÇÃO FINAL', inferindo '06.01.01 - Ciência Aberta' (mesma grande área)
+  ⚠️  Categoria inválida 'Passo 1 (Grande Área): 11. Economia e Finanças', inferindo '01.01.01 - Política Fiscal' (mesma grande área)
+  ⚠️  Categoria inválida 'Passo 1 (Grande Área): 13.00.00 - Políticas Públicas e Governança
+
+Passo 2 (Subcategoria): 13.04.00 - Integração e Articulação Governamental
+
+Passo 3 (Tópico Específico): 13.04.03 - Parcerias Interinstitucionais
+
+CLASSIFICAÇÃO', inferindo '20.01.01 - Controle Interno' (mesma grande área)
+  ⚠️  Categoria inválida 'Passo 1 (Grande Área): Defesa e Forças Armadas', inferindo '19.01.01 - Inteligência e Contrainteligência' (mesma grande área)
+  ⚠️  Categoria inválida 'Passo 1 (Grande Área): 14.0 - Justiça e Direitos Humanos
+Passo 2 (Subcategoria): 14.02 - Direitos Humanos
+Passo 3 (Tópico Específico): 14.02.04 - Violência contra a Mulher
+
+CLASSIFICAÇÃO FINAL: 14.02.04 -', inferindo '13.01.01 - Advocacia Pública' (mesma grande área)
+  ⚠️  Categoria inválida 'Passo 1 (Grande Área): 11. Indústria e Comércio', inferindo '11.01.01 - Inovação Tecnológica' (mesma grande área)
+  ⚠️  Categoria inválida 'Passo 1 (Grande Área): 07. Ciência, Tecnologia e Inovação
+Passo 2 (Subcategoria): 07.04. Pesquisa e Desenvolvimento
+Passo 3 (Tópico Específico): 07.04.03 - Projetos e Programas de Pesquisa
+
+CLASSIFICAÇÃO FINAL: 07.04.03', inferindo '06.01.01 - Ciência Aberta' (mesma grande área)
+  ⏳ Progresso: 40/200 (20.0%)
+  ⚠️  Categoria inválida 'Passo 1 (Grande Área): 09. Cultura, Artes e Patrimônio
+Passo 2 (Subcategoria): 09.04. Fomento e Financiamento Cultural
+Passo 3 (Tópico Específico): 09.04.03 - Editais e Prêmios Culturais
+
+CLASSIFICAÇÃO FINAL: 09.04', inferindo '08.01.01 - Festivais e Feiras' (mesma grande área)
+  ⚠️  Categoria inválida 'Passo 1 (Grande Área): 14. Trabalho e Emprego', inferindo '14.01.01 - Emprego e Renda' (mesma grande área)
+  ⚠️  Categoria inválida 'Passo 1 (Grande Área): 06. Segurança Pública', inferindo '04.01.01 - Policiamento Ostensivo' (mesma grande área)
+  ⚠️  Categoria inválida 'Passo 1 (Grande Área): 06. Ciência, Tecnologia e Inovação
+Passo 2 (Subcategoria): 06.07. Pesquisa e Desenvolvimento
+Passo 3 (Tópico Específico): 06.07.04 - Parcerias Público-Privadas em Pesquisa e Desenvolvimento
+
+CLASSIFICAÇÃO FINAL:', inferindo '06.01.01 - Ciência Aberta' (mesma grande área)
+  ⚠️  Categoria inválida 'PASSO 1 (Grande Área): Desenvolvimento Social', inferindo '15.01.01 - Bolsa Família' (mesma grande área)
+  ⚠️  Categoria inválida 'PASSO 1 (Grande Área): Políticas Públicas e Governança
+PASSO 2 (Subcategoria): Comunicação e Transparência Pública
+PASSO 3 (Tópico Específico): 15.02.01 - Acesso à Informação Pública
+
+CLASSIFICAÇÃO FINAL: 15.02.01 - Acesso à Informação', inferindo '20.01.01 - Controle Interno' (mesma grande área)
+  ⚠️  Categoria inválida 'Passo 1 (Grande Área): 07. Educação', inferindo '02.01.01 - Educação Infantil' (mesma grande área)
+  ⚠️  Categoria inválida 'Passo 1 (Grande Área): 10. Relações Internacionais e Diplomacia
+Passo 2 (Subcategoria): 10.02. Conflitos e Crises Internacionais
+Passo 3 (Tópico Específico): 10.02.03 - Conflitos Militares
+
+CLASSIFICAÇÃO FINAL: 10.02.03 -', inferindo '12.01.01 - Acordos Comerciais' (mesma grande área)
+  ⚠️  Categoria inválida 'Passo 1 (Grande Área): 11. Desenvolvimento Social', inferindo '15.01.01 - Bolsa Família' (mesma grande área)
+  ⚠️  Categoria inválida 'PASSO 1 (Grande Área):', usando fallback: 20.01.01 - Controle Interno
+  ⏳ Progresso: 50/200 (25.0%)
+  ⚠️  Categoria inválida 'Passo 1 (Grande Área): 05. Meio Ambiente e Sustentabilidade
+
+Passo 2 (Subcategoria): 05.04. Desastres Ambientais e Emergências
+
+Passo 3 (Tópico Específico): 05.04.03 - Resgate e Manejo de Animais em Desastres
+
+CLASSIFICAÇÃO FINAL', inferindo '05.01.01 - Proteção da Vida Selvagem' (mesma grande área)
+  ⚠️  Categoria inválida 'Passo 1 (Grande Área): 09. Desenvolvimento Social', inferindo '15.01.01 - Bolsa Família' (mesma grande área)
+  ⚠️  Categoria inválida 'Passo 1 (Grande Área): Infraestrutura e Transportes
+Passo 2 (Subcategoria): Integração Regional
+Passo 3 (Tópico Específico): 08.02.01 - Integração Sul-Americana
+
+CLASSIFICAÇÃO FINAL: 08.02.01 - Integração Sul-Americana', inferindo '07.01.01 - Construção de Estradas' (mesma grande área)
+  ⚠️  Categoria inválida 'Passo 1 (Grande Área): 11. Indústria e Comércio', inferindo '11.01.01 - Inovação Tecnológica' (mesma grande área)
+  ⚠️  Categoria inválida 'Passo 1 (Grande Área): 03. Educação', inferindo '02.01.01 - Educação Infantil' (mesma grande área)
+  ⚠️  Categoria inválida 'Passo 1 (Grande Área): 12. Agricultura, Pecuária e Abastecimento
+Passo 2 (Subcategoria): 12.02. Políticas Públicas Agrícolas
+Passo 3 (Tópico Específico): 12.02.03 - Agricultura Familiar
+
+CLASSIFICAÇÃO FINAL: 12.02.03 - Agricultura', inferindo '10.01.01 - Produção de Alimentos' (mesma grande área)
+  ⚠️  Categoria inválida 'PASSO 1 (Grande Área): 09. Cultura, Artes e Patrimônio
+
+PASSO 2 (Subcategoria): 09.01. Teatro
+
+PASSO 3 (Tópico Específico): 09.01.01 - Grupos e Coletivos de Teatro
+
+CLASSIFICAÇÃO FINAL: 09.01.01 - Grupos e Coletivos de', inferindo '08.01.01 - Festivais e Feiras' (mesma grande área)
+  ⚠️  Categoria inválida 'Passo 1 (Grande Área): 14.0 - Legislação e Regulamentação
+Passo 2 (Subcategoria): 14.02 - Regularidade Jurídica, Fiscal e Tributária
+Passo 3 (Tópico Específico): 14.02.03 - Cadastros e Certificados Obrigatórios
+
+CLASSIFICAÇÃO', inferindo '21.01.01 - Publicação de Leis e Decretos' (mesma grande área)
+  ⚠️  Categoria inválida 'Passo 1 (Grande Área): 15.0 - Trabalho e Emprego', inferindo '14.01.01 - Emprego e Renda' (mesma grande área)
+  ⚠️  Categoria inválida 'Passo 1 (Grande Área): 06. Meio Ambiente e Sustentabilidade
+
+Passo 2 (Subcategoria): 06.03. Desastres Naturais
+
+Passo 3 (Tópico Específico): 06.03.02 - Enchentes e Inundações
+
+CLASSIFICAÇÃO FINAL: 06.03.02 - Enchentes e', inferindo '05.01.01 - Proteção da Vida Selvagem' (mesma grande área)
+  ⏳ Progresso: 60/200 (30.0%)
+  ⚠️  Categoria inválida 'Passo 1 (Grande Área): 06. Saúde', inferindo '03.01.01 - Atenção Primária' (mesma grande área)
+  ⚠️  Categoria inválida 'Passo 1 (Grande Área): 09. Relações Internacionais e Diplomacia
+Passo 2 (Subcategoria): 09.02. Conflitos e Tensões Internacionais
+Passo 3 (Tópico Específico): 09.02.03 - Conflitos Militares
+
+CLASSIFICAÇÃO FINAL: 09.02.03 -', inferindo '12.01.01 - Acordos Comerciais' (mesma grande área)
+  ⚠️  Categoria inválida 'Passo 1 (Grande Área): Desenvolvimento Social', inferindo '15.01.01 - Bolsa Família' (mesma grande área)
+  ⚠️  Categoria inválida 'Passo 1 (Grande Área): 04.00.00 - Saúde', inferindo '03.01.01 - Atenção Primária' (mesma grande área)
+  ⚠️  Categoria inválida 'Passo 1 (Grande Área): 10. Segurança Pública', inferindo '04.01.01 - Policiamento Ostensivo' (mesma grande área)
+  ⚠️  Categoria inválida 'Passo 1 (Grande Área): 13. Defesa e Forças Armadas', inferindo '19.01.01 - Inteligência e Contrainteligência' (mesma grande área)
+  ⚠️  Categoria inválida 'Passo 1 (Grande Área): Justiça e Direitos Humanos', inferindo '13.01.01 - Advocacia Pública' (mesma grande área)
+  ⚠️  Categoria inválida 'PASSO 1 (Grande Área): Desenvolvimento Social', inferindo '15.01.01 - Bolsa Família' (mesma grande área)
+  ⚠️  Categoria inválida 'Passo 1 (Grande Área): 06. Segurança Pública', inferindo '04.01.01 - Policiamento Ostensivo' (mesma grande área)
+  ⏳ Progresso: 70/200 (35.0%)
+  ⚠️  Categoria inválida 'Passo 1 (Grande Área): 06.00.00 - Saúde', inferindo '03.01.01 - Atenção Primária' (mesma grande área)
+  ⚠️  Categoria inválida 'PASSO 1 (Grande Área): Infraestrutura e Transportes
+
+PASSO 2 (Subcategoria): Portos e Navegação
+
+PASSO 3 (Tópico Específico): 09.02.01 - Leilão e Arrendamento de Terminais Portuários
+
+CLASSIFICAÇÃO FINAL: 09.02.01 - Leilão', inferindo '07.01.01 - Construção de Estradas' (mesma grande área)
+  ⚠️  Categoria inválida 'Passo 1 (Grande Área): 04. Saúde', inferindo '03.01.01 - Atenção Primária' (mesma grande área)
+  ⚠️  Categoria inválida 'Passo 1 (Grande Área): 14.0 - Justiça e Direitos Humanos
+Passo 2 (Subcategoria): 14.02 - Direitos Humanos
+Passo 3 (Tópico Específico): 14.02.04 - Povos Indígenas
+
+CLASSIFICAÇÃO FINAL: 14.02.04 -', inferindo '13.01.01 - Advocacia Pública' (mesma grande área)
+  ⚠️  Categoria inválida 'Passo 1 (Grande Área): 06. Meio Ambiente e Sustentabilidade
+
+Passo 2 (Subcategoria): 06.04. Políticas Ambientais
+
+Passo 3 (Tópico Específico): 06.04.07 - Planos e Programas Ambientais
+
+CLASSIFICAÇÃO FINAL: 06.04.07 -', inferindo '05.01.01 - Proteção da Vida Selvagem' (mesma grande área)
+  ⚠️  Categoria inválida 'PASSO 1 (Grande Área): Saúde', inferindo '03.01.01 - Atenção Primária' (mesma grande área)
+  ⚠️  Categoria inválida 'Passo 1 (Grande Área): 11. Indústria e Comércio', inferindo '11.01.01 - Inovação Tecnológica' (mesma grande área)
+  ⚠️  Categoria inválida 'Passo 1 (Grande Área): 07. Políticas Públicas e Governança
+Passo 2 (Subcategoria): 07.04. Participação Social e Controle Democrático
+Passo 3 (Tópico Específico): 07.04.03 - Conferências e Conselhos Públicos
+
+CLASSIFICAÇÃO FINAL: 07.04', inferindo '20.01.01 - Controle Interno' (mesma grande área)
+  ⚠️  Categoria inválida 'PASSO 1 (Grande Área): 06. Meio Ambiente e Sustentabilidade
+PASSO 2 (Subcategoria): 06.04. Mudanças Climáticas
+PASSO 3 (Tópico Específico): 06.04.03 - Planos e Políticas Climáticas
+
+CLASSIFICAÇÃO FINAL: 06.04.03 -', inferindo '05.01.01 - Proteção da Vida Selvagem' (mesma grande área)
+  ⚠️  Categoria inválida 'Passo 1 (Grande Área): Energia e Recursos Minerais', inferindo '17.01.01 - Exploração de Petróleo' (mesma grande área)
+  ⏳ Progresso: 80/200 (40.0%)
+  ⚠️  Categoria inválida 'Passo 1 (Grande Área): 05. Meio Ambiente e Sustentabilidade
+
+Passo 2 (Subcategoria): 05.04. Povos Indígenas e Comunidades Tradicionais
+
+Passo 3 (Tópico Específico): 05.04.03 - Planos de Gestão Territorial e Ambiental (PGTA)', inferindo '05.01.01 - Proteção da Vida Selvagem' (mesma grande área)
+  ⚠️  Categoria inválida 'Passo 1 (Grande Área): 13. Justiça e Direitos Humanos
+Passo 2 (Subcategoria): 13.02. Direitos da Mulher
+Passo 3 (Tópico Específico): 13.02.04 - Enfrentamento à Violência contra a Mulher
+
+CLASSIFICAÇÃO FINAL: 13.02.04', inferindo '13.01.01 - Advocacia Pública' (mesma grande área)
+  ⚠️  Categoria inválida 'Passo 1 (Grande Área): 06. Meio Ambiente e Sustentabilidade
+Passo 2 (Subcategoria): 06.04. Unidades de Conservação
+Passo 3 (Tópico Específico): 06.04.03 - Parques Nacionais
+
+CLASSIFICAÇÃO FINAL: 06.04.03 - Parques N', inferindo '05.01.01 - Proteção da Vida Selvagem' (mesma grande área)
+  ⚠️  Categoria inválida 'Passo 1 (Grande Área): 06. Saúde', inferindo '03.01.01 - Atenção Primária' (mesma grande área)
+  ⚠️  Categoria inválida 'Passo 1 (Grande Área): 06. Saúde', inferindo '03.01.01 - Atenção Primária' (mesma grande área)
+  ⚠️  Categoria inválida 'PASSO 1 (Grande Área): 03. Educação', inferindo '02.01.01 - Educação Infantil' (mesma grande área)
+  ⚠️  Categoria inválida 'Passo 1 (Grande Área): 06. Saúde', inferindo '03.01.01 - Atenção Primária' (mesma grande área)
+  ⚠️  Categoria inválida 'Passo 1 (Grande Área): 09. Saúde', inferindo '03.01.01 - Atenção Primária' (mesma grande área)
+  ⚠️  Categoria inválida 'Passo 1 (Grande Área): 09. Segurança Pública', inferindo '04.01.01 - Policiamento Ostensivo' (mesma grande área)
+  ⏳ Progresso: 90/200 (45.0%)
+  ⚠️  Categoria inválida 'Passo 1 (Grande Área): 03. Educação', inferindo '02.01.01 - Educação Infantil' (mesma grande área)
+  ⚠️  Categoria inválida 'Passo 1 (Grande Área): 09. Infraestrutura e Transportes
+Passo 2 (Subcategoria): 09.03. Transporte Escolar
+Passo 3 (Tópico Específico): 09.03.02 - Programa Caminho da Escola
+
+CLASSIFICAÇÃO FINAL: 09.03.02 - Programa Caminho da', inferindo '07.01.01 - Construção de Estradas' (mesma grande área)
+  ⚠️  Categoria inválida 'Passo 1 (Grande Área): 11. Desenvolvimento Social', inferindo '15.01.01 - Bolsa Família' (mesma grande área)
+  ⚠️  Categoria inválida 'PASSO 1 (Grande Área): Infraestrutura e Transportes
+
+PASSO 2 (Subcategoria): Rodovias
+
+PASSO 3 (Tópico Específico): 08.02.01 - Construção e Pavimentação de Rodovias
+
+CLASSIFICAÇÃO FINAL: 08.02.01 - Construção e Pavimentação de Ro', inferindo '07.01.01 - Construção de Estradas' (mesma grande área)
+  ⚠️  Categoria inválida 'Passo 1 (Grande Área): 09. Cultura, Artes e Patrimônio
+Passo 2 (Subcategoria): 09.03. Política Cultural
+Passo 3 (Tópico Específico): 09.03.04 - Política Nacional de Cultura Viva
+
+CLASSIFICAÇÃO FINAL: 09.03.04 - Política Nacional de Cultura', inferindo '08.01.01 - Festivais e Feiras' (mesma grande área)
+  ⚠️  Categoria inválida 'Passo 1 (Grande Área): 07. Ciência, Tecnologia e Inovação
+Passo 2 (Subcategoria): 07.03. Inovação e Desenvolvimento Tecnológico
+Passo 3 (Tópico Específico): 07.03.04 - Políticas e Regulamentação de Inovação
+
+CLASSIFICAÇÃO FINAL:', inferindo '06.01.01 - Ciência Aberta' (mesma grande área)
+  ⚠️  Categoria inválida 'Passo 1 (Grande Área): 09. Educação', inferindo '02.01.01 - Educação Infantil' (mesma grande área)
+  ⚠️  Categoria inválida 'Passo 1 (Grande Área): 09. Educação', inferindo '02.01.01 - Educação Infantil' (mesma grande área)
+  ⚠️  Categoria inválida 'Passo 1 (Grande Área): 07. Saúde', inferindo '03.01.01 - Atenção Primária' (mesma grande área)
+  ⏳ Progresso: 100/200 (50.0%)
+  ⚠️  Categoria inválida 'Passo 1 (Grande Área): 14.Justiça e Direitos Humanos
+Passo 2 (Subcategoria): 14.02.Políticas Públicas de Direitos Humanos
+Passo 3 (Tópico Específico): 14.02.03 - Combate à Violência contra a Mulher
+
+CLASSIFICAÇÃO FINAL:', inferindo '13.01.01 - Advocacia Pública' (mesma grande área)
+  ⚠️  Categoria inválida 'Passo 1 (Grande Área): Infraestrutura e Transportes
+Passo 2 (Subcategoria): Obras e Projetos de Infraestrutura
+Passo 3 (Tópico Específico): 08.02.01 - Obras Viárias e Rodoviárias
+
+Classificação Final: 08.02.01 - Obras Vi', inferindo '07.01.01 - Construção de Estradas' (mesma grande área)
+  ⚠️  Categoria inválida 'PASSO 1 (Grande Área): 11. Agricultura, Pecuária e Abastecimento
+PASSO 2 (Subcategoria): 11.03. Indicações Geográficas
+PASSO 3 (Tópico Específico): 11.03.01 - Indicação Geográfica (IG)
+
+CLASSIFICAÇÃO FINAL: 11.03.', inferindo '10.01.01 - Produção de Alimentos' (mesma grande área)
+  ⚠️  Categoria inválida 'PASSO 1 (Grande Área): 06. Saúde', inferindo '03.01.01 - Atenção Primária' (mesma grande área)
+  ⚠️  Categoria inválida 'Passo 1 (Grande Área): 06. Meio Ambiente e Sustentabilidade
+Passo 2 (Subcategoria): 06.07. Reciclagem e Reaproveitamento
+Passo 3 (Tópico Específico): 06.07.04 - Reaproveitamento de Resíduos
+
+CLASSIFICAÇÃO FINAL: 06.', inferindo '05.01.01 - Proteção da Vida Selvagem' (mesma grande área)
+  ⚠️  Categoria inválida 'Passo 1 (Grande Área): 03. Educação', inferindo '02.01.01 - Educação Infantil' (mesma grande área)
+  ⚠️  Categoria inválida 'Passo 1 (Grande Área): Justiça e Direitos Humanos', inferindo '13.01.01 - Advocacia Pública' (mesma grande área)
+  ⚠️  Categoria inválida 'Passo 1 (Grande Área): Cultura, Artes e Patrimônio', inferindo '08.01.01 - Festivais e Feiras' (mesma grande área)
+  ⚠️  Categoria inválida 'Passo 1 (Grande Área): 06. Saúde', inferindo '03.01.01 - Atenção Primária' (mesma grande área)
+  ⏳ Progresso: 110/200 (55.0%)
+  ⚠️  Categoria inválida 'Passo 1 (Grande Área): 13.0 - Justiça e Direitos Humanos
+Passo 2 (Subcategoria): 13.2 - Igualdade Racial e Étnica
+Passo 3 (Tópico Específico): 13.2.3 - Combate ao Racismo
+
+CLASSIFICAÇÃO FINAL: 13.2', inferindo '13.01.01 - Advocacia Pública' (mesma grande área)
+  ⚠️  Categoria inválida 'PASSO 1 (Grande Área): Agricultura, Pecuária e Abastecimento
+PASSO 2 (Subcategoria): Agricultura Familiar
+PASSO 3 (Tópico Específico): 02.02.04 - Apoio à Agricultura Familiar
+
+CLASSIFICAÇÃO FINAL: 02.02.04 - Apoio à Agricultura Familiar', inferindo '10.01.01 - Produção de Alimentos' (mesma grande área)
+  ⚠️  Categoria inválida 'Passo 1 (Grande Área): 11. Agricultura, Pecuária e Abastecimento
+Passo 2 (Subcategoria): 11.02. Crédito Rural
+Passo 3 (Tópico Específico): 11.02.01 - Crédito Rural
+
+CLASSIFICAÇÃO FINAL: 11.02.01 - Crédito Rural', inferindo '10.01.01 - Produção de Alimentos' (mesma grande área)
+  ⚠️  Categoria inválida 'Passo 1 (Grande Área): 07. Ciência, Tecnologia e Inovação
+Passo 2 (Subcategoria): 07.02. Educação Científica e Tecnológica
+Passo 3 (Tópico Específico): 07.02.03 - Laboratórios e Experimentos Científicos
+
+CLASSIFICAÇÃO FINAL: 07.', inferindo '02.01.01 - Educação Infantil' (mesma grande área)
+  ⚠️  Categoria inválida 'Passo 1 (Grande Área): 06. Desenvolvimento Social', inferindo '15.01.01 - Bolsa Família' (mesma grande área)
+  ⚠️  Categoria inválida 'Passo 1 (Grande Área): 07. Ciência, Tecnologia e Inovação
+Passo 2 (Subcategoria): 07.03. Educação Científica e Tecnológica
+Passo 3 (Tópico Específico): 07.03.02 - Programas e Iniciativas de Popularização da Ciência
+
+CLASSIFICAÇÃO FINAL', inferindo '02.01.01 - Educação Infantil' (mesma grande área)
+  ⚠️  Categoria inválida 'Passo 1 (Grande Área): Desenvolvimento Social', inferindo '15.01.01 - Bolsa Família' (mesma grande área)
+  ⚠️  Categoria inválida 'PASSO 1 (Grande Área): 14. Defesa e Forças Armadas', inferindo '19.01.01 - Inteligência e Contrainteligência' (mesma grande área)
+  ⏳ Progresso: 120/200 (60.0%)
+  ⚠️  Categoria inválida 'Passo 1 (Grande Área): 06. Meio Ambiente e Sustentabilidade
+Passo 2 (Subcategoria): 06.04. Biodiversidade e Ecossistemas
+Passo 3 (Tópico Específico): 06.04.07 - Inventário Biológico
+
+CLASSIFICAÇÃO FINAL: 06.04.07 - Invent', inferindo '05.01.01 - Proteção da Vida Selvagem' (mesma grande área)
+  ⚠️  Categoria inválida 'Passo 1 (Grande Área): Cultura, Artes e Patrimônio', inferindo '08.01.01 - Festivais e Feiras' (mesma grande área)
+  ⚠️  Categoria inválida 'Passo 1 (Grande Área): 11. Agricultura, Pecuária e Abastecimento
+Passo 2 (Subcategoria): 11.01. Política Agrícola e Pecuária
+Passo 3 (Tópico Específico): 11.01.04 - Histórico e Trajetória de Lideranças do Setor Ag', inferindo '10.01.01 - Produção de Alimentos' (mesma grande área)
+  ⚠️  Categoria inválida 'Passo 1 (Grande Área): 03. Educação', inferindo '02.01.01 - Educação Infantil' (mesma grande área)
+  ⚠️  Categoria inválida 'Passo 1 (Grande Área): Justiça e Direitos Humanos', inferindo '13.01.01 - Advocacia Pública' (mesma grande área)
+  ⚠️  Categoria inválida 'Passo 1 (Grande Área): 05. Meio Ambiente e Sustentabilidade
+Passo 2 (Subcategoria): 05.03. Recuperação Ambiental
+Passo 3 (Tópico Específico): 05.03.04 - Reparação de Danos Ambientais
+
+CLASSIFICAÇÃO FINAL: 05.03.04 -', inferindo '05.01.01 - Proteção da Vida Selvagem' (mesma grande área)
+  ⚠️  Categoria inválida 'PASSO 1 (Grande Área): 11. Agricultura, Pecuária e Abastecimento
+PASSO 2 (Subcategoria): 11.02. Agricultura Familiar
+PASSO 3 (Tópico Específico): 11.02.04 - Programa Quintais Produtivos para Mulheres Rurais
+
+CLASSIFICAÇÃO FINAL: 11.', inferindo '10.01.01 - Produção de Alimentos' (mesma grande área)
+  ⚠️  Categoria inválida 'Passo 1 (Grande Área): 11. Indústria e Comércio', inferindo '11.01.01 - Inovação Tecnológica' (mesma grande área)
+  ⚠️  Categoria inválida 'Passo 1 (Grande Área): 09. Infraestrutura e Transportes
+Passo 2 (Subcategoria): 09.03. Portos e Navegação
+Passo 3 (Tópico Específico): 09.03.02 - Movimentação de Cargas
+
+CLASSIFICAÇÃO FINAL: 09.03.02 - Movimentação de', inferindo '07.01.01 - Construção de Estradas' (mesma grande área)
+  ⏳ Progresso: 130/200 (65.0%)
+  ⚠️  Categoria inválida 'Passo 1 (Grande Área): 09. Cultura, Artes e Patrimônio
+Passo 2 (Subcategoria): 09.02. Artes Cênicas
+Passo 3 (Tópico Específico): 09.02.01 - Teatro
+
+CLASSIFICAÇÃO FINAL: 09.02.01 - Teatro', inferindo '08.01.01 - Festivais e Feiras' (mesma grande área)
+  ⚠️  Categoria inválida 'Passo 1 (Grande Área): 15. Esportes e Lazer', inferindo '09.01.01 - Jogos Olímpicos' (mesma grande área)
+  ⚠️  Categoria inválida 'Passo 1 (Grande Área): Economia e Finanças', inferindo '01.01.01 - Política Fiscal' (mesma grande área)
+  ⚠️  Categoria inválida 'Passo 1 (Grande Área): 05. Meio Ambiente e Sustentabilidade
+
+Passo 2 (Subcategoria): 05.02. Políticas e Programas Ambientais
+
+Passo 3 (Tópico Específico): 05.02.03 - Plano de Ação Nacional (PAN)
+
+CLASSIFICAÇÃO FINAL: 05.02', inferindo '05.01.01 - Proteção da Vida Selvagem' (mesma grande área)
+  ⚠️  Categoria inválida 'Passo 1 (Grande Área): 07. Ciência, Tecnologia e Inovação
+Passo 2 (Subcategoria): 07.04. Cooperação Internacional em C&T
+Passo 3 (Tópico Específico): 07.04.03 - Programa Brasil-China de Futuros Líderes em Inovação Científica e', inferindo '06.01.01 - Ciência Aberta' (mesma grande área)
+  ⚠️  Categoria inválida 'Passo 1 (Grande Área): 06. Meio Ambiente e Sustentabilidade
+
+Passo 2 (Subcategoria): 06.04. Florestas e Biodiversidade
+
+Passo 3 (Tópico Específico): 06.04.03 - Economia e Mercado Florestal
+
+CLASSIFICAÇÃO FINAL: 06.04.03 -', inferindo '05.01.01 - Proteção da Vida Selvagem' (mesma grande área)
+  ⚠️  Categoria inválida 'Passo 1 (Grande Área): 09. Cultura, Artes e Patrimônio
+Passo 2 (Subcategoria): 09.04. Concursos e Premiações
+Passo 3 (Tópico Específico): 09.04.02 - Concurso de Fotos e Vídeos
+
+CLASSIFICAÇÃO FINAL: 09.04.', inferindo '08.01.01 - Festivais e Feiras' (mesma grande área)
+  ⚠️  Categoria inválida 'Passo 1 (Grande Área): 19. Ciência, Tecnologia e Inovação
+Passo 2 (Subcategoria): 19.02. Energia Nuclear
+Passo 3 (Tópico Específico): 19.02.03 - Desenvolvimento Tecnológico Nuclear
+
+CLASSIFICAÇÃO FINAL: 19.02.03 - Desenvolvimento Tecnológico Nuclear', inferindo '06.01.01 - Ciência Aberta' (mesma grande área)
+  ⚠️  Categoria inválida 'Passo 1 (Grande Área): 09. Cultura, Artes e Patrimônio
+Passo 2 (Subcategoria): 09.03. Eventos Culturais
+Passo 3 (Tópico Específico): 09.03.04 - Eventos Culturais Diversos
+
+CLASSIFICAÇÃO FINAL: 09.03.04 - Eventos Culturais', inferindo '08.01.01 - Festivais e Feiras' (mesma grande área)
+  ⏳ Progresso: 140/200 (70.0%)
+  ⚠️  Categoria inválida 'Passo 1 (Grande Área): 04. Saúde', inferindo '03.01.01 - Atenção Primária' (mesma grande área)
+  ⚠️  Categoria inválida 'Passo 1 (Grande Área): 03. Educação', inferindo '02.01.01 - Educação Infantil' (mesma grande área)
+  ⚠️  Categoria inválida 'Passo 1 (Grande Área): 11. Desenvolvimento Social', inferindo '15.01.01 - Bolsa Família' (mesma grande área)
+  ⚠️  Categoria inválida 'Passo 1 (Grande Área): 09. Cultura, Artes e Patrimônio
+Passo 2 (Subcategoria): 09.04. Eventos Culturais
+Passo 3 (Tópico Específico): 09.04.03 - Cerimônias e Eventos Oficiais
+
+CLASSIFICAÇÃO FINAL: 09.04.03 - Ce', inferindo '08.01.01 - Festivais e Feiras' (mesma grande área)
+  ⚠️  Categoria inválida 'Passo 1 (Grande Área): 15.0.0 - Desenvolvimento Social
+Passo 2 (Subcategoria): 15.2.0 - Inclusão Social e Combate à Pobreza
+Passo 3 (Tópico Específico): 15.2.4 - Inclusão Produtiva de Povos e Comunidades Tradicionais', inferindo '15.01.01 - Bolsa Família' (mesma grande área)
+  ⚠️  Categoria inválida 'PASSO 1 (Grande Área): Desenvolvimento Social', inferindo '15.01.01 - Bolsa Família' (mesma grande área)
+  ⚠️  Categoria inválida 'Passo 1 (Grande Área): 11. Agricultura, Pecuária e Abastecimento
+Passo 2 (Subcategoria): 11.02. Reforma Agrária
+Passo 3 (Tópico Específico): 11.02.03 - Assentamentos Rurais
+
+CLASSIFICAÇÃO FINAL: 11.02.03 - Assentamentos', inferindo '10.01.01 - Produção de Alimentos' (mesma grande área)
+  ⚠️  Categoria inválida 'Passo 1 (Grande Área): Educação', inferindo '02.01.01 - Educação Infantil' (mesma grande área)
+  ⏳ Progresso: 150/200 (75.0%)
+  ⚠️  Categoria inválida 'Passo 1 (Grande Área): 06. Saúde', inferindo '03.01.01 - Atenção Primária' (mesma grande área)
+  ⚠️  Categoria inválida 'PASSO 1 (Grande Área): 06. Meio Ambiente e Sustentabilidade
+PASSO 2 (Subcategoria): 06.04. Gestão Ambiental e Territorial
+PASSO 3 (Tópico Específico): 06.04.03 - Projetos de Carbono
+
+CLASSIFICAÇÃO FINAL: 06.04.03 - Proj', inferindo '05.01.01 - Proteção da Vida Selvagem' (mesma grande área)
+  ⚠️  Categoria inválida 'Passo 1 (Grande Área): 13.0 - Desenvolvimento Social
+Passo 2 (Subcategoria): 13.02 - Assistência Social
+Passo 3 (Tópico Específico): 13.02.04 - Programas de Proteção Social
+
+CLASSIFICAÇÃO FINAL: 13.02.04 - Programas de Proteção Social', inferindo '15.01.01 - Bolsa Família' (mesma grande área)
+  ⚠️  Categoria inválida 'Passo 1 (Grande Área): 13. Justiça e Direitos Humanos
+Passo 2 (Subcategoria): 13.04. Direitos da Mulher
+Passo 3 (Tópico Específico): 13.04.03 - Mulheres Rurais e Camponesas
+
+CLASSIFICAÇÃO FINAL: 13.04.03', inferindo '13.01.01 - Advocacia Pública' (mesma grande área)
+  ⚠️  Categoria inválida 'Passo 1 (Grande Área): 07. Ciência, Tecnologia e Inovação
+Passo 2 (Subcategoria): 07.04. Biotecnologia
+Passo 3 (Tópico Específico): 07.04.03 - Controle biológico de doenças vegetais
+
+CLASSIFICAÇÃO FINAL: 07.04.03 -', inferindo '06.01.01 - Ciência Aberta' (mesma grande área)
+  ⚠️  Categoria inválida 'Passo 1 (Grande Área): 13.00.00 - Justiça e Direitos Humanos
+Passo 2 (Subcategoria): 13.04.00 - Combate à Corrupção e Crimes Financeiros
+Passo 3 (Tópico Específico): 13.04.03 - Combate à Lavagem de Dinh', inferindo '13.01.01 - Advocacia Pública' (mesma grande área)
+  ⚠️  Categoria inválida 'Passo 1 (Grande Área): 11. Desenvolvimento Social', inferindo '15.01.01 - Bolsa Família' (mesma grande área)
+  ⚠️  Categoria inválida 'Passo 1 (Grande Área): 09. Educação', inferindo '02.01.01 - Educação Infantil' (mesma grande área)
+  ⚠️  Categoria inválida 'Passo 1 (Grande Área): 06. Ciência, Tecnologia e Inovação
+Passo 2 (Subcategoria): 06.02. Educação Científica e Tecnológica
+Passo 3 (Tópico Específico): 06.02.03 - Programas de Incentivo à Pesquisa e Inovação
+
+CLASSIFICAÇÃO', inferindo '02.01.01 - Educação Infantil' (mesma grande área)
+  ⚠️  Categoria inválida 'PASSO 1 (Grande Área): 14.0 - Justiça e Direitos Humanos
+PASSO 2 (Subcategoria): 14.02 - Direitos Sociais
+PASSO 3 (Tópico Específico): 14.02.03 - Diversidade e Inclusão
+
+CLASSIFICAÇÃO FINAL: 14.02.03 -', inferindo '13.01.01 - Advocacia Pública' (mesma grande área)
+  ⏳ Progresso: 160/200 (80.0%)
+  ⚠️  Categoria inválida 'Passo 1 (Grande Área): 11. Desenvolvimento Social', inferindo '15.01.01 - Bolsa Família' (mesma grande área)
+  ⚠️  Categoria inválida 'Passo 1 (Grande Área): 09. Cultura, Artes e Patrimônio
+Passo 2 (Subcategoria): 09.04. Eventos Culturais
+Passo 3 (Tópico Específico): 09.04.03 - Eventos Culturais Nacionais
+
+CLASSIFICAÇÃO FINAL: 09.04.03 - Eventos Cultur', inferindo '08.01.01 - Festivais e Feiras' (mesma grande área)
+  ⚠️  Categoria inválida 'Passo 1 (Grande Área): 13.0 - Justiça e Direitos Humanos
+Passo 2 (Subcategoria): 13.2 - Direitos Humanos
+Passo 3 (Tópico Específico): 13.2.4 - Violência contra a Mulher
+
+CLASSIFICAÇÃO FINAL: 13.2.4 -', inferindo '13.01.01 - Advocacia Pública' (mesma grande área)
+  ⚠️  Categoria inválida 'Passo 1 (Grande Área): 09. Energia e Recursos Minerais
+Passo 2 (Subcategoria): 09.02. Combustíveis e Gás
+Passo 3 (Tópico Específico): 09.02.03 - Programa Gás do Povo
+
+CLASSIFICAÇÃO FINAL: 09.02.03 - Programa G', inferindo '17.01.01 - Exploração de Petróleo' (mesma grande área)
+  ⚠️  Categoria inválida 'Passo 1 (Grande Área): 09. Saúde', inferindo '03.01.01 - Atenção Primária' (mesma grande área)
+  ⚠️  Categoria inválida 'Passo 1 (Grande Área): 06. Saúde', inferindo '03.01.01 - Atenção Primária' (mesma grande área)
+  ⚠️  Categoria inválida 'Passo 1 (Grande Área): 13.Justiça e Direitos Humanos
+Passo 2 (Subcategoria): 13.03.Combate à Corrupção e Lavagem de Dinheiro
+Passo 3 (Tópico Específico): 13.03.04 - Criptoativos e Combate à Lavagem de', inferindo '13.01.01 - Advocacia Pública' (mesma grande área)
+  ⚠️  Categoria inválida 'Passo 1 (Grande Área): 13.0 - Justiça e Direitos Humanos
+Passo 2 (Subcategoria): 13.02 - Violência e Crimes
+Passo 3 (Tópico Específico): 13.02.04 - Estupro e Violência Sexual
+
+CLASSIFICAÇÃO FINAL: 13.02.04', inferindo '13.01.01 - Advocacia Pública' (mesma grande área)
+  ⚠️  Categoria inválida 'Passo 1 (Grande Área): 06. Ciência, Tecnologia e Inovação
+Passo 2 (Subcategoria): 06.02. Pesquisa e Desenvolvimento
+Passo 3 (Tópico Específico): 06.02.03 - Reatores Nucleares
+
+CLASSIFICAÇÃO FINAL: 06.02.03 - Reat', inferindo '06.01.01 - Ciência Aberta' (mesma grande área)
+  ⚠️  Categoria inválida 'Passo 1 (Grande Área): 05. Meio Ambiente e Sustentabilidade
+
+Passo 2 (Subcategoria): 05.04. Povos Indígenas e Comunidades Tradicionais
+
+Passo 3 (Tópico Específico): 05.04.07 - Projetos de Carbono e Autonomia Indígena
+
+CLASSIFICAÇÃO', inferindo '05.01.01 - Proteção da Vida Selvagem' (mesma grande área)
+  ⏳ Progresso: 170/200 (85.0%)
+  ⚠️  Categoria inválida 'Passo 1 (Grande Área): 11. Indústria e Comércio', inferindo '11.01.01 - Inovação Tecnológica' (mesma grande área)
+  ⚠️  Categoria inválida 'Passo 1 (Grande Área): 18. Turismo', inferindo '16.01.01 - Campanhas de Divulgação' (mesma grande área)
+  ⚠️  Categoria inválida 'Passo 1 (Grande Área): 04. Educação', inferindo '02.01.01 - Educação Infantil' (mesma grande área)
+  ⚠️  Categoria inválida 'Passo 1 (Grande Área): 11. Agricultura, Pecuária e Abastecimento
+Passo 2 (Subcategoria): 11.02. Políticas e Programas Agrícolas
+Passo 3 (Tópico Específico): 11.02.04 - Trajetória e Contribuições de Lideranças Agropecuá', inferindo '10.01.01 - Produção de Alimentos' (mesma grande área)
+  ⚠️  Categoria inválida 'Passo 1 (Grande Área): 10. Segurança Pública', inferindo '04.01.01 - Policiamento Ostensivo' (mesma grande área)
+  ⚠️  Categoria inválida 'PASSO 1 (Grande Área): Meio Ambiente e Sustentabilidade
+
+PASSO 2 (Subcategoria): Desertificação
+
+PASSO 3 (Tópico Específico): 05.02.01 - Desertificação
+
+CLASSIFICAÇÃO FINAL: 05.02.01 - Desertificação', inferindo '05.01.01 - Proteção da Vida Selvagem' (mesma grande área)
+  ⚠️  Categoria inválida 'Passo 1 (Grande Área): 15.00.00 - Minorias e Grupos Especiais
+Passo 2 (Subcategoria): 15.01.00 - Povos e Comunidades Tradicionais
+Passo 3 (Tópico Específico): 15.01.03 - Racismo Ambiental
+
+CLASSIFICAÇÃO FINAL:', inferindo '24.01.01 - Igualdade de Gênero' (mesma grande área)
+  ⚠️  Categoria inválida 'Passo 1 (Grande Área): 11. Economia e Finanças', inferindo '01.01.01 - Política Fiscal' (mesma grande área)
+  ⚠️  Categoria inválida 'Passo 1 (Grande Área): 07. Ciência, Tecnologia e Inovação
+Passo 2 (Subcategoria): 07.04. Tecnologia da Informação e Comunicação
+Passo 3 (Tópico Específico): 07.04.03 - Políticas e Programas de TI
+
+Classificação Final: 07.04.', inferindo '06.01.01 - Ciência Aberta' (mesma grande área)
+  ⏳ Progresso: 180/200 (90.0%)
+  ⚠️  Categoria inválida 'Passo 1 (Grande Área): Cultura, Artes e Patrimônio', inferindo '08.01.01 - Festivais e Feiras' (mesma grande área)
+  ⚠️  Categoria inválida 'Passo 1 (Grande Área): 11. Indústria e Comércio', inferindo '11.01.01 - Inovação Tecnológica' (mesma grande área)
+  ⚠️  Categoria inválida 'Passo 1 (Grande Área): 09. Infraestrutura e Transportes
+Passo 2 (Subcategoria): 09.04. Desenvolvimento Regional
+Passo 3 (Tópico Específico): 09.04.03 - Superintendências de Desenvolvimento Regional
+
+CLASSIFICAÇÃO FINAL: 09.04.03 - Superintendências de Desenvolvimento Regional', inferindo '07.01.01 - Construção de Estradas' (mesma grande área)
+  ⚠️  Categoria inválida 'PASSO 1 (Grande Área): Comunicações e Mídia', inferindo '18.01.01 - Serviços Digitais' (mesma grande área)
+  ⚠️  Categoria inválida 'Passo 1 (Grande Área): 19. Energia e Recursos Minerais
+Passo 2 (Subcategoria): 19.02. Mineração
+Passo 3 (Tópico Específico): 19.02.03 - Ações Preventivas na Mineração
+
+CLASSIFICAÇÃO FINAL: 19.02.03 - Ações Preventivas na', inferindo '17.01.01 - Exploração de Petróleo' (mesma grande área)
+  ⚠️  Categoria inválida 'Passo 1 (Grande Área): 03. Educação', inferindo '02.01.01 - Educação Infantil' (mesma grande área)
+  ⏳ Progresso: 190/200 (95.0%)
+  ⚠️  Categoria inválida 'Passo 1 (Grande Área): 14. Energia e Recursos Minerais
+Passo 2 (Subcategoria): 14.01. Energia Nuclear
+Passo 3 (Tópico Específico): 14.01.03 - Responsabilidade Civil Nuclear
+
+CLASSIFICAÇÃO FINAL: 14.01.03 - Responsabilidade Civil Nuclear', inferindo '17.01.01 - Exploração de Petróleo' (mesma grande área)
+  ⚠️  Categoria inválida 'Passo 1 (Grande Área): Trabalho e Emprego', inferindo '14.01.01 - Emprego e Renda' (mesma grande área)
+  ⚠️  Categoria inválida 'Passo 1 (Grande Área): 11. Saúde', inferindo '03.01.01 - Atenção Primária' (mesma grande área)
+  ⚠️  Categoria inválida 'Passo 1 (Grande Área): 05. Meio Ambiente e Sustentabilidade
+Passo 2 (Subcategoria): 05.03. Desastres Naturais e Emergências Ambientais
+Passo 3 (Tópico Específico): 05.03.02 - Monitoramento e Previsão de Eventos Climáticos Extremos', inferindo '05.01.01 - Proteção da Vida Selvagem' (mesma grande área)
+  ⚠️  Categoria inválida 'Passo 1 (Grande Área): 06. Meio Ambiente e Sustentabilidade
+Passo 2 (Subcategoria): 06.04. Desastres Naturais e Riscos Ambientais
+Passo 3 (Tópico Específico): 06.04.03 - Monitoramento e Manutenção de Barragens
+
+CLASSIFICAÇÃO', inferindo '05.01.01 - Proteção da Vida Selvagem' (mesma grande área)
+  ⚠️  Categoria inválida 'PASSO 1 (Grande Área): Indústria e Comércio', inferindo '11.01.01 - Inovação Tecnológica' (mesma grande área)
+  ⚠️  Categoria inválida 'Passo 1 (Grande Área): Ciência, Tecnologia e Inovação
+Passo 2 (Subcategoria): Aeronáutica e Espaço
+Passo 3 (Tópico Específico): 07.02.03 - Aeronaves Elétricas e Híbridas
+
+CLASSIFICAÇÃO FINAL: 07.02.03 -', inferindo '06.01.01 - Ciência Aberta' (mesma grande área)
+  ⚠️  Categoria inválida 'Passo 1 (Grande Área): 13.0 - Justiça e Direitos Humanos
+Passo 2 (Subcategoria): 13.02 - Reinserção Social
+Passo 3 (Tópico Específico): 13.02.04 - Reintegração de Mulheres Privadas de Liberdade
+
+CLASSIFICAÇÃO FINAL:', inferindo '13.01.01 - Advocacia Pública' (mesma grande área)
+  ⚠️  Categoria inválida 'Passo 1 (Grande Área): 07. Saúde', inferindo '03.01.01 - Atenção Primária' (mesma grande área)
+  ⏳ Progresso: 200/200 (100.0%)
+  ⚠️  Categoria inválida 'Passo 1 (Grande Área): Ciência, Tecnologia e Inovação
+Passo 2 (Subcategoria): Política Científica e Tecnológica
+Passo 3 (Tópico Específico): 07.02.01 - Valorização da Pesquisa Científica
+
+CLASSIFICAÇÃO FINAL: 07.02.01 - Valorização da', inferindo '06.01.01 - Ciência Aberta' (mesma grande área)
+  ✅ Classificação completa: 200 notícias
+
+❌ ERRO ao avaliar Claude 3 Haiku: At least one label specified must be in y_true
+   Pulando este modelo...
+
+================================================================================
+MODELO 3/12
+================================================================================
+
+================================================================================
+🤖 Avaliando: Mistral Large 3
+   ID: mistral.mistral-large-3-675b-instruct
+   Provider: mistral
+   Estratégia: chain-of-thought
+================================================================================
+  ❌ Erro ao classificar com Mistral Large 3: An error occurred (ValidationException) when calling the InvokeModel operation: {"error":{"code":"validation_error","message":"Failed to deserialize the JSON body into the target type: missing field `messages` at line 1 column 2533","param":null,"type":"invalid_request_error"}}
+  ❌ Erro ao classificar com Mistral Large 3: An error occurred (ValidationException) when calling the InvokeModel operation: {"error":{"code":"validation_error","message":"Failed to deserialize the JSON body into the target type: missing field `messages` at line 1 column 2312","param":null,"type":"invalid_request_error"}}
+  ❌ Erro ao classificar com Mistral Large 3: An error occurred (ValidationException) when calling the InvokeModel operation: {"error":{"code":"validation_error","message":"Failed to deserialize the JSON body into the target type: missing field `messages` at line 1 column 2433","param":null,"type":"invalid_request_error"}}
+  ❌ Erro ao classificar com Mistral Large 3: An error occurred (ValidationException) when calling the InvokeModel operation: {"error":{"code":"validation_error","message":"Failed to deserialize the JSON body into the target type: missing field `messages` at line 1 column 2380","param":null,"type":"invalid_request_error"}}
+  ❌ Erro ao classificar com Mistral Large 3: An error occurred (ValidationException) when calling the InvokeModel operation: {"error":{"code":"validation_error","message":"Failed to deserialize the JSON body into the target type: missing field `messages` at line 1 column 5770","param":null,"type":"invalid_request_error"}}
+  ❌ Erro ao classificar com Mistral Large 3: An error occurred (ValidationException) when calling the InvokeModel operation: {"error":{"code":"validation_error","message":"Failed to deserialize the JSON body into the target type: missing field `messages` at line 1 column 2497","param":null,"type":"invalid_request_error"}}
+  ❌ Erro ao classificar com Mistral Large 3: An error occurred (ValidationException) when calling the InvokeModel operation: {"error":{"code":"validation_error","message":"Failed to deserialize the JSON body into the target type: missing field `messages` at line 1 column 2478","param":null,"type":"invalid_request_error"}}
+  ❌ Erro ao classificar com Mistral Large 3: An error occurred (ValidationException) when calling the InvokeModel operation: {"error":{"code":"validation_error","message":"Failed to deserialize the JSON body into the target type: missing field `messages` at line 1 column 6294","param":null,"type":"invalid_request_error"}}
+  ❌ Erro ao classificar com Mistral Large 3: An error occurred (ValidationException) when calling the InvokeModel operation: {"error":{"code":"validation_error","message":"Failed to deserialize the JSON body into the target type: missing field `messages` at line 1 column 2357","param":null,"type":"invalid_request_error"}}
+  ⏳ Progresso: 10/200 (5.0%)
+  ❌ Erro ao classificar com Mistral Large 3: An error occurred (ValidationException) when calling the InvokeModel operation: {"error":{"code":"validation_error","message":"Failed to deserialize the JSON body into the target type: missing field `messages` at line 1 column 3584","param":null,"type":"invalid_request_error"}}
+  ❌ Erro ao classificar com Mistral Large 3: An error occurred (ValidationException) when calling the InvokeModel operation: {"error":{"code":"validation_error","message":"Failed to deserialize the JSON body into the target type: missing field `messages` at line 1 column 3728","param":null,"type":"invalid_request_error"}}
+  ❌ Erro ao classificar com Mistral Large 3: An error occurred (ValidationException) when calling the InvokeModel operation: {"error":{"code":"validation_error","message":"Failed to deserialize the JSON body into the target type: missing field `messages` at line 1 column 2984","param":null,"type":"invalid_request_error"}}
+  ❌ Erro ao classificar com Mistral Large 3: An error occurred (ValidationException) when calling the InvokeModel operation: {"error":{"code":"validation_error","message":"Failed to deserialize the JSON body into the target type: missing field `messages` at line 1 column 2347","param":null,"type":"invalid_request_error"}}
+  ❌ Erro ao classificar com Mistral Large 3: An error occurred (ValidationException) when calling the InvokeModel operation: {"error":{"code":"validation_error","message":"Failed to deserialize the JSON body into the target type: missing field `messages` at line 1 column 2664","param":null,"type":"invalid_request_error"}}
+  ❌ Erro ao classificar com Mistral Large 3: An error occurred (ValidationException) when calling the InvokeModel operation: {"error":{"code":"validation_error","message":"Failed to deserialize the JSON body into the target type: missing field `messages` at line 1 column 3092","param":null,"type":"invalid_request_error"}}
+  ❌ Erro ao classificar com Mistral Large 3: An error occurred (ValidationException) when calling the InvokeModel operation: {"error":{"code":"validation_error","message":"Failed to deserialize the JSON body into the target type: missing field `messages` at line 1 column 2528","param":null,"type":"invalid_request_error"}}
+  ❌ Erro ao classificar com Mistral Large 3: An error occurred (ValidationException) when calling the InvokeModel operation: {"error":{"code":"validation_error","message":"Failed to deserialize the JSON body into the target type: missing field `messages` at line 1 column 7752","param":null,"type":"invalid_request_error"}}
+  ❌ Erro ao classificar com Mistral Large 3: An error occurred (ValidationException) when calling the InvokeModel operation: {"error":{"code":"validation_error","message":"Failed to deserialize the JSON body into the target type: missing field `messages` at line 1 column 3540","param":null,"type":"invalid_request_error"}}
+  ❌ Erro ao classificar com Mistral Large 3: An error occurred (ValidationException) when calling the InvokeModel operation: {"error":{"code":"validation_error","message":"Failed to deserialize the JSON body into the target type: missing field `messages` at line 1 column 2854","param":null,"type":"invalid_request_error"}}
+  ⏳ Progresso: 20/200 (10.0%)
+  ❌ Erro ao classificar com Mistral Large 3: An error occurred (ValidationException) when calling the InvokeModel operation: {"error":{"code":"validation_error","message":"Failed to deserialize the JSON body into the target type: missing field `messages` at line 1 column 3096","param":null,"type":"invalid_request_error"}}
+  ❌ Erro ao classificar com Mistral Large 3: An error occurred (ValidationException) when calling the InvokeModel operation: {"error":{"code":"validation_error","message":"Failed to deserialize the JSON body into the target type: missing field `messages` at line 1 column 7998","param":null,"type":"invalid_request_error"}}
+  ❌ Erro ao classificar com Mistral Large 3: An error occurred (ValidationException) when calling the InvokeModel operation: {"error":{"code":"validation_error","message":"Failed to deserialize the JSON body into the target type: missing field `messages` at line 1 column 2490","param":null,"type":"invalid_request_error"}}
+  ❌ Erro ao classificar com Mistral Large 3: An error occurred (ValidationException) when calling the InvokeModel operation: {"error":{"code":"validation_error","message":"Failed to deserialize the JSON body into the target type: missing field `messages` at line 1 column 6512","param":null,"type":"invalid_request_error"}}
+  ❌ Erro ao classificar com Mistral Large 3: An error occurred (ValidationException) when calling the InvokeModel operation: {"error":{"code":"validation_error","message":"Failed to deserialize the JSON body into the target type: missing field `messages` at line 1 column 2312","param":null,"type":"invalid_request_error"}}
+  ❌ Erro ao classificar com Mistral Large 3: An error occurred (ValidationException) when calling the InvokeModel operation: {"error":{"code":"validation_error","message":"Failed to deserialize the JSON body into the target type: missing field `messages` at line 1 column 2420","param":null,"type":"invalid_request_error"}}
+  ❌ Erro ao classificar com Mistral Large 3: An error occurred (ValidationException) when calling the InvokeModel operation: {"error":{"code":"validation_error","message":"Failed to deserialize the JSON body into the target type: missing field `messages` at line 1 column 2702","param":null,"type":"invalid_request_error"}}
+  ❌ Erro ao classificar com Mistral Large 3: An error occurred (ValidationException) when calling the InvokeModel operation: {"error":{"code":"validation_error","message":"Failed to deserialize the JSON body into the target type: missing field `messages` at line 1 column 4506","param":null,"type":"invalid_request_error"}}
+  ❌ Erro ao classificar com Mistral Large 3: An error occurred (ValidationException) when calling the InvokeModel operation: {"error":{"code":"validation_error","message":"Failed to deserialize the JSON body into the target type: missing field `messages` at line 1 column 2618","param":null,"type":"invalid_request_error"}}
+  ❌ Erro ao classificar com Mistral Large 3: An error occurred (ValidationException) when calling the InvokeModel operation: {"error":{"code":"validation_error","message":"Failed to deserialize the JSON body into the target type: missing field `messages` at line 1 column 6188","param":null,"type":"invalid_request_error"}}
+  ⏳ Progresso: 30/200 (15.0%)
+  ❌ Erro ao classificar com Mistral Large 3: An error occurred (ValidationException) when calling the InvokeModel operation: {"error":{"code":"validation_error","message":"Failed to deserialize the JSON body into the target type: missing field `messages` at line 1 column 2441","param":null,"type":"invalid_request_error"}}
+  ❌ Erro ao classificar com Mistral Large 3: An error occurred (ValidationException) when calling the InvokeModel operation: {"error":{"code":"validation_error","message":"Failed to deserialize the JSON body into the target type: missing field `messages` at line 1 column 2274","param":null,"type":"invalid_request_error"}}
+  ❌ Erro ao classificar com Mistral Large 3: An error occurred (ValidationException) when calling the InvokeModel operation: {"error":{"code":"validation_error","message":"Failed to deserialize the JSON body into the target type: missing field `messages` at line 1 column 2641","param":null,"type":"invalid_request_error"}}
+  ❌ Erro ao classificar com Mistral Large 3: An error occurred (ValidationException) when calling the InvokeModel operation: {"error":{"code":"validation_error","message":"Failed to deserialize the JSON body into the target type: missing field `messages` at line 1 column 7718","param":null,"type":"invalid_request_error"}}
+  ❌ Erro ao classificar com Mistral Large 3: An error occurred (ValidationException) when calling the InvokeModel operation: {"error":{"code":"validation_error","message":"Failed to deserialize the JSON body into the target type: missing field `messages` at line 1 column 2236","param":null,"type":"invalid_request_error"}}
+  ❌ Erro ao classificar com Mistral Large 3: An error occurred (ValidationException) when calling the InvokeModel operation: {"error":{"code":"validation_error","message":"Failed to deserialize the JSON body into the target type: missing field `messages` at line 1 column 2457","param":null,"type":"invalid_request_error"}}
+  ❌ Erro ao classificar com Mistral Large 3: An error occurred (ValidationException) when calling the InvokeModel operation: {"error":{"code":"validation_error","message":"Failed to deserialize the JSON body into the target type: missing field `messages` at line 1 column 2435","param":null,"type":"invalid_request_error"}}
+  ❌ Erro ao classificar com Mistral Large 3: An error occurred (ValidationException) when calling the InvokeModel operation: {"error":{"code":"validation_error","message":"Failed to deserialize the JSON body into the target type: missing field `messages` at line 1 column 2367","param":null,"type":"invalid_request_error"}}
+  ❌ Erro ao classificar com Mistral Large 3: An error occurred (ValidationException) when calling the InvokeModel operation: {"error":{"code":"validation_error","message":"Failed to deserialize the JSON body into the target type: missing field `messages` at line 1 column 4187","param":null,"type":"invalid_request_error"}}
+  ❌ Erro ao classificar com Mistral Large 3: An error occurred (ValidationException) when calling the InvokeModel operation: {"error":{"code":"validation_error","message":"Failed to deserialize the JSON body into the target type: missing field `messages` at line 1 column 2556","param":null,"type":"invalid_request_error"}}
+  ⏳ Progresso: 40/200 (20.0%)
+  ❌ Erro ao classificar com Mistral Large 3: An error occurred (ValidationException) when calling the InvokeModel operation: {"error":{"code":"validation_error","message":"Failed to deserialize the JSON body into the target type: missing field `messages` at line 1 column 7198","param":null,"type":"invalid_request_error"}}
+  ❌ Erro ao classificar com Mistral Large 3: An error occurred (ValidationException) when calling the InvokeModel operation: {"error":{"code":"validation_error","message":"Failed to deserialize the JSON body into the target type: missing field `messages` at line 1 column 2537","param":null,"type":"invalid_request_error"}}
+  ❌ Erro ao classificar com Mistral Large 3: An error occurred (ValidationException) when calling the InvokeModel operation: {"error":{"code":"validation_error","message":"Failed to deserialize the JSON body into the target type: missing field `messages` at line 1 column 3076","param":null,"type":"invalid_request_error"}}
+  ❌ Erro ao classificar com Mistral Large 3: An error occurred (ValidationException) when calling the InvokeModel operation: {"error":{"code":"validation_error","message":"Failed to deserialize the JSON body into the target type: missing field `messages` at line 1 column 2474","param":null,"type":"invalid_request_error"}}
+  ❌ Erro ao classificar com Mistral Large 3: An error occurred (ValidationException) when calling the InvokeModel operation: {"error":{"code":"validation_error","message":"Failed to deserialize the JSON body into the target type: missing field `messages` at line 1 column 3351","param":null,"type":"invalid_request_error"}}
+  ❌ Erro ao classificar com Mistral Large 3: An error occurred (ValidationException) when calling the InvokeModel operation: {"error":{"code":"validation_error","message":"Failed to deserialize the JSON body into the target type: missing field `messages` at line 1 column 2320","param":null,"type":"invalid_request_error"}}
+  ❌ Erro ao classificar com Mistral Large 3: An error occurred (ValidationException) when calling the InvokeModel operation: {"error":{"code":"validation_error","message":"Failed to deserialize the JSON body into the target type: missing field `messages` at line 1 column 2516","param":null,"type":"invalid_request_error"}}
+  ❌ Erro ao classificar com Mistral Large 3: An error occurred (ValidationException) when calling the InvokeModel operation: {"error":{"code":"validation_error","message":"Failed to deserialize the JSON body into the target type: missing field `messages` at line 1 column 2287","param":null,"type":"invalid_request_error"}}
+  ❌ Erro ao classificar com Mistral Large 3: An error occurred (ValidationException) when calling the InvokeModel operation: {"error":{"code":"validation_error","message":"Failed to deserialize the JSON body into the target type: missing field `messages` at line 1 column 2619","param":null,"type":"invalid_request_error"}}
+  ❌ Erro ao classificar com Mistral Large 3: An error occurred (ValidationException) when calling the InvokeModel operation: {"error":{"code":"validation_error","message":"Failed to deserialize the JSON body into the target type: missing field `messages` at line 1 column 5435","param":null,"type":"invalid_request_error"}}
+  ⏳ Progresso: 50/200 (25.0%)
+  ❌ Erro ao classificar com Mistral Large 3: An error occurred (ValidationException) when calling the InvokeModel operation: {"error":{"code":"validation_error","message":"Failed to deserialize the JSON body into the target type: missing field `messages` at line 1 column 2536","param":null,"type":"invalid_request_error"}}
+  ❌ Erro ao classificar com Mistral Large 3: An error occurred (ValidationException) when calling the InvokeModel operation: {"error":{"code":"validation_error","message":"Failed to deserialize the JSON body into the target type: missing field `messages` at line 1 column 8173","param":null,"type":"invalid_request_error"}}
+  ❌ Erro ao classificar com Mistral Large 3: An error occurred (ValidationException) when calling the InvokeModel operation: {"error":{"code":"validation_error","message":"Failed to deserialize the JSON body into the target type: missing field `messages` at line 1 column 2659","param":null,"type":"invalid_request_error"}}
+  ❌ Erro ao classificar com Mistral Large 3: An error occurred (ValidationException) when calling the InvokeModel operation: {"error":{"code":"validation_error","message":"Failed to deserialize the JSON body into the target type: missing field `messages` at line 1 column 3668","param":null,"type":"invalid_request_error"}}
+  ❌ Erro ao classificar com Mistral Large 3: An error occurred (ValidationException) when calling the InvokeModel operation: {"error":{"code":"validation_error","message":"Failed to deserialize the JSON body into the target type: missing field `messages` at line 1 column 2543","param":null,"type":"invalid_request_error"}}
+  ❌ Erro ao classificar com Mistral Large 3: An error occurred (ValidationException) when calling the InvokeModel operation: {"error":{"code":"validation_error","message":"Failed to deserialize the JSON body into the target type: missing field `messages` at line 1 column 5219","param":null,"type":"invalid_request_error"}}
+  ❌ Erro ao classificar com Mistral Large 3: An error occurred (ValidationException) when calling the InvokeModel operation: {"error":{"code":"validation_error","message":"Failed to deserialize the JSON body into the target type: missing field `messages` at line 1 column 16491","param":null,"type":"invalid_request_error"}}
+  ❌ Erro ao classificar com Mistral Large 3: An error occurred (ValidationException) when calling the InvokeModel operation: {"error":{"code":"validation_error","message":"Failed to deserialize the JSON body into the target type: missing field `messages` at line 1 column 2937","param":null,"type":"invalid_request_error"}}
+  ❌ Erro ao classificar com Mistral Large 3: An error occurred (ValidationException) when calling the InvokeModel operation: {"error":{"code":"validation_error","message":"Failed to deserialize the JSON body into the target type: missing field `messages` at line 1 column 9016","param":null,"type":"invalid_request_error"}}
+  ❌ Erro ao classificar com Mistral Large 3: An error occurred (ValidationException) when calling the InvokeModel operation: {"error":{"code":"validation_error","message":"Failed to deserialize the JSON body into the target type: missing field `messages` at line 1 column 2363","param":null,"type":"invalid_request_error"}}
+  ⏳ Progresso: 60/200 (30.0%)
+  ❌ Erro ao classificar com Mistral Large 3: An error occurred (ValidationException) when calling the InvokeModel operation: {"error":{"code":"validation_error","message":"Failed to deserialize the JSON body into the target type: missing field `messages` at line 1 column 2473","param":null,"type":"invalid_request_error"}}
+  ❌ Erro ao classificar com Mistral Large 3: An error occurred (ValidationException) when calling the InvokeModel operation: {"error":{"code":"validation_error","message":"Failed to deserialize the JSON body into the target type: missing field `messages` at line 1 column 5394","param":null,"type":"invalid_request_error"}}
+  ❌ Erro ao classificar com Mistral Large 3: An error occurred (ValidationException) when calling the InvokeModel operation: {"error":{"code":"validation_error","message":"Failed to deserialize the JSON body into the target type: missing field `messages` at line 1 column 2541","param":null,"type":"invalid_request_error"}}
+  ❌ Erro ao classificar com Mistral Large 3: An error occurred (ValidationException) when calling the InvokeModel operation: {"error":{"code":"validation_error","message":"Failed to deserialize the JSON body into the target type: missing field `messages` at line 1 column 5707","param":null,"type":"invalid_request_error"}}
+  ❌ Erro ao classificar com Mistral Large 3: An error occurred (ValidationException) when calling the InvokeModel operation: {"error":{"code":"validation_error","message":"Failed to deserialize the JSON body into the target type: missing field `messages` at line 1 column 6256","param":null,"type":"invalid_request_error"}}
+  ❌ Erro ao classificar com Mistral Large 3: An error occurred (ValidationException) when calling the InvokeModel operation: {"error":{"code":"validation_error","message":"Failed to deserialize the JSON body into the target type: missing field `messages` at line 1 column 2432","param":null,"type":"invalid_request_error"}}
+  ❌ Erro ao classificar com Mistral Large 3: An error occurred (ValidationException) when calling the InvokeModel operation: {"error":{"code":"validation_error","message":"Failed to deserialize the JSON body into the target type: missing field `messages` at line 1 column 4110","param":null,"type":"invalid_request_error"}}
+  ❌ Erro ao classificar com Mistral Large 3: An error occurred (ValidationException) when calling the InvokeModel operation: {"error":{"code":"validation_error","message":"Failed to deserialize the JSON body into the target type: missing field `messages` at line 1 column 3408","param":null,"type":"invalid_request_error"}}
+  ❌ Erro ao classificar com Mistral Large 3: An error occurred (ValidationException) when calling the InvokeModel operation: {"error":{"code":"validation_error","message":"Failed to deserialize the JSON body into the target type: missing field `messages` at line 1 column 3707","param":null,"type":"invalid_request_error"}}
+  ❌ Erro ao classificar com Mistral Large 3: An error occurred (ValidationException) when calling the InvokeModel operation: {"error":{"code":"validation_error","message":"Failed to deserialize the JSON body into the target type: missing field `messages` at line 1 column 2549","param":null,"type":"invalid_request_error"}}
+  ⏳ Progresso: 70/200 (35.0%)
+  ❌ Erro ao classificar com Mistral Large 3: An error occurred (ValidationException) when calling the InvokeModel operation: {"error":{"code":"validation_error","message":"Failed to deserialize the JSON body into the target type: missing field `messages` at line 1 column 2849","param":null,"type":"invalid_request_error"}}
+  ❌ Erro ao classificar com Mistral Large 3: An error occurred (ValidationException) when calling the InvokeModel operation: {"error":{"code":"validation_error","message":"Failed to deserialize the JSON body into the target type: missing field `messages` at line 1 column 3083","param":null,"type":"invalid_request_error"}}
+  ❌ Erro ao classificar com Mistral Large 3: An error occurred (ValidationException) when calling the InvokeModel operation: {"error":{"code":"validation_error","message":"Failed to deserialize the JSON body into the target type: missing field `messages` at line 1 column 3086","param":null,"type":"invalid_request_error"}}
+  ❌ Erro ao classificar com Mistral Large 3: An error occurred (ValidationException) when calling the InvokeModel operation: {"error":{"code":"validation_error","message":"Failed to deserialize the JSON body into the target type: missing field `messages` at line 1 column 5161","param":null,"type":"invalid_request_error"}}
+  ❌ Erro ao classificar com Mistral Large 3: An error occurred (ValidationException) when calling the InvokeModel operation: {"error":{"code":"validation_error","message":"Failed to deserialize the JSON body into the target type: missing field `messages` at line 1 column 2354","param":null,"type":"invalid_request_error"}}
+  ❌ Erro ao classificar com Mistral Large 3: An error occurred (ValidationException) when calling the InvokeModel operation: {"error":{"code":"validation_error","message":"Failed to deserialize the JSON body into the target type: missing field `messages` at line 1 column 10677","param":null,"type":"invalid_request_error"}}
+  ❌ Erro ao classificar com Mistral Large 3: An error occurred (ValidationException) when calling the InvokeModel operation: {"error":{"code":"validation_error","message":"Failed to deserialize the JSON body into the target type: missing field `messages` at line 1 column 3979","param":null,"type":"invalid_request_error"}}
+  ❌ Erro ao classificar com Mistral Large 3: An error occurred (ValidationException) when calling the InvokeModel operation: {"error":{"code":"validation_error","message":"Failed to deserialize the JSON body into the target type: missing field `messages` at line 1 column 2455","param":null,"type":"invalid_request_error"}}
+  ❌ Erro ao classificar com Mistral Large 3: An error occurred (ValidationException) when calling the InvokeModel operation: {"error":{"code":"validation_error","message":"Failed to deserialize the JSON body into the target type: missing field `messages` at line 1 column 12211","param":null,"type":"invalid_request_error"}}
+  ❌ Erro ao classificar com Mistral Large 3: An error occurred (ValidationException) when calling the InvokeModel operation: {"error":{"code":"validation_error","message":"Failed to deserialize the JSON body into the target type: missing field `messages` at line 1 column 2469","param":null,"type":"invalid_request_error"}}
+  ⏳ Progresso: 80/200 (40.0%)
+  ❌ Erro ao classificar com Mistral Large 3: An error occurred (ValidationException) when calling the InvokeModel operation: {"error":{"code":"validation_error","message":"Failed to deserialize the JSON body into the target type: missing field `messages` at line 1 column 2408","param":null,"type":"invalid_request_error"}}
+  ❌ Erro ao classificar com Mistral Large 3: An error occurred (ValidationException) when calling the InvokeModel operation: {"error":{"code":"validation_error","message":"Failed to deserialize the JSON body into the target type: missing field `messages` at line 1 column 3587","param":null,"type":"invalid_request_error"}}
+  ❌ Erro ao classificar com Mistral Large 3: An error occurred (ValidationException) when calling the InvokeModel operation: {"error":{"code":"validation_error","message":"Failed to deserialize the JSON body into the target type: missing field `messages` at line 1 column 9967","param":null,"type":"invalid_request_error"}}
+  ❌ Erro ao classificar com Mistral Large 3: An error occurred (ValidationException) when calling the InvokeModel operation: {"error":{"code":"validation_error","message":"Failed to deserialize the JSON body into the target type: missing field `messages` at line 1 column 2359","param":null,"type":"invalid_request_error"}}
+  ❌ Erro ao classificar com Mistral Large 3: An error occurred (ValidationException) when calling the InvokeModel operation: {"error":{"code":"validation_error","message":"Failed to deserialize the JSON body into the target type: missing field `messages` at line 1 column 3659","param":null,"type":"invalid_request_error"}}
+  ❌ Erro ao classificar com Mistral Large 3: An error occurred (ValidationException) when calling the InvokeModel operation: {"error":{"code":"validation_error","message":"Failed to deserialize the JSON body into the target type: missing field `messages` at line 1 column 3905","param":null,"type":"invalid_request_error"}}
+  ❌ Erro ao classificar com Mistral Large 3: An error occurred (ValidationException) when calling the InvokeModel operation: {"error":{"code":"validation_error","message":"Failed to deserialize the JSON body into the target type: missing field `messages` at line 1 column 2402","param":null,"type":"invalid_request_error"}}
+  ❌ Erro ao classificar com Mistral Large 3: An error occurred (ValidationException) when calling the InvokeModel operation: {"error":{"code":"validation_error","message":"Failed to deserialize the JSON body into the target type: missing field `messages` at line 1 column 2570","param":null,"type":"invalid_request_error"}}
+  ❌ Erro ao classificar com Mistral Large 3: An error occurred (ValidationException) when calling the InvokeModel operation: {"error":{"code":"validation_error","message":"Failed to deserialize the JSON body into the target type: missing field `messages` at line 1 column 4533","param":null,"type":"invalid_request_error"}}
+  ❌ Erro ao classificar com Mistral Large 3: An error occurred (ValidationException) when calling the InvokeModel operation: {"error":{"code":"validation_error","message":"Failed to deserialize the JSON body into the target type: missing field `messages` at line 1 column 3580","param":null,"type":"invalid_request_error"}}
+  ⏳ Progresso: 90/200 (45.0%)
+  ❌ Erro ao classificar com Mistral Large 3: An error occurred (ValidationException) when calling the InvokeModel operation: {"error":{"code":"validation_error","message":"Failed to deserialize the JSON body into the target type: missing field `messages` at line 1 column 2543","param":null,"type":"invalid_request_error"}}
+  ❌ Erro ao classificar com Mistral Large 3: An error occurred (ValidationException) when calling the InvokeModel operation: {"error":{"code":"validation_error","message":"Failed to deserialize the JSON body into the target type: missing field `messages` at line 1 column 2482","param":null,"type":"invalid_request_error"}}
+  ❌ Erro ao classificar com Mistral Large 3: An error occurred (ValidationException) when calling the InvokeModel operation: {"error":{"code":"validation_error","message":"Failed to deserialize the JSON body into the target type: missing field `messages` at line 1 column 7660","param":null,"type":"invalid_request_error"}}
+  ❌ Erro ao classificar com Mistral Large 3: An error occurred (ValidationException) when calling the InvokeModel operation: {"error":{"code":"validation_error","message":"Failed to deserialize the JSON body into the target type: missing field `messages` at line 1 column 4110","param":null,"type":"invalid_request_error"}}
+  ❌ Erro ao classificar com Mistral Large 3: An error occurred (ValidationException) when calling the InvokeModel operation: {"error":{"code":"validation_error","message":"Failed to deserialize the JSON body into the target type: missing field `messages` at line 1 column 3899","param":null,"type":"invalid_request_error"}}
+  ❌ Erro ao classificar com Mistral Large 3: An error occurred (ValidationException) when calling the InvokeModel operation: {"error":{"code":"validation_error","message":"Failed to deserialize the JSON body into the target type: missing field `messages` at line 1 column 3378","param":null,"type":"invalid_request_error"}}
+  ❌ Erro ao classificar com Mistral Large 3: An error occurred (ValidationException) when calling the InvokeModel operation: {"error":{"code":"validation_error","message":"Failed to deserialize the JSON body into the target type: missing field `messages` at line 1 column 5817","param":null,"type":"invalid_request_error"}}
+  ❌ Erro ao classificar com Mistral Large 3: An error occurred (ValidationException) when calling the InvokeModel operation: {"error":{"code":"validation_error","message":"Failed to deserialize the JSON body into the target type: missing field `messages` at line 1 column 2384","param":null,"type":"invalid_request_error"}}
+  ❌ Erro ao classificar com Mistral Large 3: An error occurred (ValidationException) when calling the InvokeModel operation: {"error":{"code":"validation_error","message":"Failed to deserialize the JSON body into the target type: missing field `messages` at line 1 column 4347","param":null,"type":"invalid_request_error"}}
+  ❌ Erro ao classificar com Mistral Large 3: An error occurred (ValidationException) when calling the InvokeModel operation: {"error":{"code":"validation_error","message":"Failed to deserialize the JSON body into the target type: missing field `messages` at line 1 column 2602","param":null,"type":"invalid_request_error"}}
+  ⏳ Progresso: 100/200 (50.0%)
+  ❌ Erro ao classificar com Mistral Large 3: An error occurred (ValidationException) when calling the InvokeModel operation: {"error":{"code":"validation_error","message":"Failed to deserialize the JSON body into the target type: missing field `messages` at line 1 column 3535","param":null,"type":"invalid_request_error"}}
+  ❌ Erro ao classificar com Mistral Large 3: An error occurred (ValidationException) when calling the InvokeModel operation: {"error":{"code":"validation_error","message":"Failed to deserialize the JSON body into the target type: missing field `messages` at line 1 column 3895","param":null,"type":"invalid_request_error"}}
+  ❌ Erro ao classificar com Mistral Large 3: An error occurred (ValidationException) when calling the InvokeModel operation: {"error":{"code":"validation_error","message":"Failed to deserialize the JSON body into the target type: missing field `messages` at line 1 column 3429","param":null,"type":"invalid_request_error"}}
+  ❌ Erro ao classificar com Mistral Large 3: An error occurred (ValidationException) when calling the InvokeModel operation: {"error":{"code":"validation_error","message":"Failed to deserialize the JSON body into the target type: missing field `messages` at line 1 column 4970","param":null,"type":"invalid_request_error"}}
+  ❌ Erro ao classificar com Mistral Large 3: An error occurred (ValidationException) when calling the InvokeModel operation: {"error":{"code":"validation_error","message":"Failed to deserialize the JSON body into the target type: missing field `messages` at line 1 column 3891","param":null,"type":"invalid_request_error"}}
+  ❌ Erro ao classificar com Mistral Large 3: An error occurred (ValidationException) when calling the InvokeModel operation: {"error":{"code":"validation_error","message":"Failed to deserialize the JSON body into the target type: missing field `messages` at line 1 column 2391","param":null,"type":"invalid_request_error"}}
+  ❌ Erro ao classificar com Mistral Large 3: An error occurred (ValidationException) when calling the InvokeModel operation: {"error":{"code":"validation_error","message":"Failed to deserialize the JSON body into the target type: missing field `messages` at line 1 column 2611","param":null,"type":"invalid_request_error"}}
+  ❌ Erro ao classificar com Mistral Large 3: An error occurred (ValidationException) when calling the InvokeModel operation: {"error":{"code":"validation_error","message":"Failed to deserialize the JSON body into the target type: missing field `messages` at line 1 column 2444","param":null,"type":"invalid_request_error"}}
+  ❌ Erro ao classificar com Mistral Large 3: An error occurred (ValidationException) when calling the InvokeModel operation: {"error":{"code":"validation_error","message":"Failed to deserialize the JSON body into the target type: missing field `messages` at line 1 column 2545","param":null,"type":"invalid_request_error"}}
+  ❌ Erro ao classificar com Mistral Large 3: An error occurred (ValidationException) when calling the InvokeModel operation: {"error":{"code":"validation_error","message":"Failed to deserialize the JSON body into the target type: missing field `messages` at line 1 column 3418","param":null,"type":"invalid_request_error"}}
+  ⏳ Progresso: 110/200 (55.0%)
+  ❌ Erro ao classificar com Mistral Large 3: An error occurred (ValidationException) when calling the InvokeModel operation: {"error":{"code":"validation_error","message":"Failed to deserialize the JSON body into the target type: missing field `messages` at line 1 column 5878","param":null,"type":"invalid_request_error"}}
+  ❌ Erro ao classificar com Mistral Large 3: An error occurred (ValidationException) when calling the InvokeModel operation: {"error":{"code":"validation_error","message":"Failed to deserialize the JSON body into the target type: missing field `messages` at line 1 column 3719","param":null,"type":"invalid_request_error"}}
+  ❌ Erro ao classificar com Mistral Large 3: An error occurred (ValidationException) when calling the InvokeModel operation: {"error":{"code":"validation_error","message":"Failed to deserialize the JSON body into the target type: missing field `messages` at line 1 column 2470","param":null,"type":"invalid_request_error"}}
+  ❌ Erro ao classificar com Mistral Large 3: An error occurred (ValidationException) when calling the InvokeModel operation: {"error":{"code":"validation_error","message":"Failed to deserialize the JSON body into the target type: missing field `messages` at line 1 column 3647","param":null,"type":"invalid_request_error"}}
+  ❌ Erro ao classificar com Mistral Large 3: An error occurred (ValidationException) when calling the InvokeModel operation: {"error":{"code":"validation_error","message":"Failed to deserialize the JSON body into the target type: missing field `messages` at line 1 column 2510","param":null,"type":"invalid_request_error"}}
+  ❌ Erro ao classificar com Mistral Large 3: An error occurred (ValidationException) when calling the InvokeModel operation: {"error":{"code":"validation_error","message":"Failed to deserialize the JSON body into the target type: missing field `messages` at line 1 column 2937","param":null,"type":"invalid_request_error"}}
+  ❌ Erro ao classificar com Mistral Large 3: An error occurred (ValidationException) when calling the InvokeModel operation: {"error":{"code":"validation_error","message":"Failed to deserialize the JSON body into the target type: missing field `messages` at line 1 column 6686","param":null,"type":"invalid_request_error"}}
+  ❌ Erro ao classificar com Mistral Large 3: An error occurred (ValidationException) when calling the InvokeModel operation: {"error":{"code":"validation_error","message":"Failed to deserialize the JSON body into the target type: missing field `messages` at line 1 column 2774","param":null,"type":"invalid_request_error"}}
+  ❌ Erro ao classificar com Mistral Large 3: An error occurred (ValidationException) when calling the InvokeModel operation: {"error":{"code":"validation_error","message":"Failed to deserialize the JSON body into the target type: missing field `messages` at line 1 column 12070","param":null,"type":"invalid_request_error"}}
+  ❌ Erro ao classificar com Mistral Large 3: An error occurred (ValidationException) when calling the InvokeModel operation: {"error":{"code":"validation_error","message":"Failed to deserialize the JSON body into the target type: missing field `messages` at line 1 column 3716","param":null,"type":"invalid_request_error"}}
+  ⏳ Progresso: 120/200 (60.0%)
+  ❌ Erro ao classificar com Mistral Large 3: An error occurred (ValidationException) when calling the InvokeModel operation: {"error":{"code":"validation_error","message":"Failed to deserialize the JSON body into the target type: missing field `messages` at line 1 column 3215","param":null,"type":"invalid_request_error"}}
+  ❌ Erro ao classificar com Mistral Large 3: An error occurred (ValidationException) when calling the InvokeModel operation: {"error":{"code":"validation_error","message":"Failed to deserialize the JSON body into the target type: missing field `messages` at line 1 column 2831","param":null,"type":"invalid_request_error"}}
+  ❌ Erro ao classificar com Mistral Large 3: An error occurred (ValidationException) when calling the InvokeModel operation: {"error":{"code":"validation_error","message":"Failed to deserialize the JSON body into the target type: missing field `messages` at line 1 column 5549","param":null,"type":"invalid_request_error"}}
+  ❌ Erro ao classificar com Mistral Large 3: An error occurred (ValidationException) when calling the InvokeModel operation: {"error":{"code":"validation_error","message":"Failed to deserialize the JSON body into the target type: missing field `messages` at line 1 column 2365","param":null,"type":"invalid_request_error"}}
+  ❌ Erro ao classificar com Mistral Large 3: An error occurred (ValidationException) when calling the InvokeModel operation: {"error":{"code":"validation_error","message":"Failed to deserialize the JSON body into the target type: missing field `messages` at line 1 column 3726","param":null,"type":"invalid_request_error"}}
+  ❌ Erro ao classificar com Mistral Large 3: An error occurred (ValidationException) when calling the InvokeModel operation: {"error":{"code":"validation_error","message":"Failed to deserialize the JSON body into the target type: missing field `messages` at line 1 column 3914","param":null,"type":"invalid_request_error"}}
+  ❌ Erro ao classificar com Mistral Large 3: An error occurred (ValidationException) when calling the InvokeModel operation: {"error":{"code":"validation_error","message":"Failed to deserialize the JSON body into the target type: missing field `messages` at line 1 column 3772","param":null,"type":"invalid_request_error"}}
+  ❌ Erro ao classificar com Mistral Large 3: An error occurred (ValidationException) when calling the InvokeModel operation: {"error":{"code":"validation_error","message":"Failed to deserialize the JSON body into the target type: missing field `messages` at line 1 column 2998","param":null,"type":"invalid_request_error"}}
+  ❌ Erro ao classificar com Mistral Large 3: An error occurred (ValidationException) when calling the InvokeModel operation: {"error":{"code":"validation_error","message":"Failed to deserialize the JSON body into the target type: missing field `messages` at line 1 column 6293","param":null,"type":"invalid_request_error"}}
+  ❌ Erro ao classificar com Mistral Large 3: An error occurred (ValidationException) when calling the InvokeModel operation: {"error":{"code":"validation_error","message":"Failed to deserialize the JSON body into the target type: missing field `messages` at line 1 column 2399","param":null,"type":"invalid_request_error"}}
+  ⏳ Progresso: 130/200 (65.0%)
+  ❌ Erro ao classificar com Mistral Large 3: An error occurred (ValidationException) when calling the InvokeModel operation: {"error":{"code":"validation_error","message":"Failed to deserialize the JSON body into the target type: missing field `messages` at line 1 column 3598","param":null,"type":"invalid_request_error"}}
+  ❌ Erro ao classificar com Mistral Large 3: An error occurred (ValidationException) when calling the InvokeModel operation: {"error":{"code":"validation_error","message":"Failed to deserialize the JSON body into the target type: missing field `messages` at line 1 column 6005","param":null,"type":"invalid_request_error"}}
+  ❌ Erro ao classificar com Mistral Large 3: An error occurred (ValidationException) when calling the InvokeModel operation: {"error":{"code":"validation_error","message":"Failed to deserialize the JSON body into the target type: missing field `messages` at line 1 column 2309","param":null,"type":"invalid_request_error"}}
+  ❌ Erro ao classificar com Mistral Large 3: An error occurred (ValidationException) when calling the InvokeModel operation: {"error":{"code":"validation_error","message":"Failed to deserialize the JSON body into the target type: missing field `messages` at line 1 column 2676","param":null,"type":"invalid_request_error"}}
+  ❌ Erro ao classificar com Mistral Large 3: An error occurred (ValidationException) when calling the InvokeModel operation: {"error":{"code":"validation_error","message":"Failed to deserialize the JSON body into the target type: missing field `messages` at line 1 column 2224","param":null,"type":"invalid_request_error"}}
+  ❌ Erro ao classificar com Mistral Large 3: An error occurred (ValidationException) when calling the InvokeModel operation: {"error":{"code":"validation_error","message":"Failed to deserialize the JSON body into the target type: missing field `messages` at line 1 column 5565","param":null,"type":"invalid_request_error"}}
+  ❌ Erro ao classificar com Mistral Large 3: An error occurred (ValidationException) when calling the InvokeModel operation: {"error":{"code":"validation_error","message":"Failed to deserialize the JSON body into the target type: missing field `messages` at line 1 column 2246","param":null,"type":"invalid_request_error"}}
+  ❌ Erro ao classificar com Mistral Large 3: An error occurred (ValidationException) when calling the InvokeModel operation: {"error":{"code":"validation_error","message":"Failed to deserialize the JSON body into the target type: missing field `messages` at line 1 column 4667","param":null,"type":"invalid_request_error"}}
+  ❌ Erro ao classificar com Mistral Large 3: An error occurred (ValidationException) when calling the InvokeModel operation: {"error":{"code":"validation_error","message":"Failed to deserialize the JSON body into the target type: missing field `messages` at line 1 column 3300","param":null,"type":"invalid_request_error"}}
+  ❌ Erro ao classificar com Mistral Large 3: An error occurred (ValidationException) when calling the InvokeModel operation: {"error":{"code":"validation_error","message":"Failed to deserialize the JSON body into the target type: missing field `messages` at line 1 column 4686","param":null,"type":"invalid_request_error"}}
+  ⏳ Progresso: 140/200 (70.0%)
+  ❌ Erro ao classificar com Mistral Large 3: An error occurred (ValidationException) when calling the InvokeModel operation: {"error":{"code":"validation_error","message":"Failed to deserialize the JSON body into the target type: missing field `messages` at line 1 column 2812","param":null,"type":"invalid_request_error"}}
+  ❌ Erro ao classificar com Mistral Large 3: An error occurred (ValidationException) when calling the InvokeModel operation: {"error":{"code":"validation_error","message":"Failed to deserialize the JSON body into the target type: missing field `messages` at line 1 column 2492","param":null,"type":"invalid_request_error"}}
+  ❌ Erro ao classificar com Mistral Large 3: An error occurred (ValidationException) when calling the InvokeModel operation: {"error":{"code":"validation_error","message":"Failed to deserialize the JSON body into the target type: missing field `messages` at line 1 column 4012","param":null,"type":"invalid_request_error"}}
+  ❌ Erro ao classificar com Mistral Large 3: An error occurred (ValidationException) when calling the InvokeModel operation: {"error":{"code":"validation_error","message":"Failed to deserialize the JSON body into the target type: missing field `messages` at line 1 column 2328","param":null,"type":"invalid_request_error"}}
+  ❌ Erro ao classificar com Mistral Large 3: An error occurred (ValidationException) when calling the InvokeModel operation: {"error":{"code":"validation_error","message":"Failed to deserialize the JSON body into the target type: missing field `messages` at line 1 column 2545","param":null,"type":"invalid_request_error"}}
+  ❌ Erro ao classificar com Mistral Large 3: An error occurred (ValidationException) when calling the InvokeModel operation: {"error":{"code":"validation_error","message":"Failed to deserialize the JSON body into the target type: missing field `messages` at line 1 column 2513","param":null,"type":"invalid_request_error"}}
+  ❌ Erro ao classificar com Mistral Large 3: An error occurred (ValidationException) when calling the InvokeModel operation: {"error":{"code":"validation_error","message":"Failed to deserialize the JSON body into the target type: missing field `messages` at line 1 column 2308","param":null,"type":"invalid_request_error"}}
+  ❌ Erro ao classificar com Mistral Large 3: An error occurred (ValidationException) when calling the InvokeModel operation: {"error":{"code":"validation_error","message":"Failed to deserialize the JSON body into the target type: missing field `messages` at line 1 column 6759","param":null,"type":"invalid_request_error"}}
+  ❌ Erro ao classificar com Mistral Large 3: An error occurred (ValidationException) when calling the InvokeModel operation: {"error":{"code":"validation_error","message":"Failed to deserialize the JSON body into the target type: missing field `messages` at line 1 column 6969","param":null,"type":"invalid_request_error"}}
+  ❌ Erro ao classificar com Mistral Large 3: An error occurred (ValidationException) when calling the InvokeModel operation: {"error":{"code":"validation_error","message":"Failed to deserialize the JSON body into the target type: missing field `messages` at line 1 column 2572","param":null,"type":"invalid_request_error"}}
+  ⏳ Progresso: 150/200 (75.0%)
+  ❌ Erro ao classificar com Mistral Large 3: An error occurred (ValidationException) when calling the InvokeModel operation: {"error":{"code":"validation_error","message":"Failed to deserialize the JSON body into the target type: missing field `messages` at line 1 column 2482","param":null,"type":"invalid_request_error"}}
+  ❌ Erro ao classificar com Mistral Large 3: An error occurred (ValidationException) when calling the InvokeModel operation: {"error":{"code":"validation_error","message":"Failed to deserialize the JSON body into the target type: missing field `messages` at line 1 column 11435","param":null,"type":"invalid_request_error"}}
+  ❌ Erro ao classificar com Mistral Large 3: An error occurred (ValidationException) when calling the InvokeModel operation: {"error":{"code":"validation_error","message":"Failed to deserialize the JSON body into the target type: missing field `messages` at line 1 column 3465","param":null,"type":"invalid_request_error"}}
+  ❌ Erro ao classificar com Mistral Large 3: An error occurred (ValidationException) when calling the InvokeModel operation: {"error":{"code":"validation_error","message":"Failed to deserialize the JSON body into the target type: missing field `messages` at line 1 column 2443","param":null,"type":"invalid_request_error"}}
+  ❌ Erro ao classificar com Mistral Large 3: An error occurred (ValidationException) when calling the InvokeModel operation: {"error":{"code":"validation_error","message":"Failed to deserialize the JSON body into the target type: missing field `messages` at line 1 column 7264","param":null,"type":"invalid_request_error"}}
+  ❌ Erro ao classificar com Mistral Large 3: An error occurred (ValidationException) when calling the InvokeModel operation: {"error":{"code":"validation_error","message":"Failed to deserialize the JSON body into the target type: missing field `messages` at line 1 column 5520","param":null,"type":"invalid_request_error"}}
+  ❌ Erro ao classificar com Mistral Large 3: An error occurred (ValidationException) when calling the InvokeModel operation: {"error":{"code":"validation_error","message":"Failed to deserialize the JSON body into the target type: missing field `messages` at line 1 column 2576","param":null,"type":"invalid_request_error"}}
+  ❌ Erro ao classificar com Mistral Large 3: An error occurred (ValidationException) when calling the InvokeModel operation: {"error":{"code":"validation_error","message":"Failed to deserialize the JSON body into the target type: missing field `messages` at line 1 column 4471","param":null,"type":"invalid_request_error"}}
+  ❌ Erro ao classificar com Mistral Large 3: An error occurred (ValidationException) when calling the InvokeModel operation: {"error":{"code":"validation_error","message":"Failed to deserialize the JSON body into the target type: missing field `messages` at line 1 column 2425","param":null,"type":"invalid_request_error"}}
+  ❌ Erro ao classificar com Mistral Large 3: An error occurred (ValidationException) when calling the InvokeModel operation: {"error":{"code":"validation_error","message":"Failed to deserialize the JSON body into the target type: missing field `messages` at line 1 column 5464","param":null,"type":"invalid_request_error"}}
+  ⏳ Progresso: 160/200 (80.0%)
+  ❌ Erro ao classificar com Mistral Large 3: An error occurred (ValidationException) when calling the InvokeModel operation: {"error":{"code":"validation_error","message":"Failed to deserialize the JSON body into the target type: missing field `messages` at line 1 column 2526","param":null,"type":"invalid_request_error"}}
+  ❌ Erro ao classificar com Mistral Large 3: An error occurred (ValidationException) when calling the InvokeModel operation: {"error":{"code":"validation_error","message":"Failed to deserialize the JSON body into the target type: missing field `messages` at line 1 column 2492","param":null,"type":"invalid_request_error"}}
+  ❌ Erro ao classificar com Mistral Large 3: An error occurred (ValidationException) when calling the InvokeModel operation: {"error":{"code":"validation_error","message":"Failed to deserialize the JSON body into the target type: missing field `messages` at line 1 column 4299","param":null,"type":"invalid_request_error"}}
+  ❌ Erro ao classificar com Mistral Large 3: An error occurred (ValidationException) when calling the InvokeModel operation: {"error":{"code":"validation_error","message":"Failed to deserialize the JSON body into the target type: missing field `messages` at line 1 column 2377","param":null,"type":"invalid_request_error"}}
+  ❌ Erro ao classificar com Mistral Large 3: An error occurred (ValidationException) when calling the InvokeModel operation: {"error":{"code":"validation_error","message":"Failed to deserialize the JSON body into the target type: missing field `messages` at line 1 column 3609","param":null,"type":"invalid_request_error"}}
+  ❌ Erro ao classificar com Mistral Large 3: An error occurred (ValidationException) when calling the InvokeModel operation: {"error":{"code":"validation_error","message":"Failed to deserialize the JSON body into the target type: missing field `messages` at line 1 column 2463","param":null,"type":"invalid_request_error"}}
+  ❌ Erro ao classificar com Mistral Large 3: An error occurred (ValidationException) when calling the InvokeModel operation: {"error":{"code":"validation_error","message":"Failed to deserialize the JSON body into the target type: missing field `messages` at line 1 column 5711","param":null,"type":"invalid_request_error"}}
+  ❌ Erro ao classificar com Mistral Large 3: An error occurred (ValidationException) when calling the InvokeModel operation: {"error":{"code":"validation_error","message":"Failed to deserialize the JSON body into the target type: missing field `messages` at line 1 column 2364","param":null,"type":"invalid_request_error"}}
+  ❌ Erro ao classificar com Mistral Large 3: An error occurred (ValidationException) when calling the InvokeModel operation: {"error":{"code":"validation_error","message":"Failed to deserialize the JSON body into the target type: missing field `messages` at line 1 column 2385","param":null,"type":"invalid_request_error"}}
+  ❌ Erro ao classificar com Mistral Large 3: An error occurred (ValidationException) when calling the InvokeModel operation: {"error":{"code":"validation_error","message":"Failed to deserialize the JSON body into the target type: missing field `messages` at line 1 column 2373","param":null,"type":"invalid_request_error"}}
+  ⏳ Progresso: 170/200 (85.0%)
+  ❌ Erro ao classificar com Mistral Large 3: An error occurred (ValidationException) when calling the InvokeModel operation: {"error":{"code":"validation_error","message":"Failed to deserialize the JSON body into the target type: missing field `messages` at line 1 column 3134","param":null,"type":"invalid_request_error"}}
+  ❌ Erro ao classificar com Mistral Large 3: An error occurred (ValidationException) when calling the InvokeModel operation: {"error":{"code":"validation_error","message":"Failed to deserialize the JSON body into the target type: missing field `messages` at line 1 column 3319","param":null,"type":"invalid_request_error"}}
+  ❌ Erro ao classificar com Mistral Large 3: An error occurred (ValidationException) when calling the InvokeModel operation: {"error":{"code":"validation_error","message":"Failed to deserialize the JSON body into the target type: missing field `messages` at line 1 column 6796","param":null,"type":"invalid_request_error"}}
+  ❌ Erro ao classificar com Mistral Large 3: An error occurred (ValidationException) when calling the InvokeModel operation: {"error":{"code":"validation_error","message":"Failed to deserialize the JSON body into the target type: missing field `messages` at line 1 column 2216","param":null,"type":"invalid_request_error"}}
+  ❌ Erro ao classificar com Mistral Large 3: An error occurred (ValidationException) when calling the InvokeModel operation: {"error":{"code":"validation_error","message":"Failed to deserialize the JSON body into the target type: missing field `messages` at line 1 column 2422","param":null,"type":"invalid_request_error"}}
+  ❌ Erro ao classificar com Mistral Large 3: An error occurred (ValidationException) when calling the InvokeModel operation: {"error":{"code":"validation_error","message":"Failed to deserialize the JSON body into the target type: missing field `messages` at line 1 column 2598","param":null,"type":"invalid_request_error"}}
+  ❌ Erro ao classificar com Mistral Large 3: An error occurred (ValidationException) when calling the InvokeModel operation: {"error":{"code":"validation_error","message":"Failed to deserialize the JSON body into the target type: missing field `messages` at line 1 column 2423","param":null,"type":"invalid_request_error"}}
+  ❌ Erro ao classificar com Mistral Large 3: An error occurred (ValidationException) when calling the InvokeModel operation: {"error":{"code":"validation_error","message":"Failed to deserialize the JSON body into the target type: missing field `messages` at line 1 column 2786","param":null,"type":"invalid_request_error"}}
+  ❌ Erro ao classificar com Mistral Large 3: An error occurred (ValidationException) when calling the InvokeModel operation: {"error":{"code":"validation_error","message":"Failed to deserialize the JSON body into the target type: missing field `messages` at line 1 column 3199","param":null,"type":"invalid_request_error"}}
+  ❌ Erro ao classificar com Mistral Large 3: An error occurred (ValidationException) when calling the InvokeModel operation: {"error":{"code":"validation_error","message":"Failed to deserialize the JSON body into the target type: missing field `messages` at line 1 column 2236","param":null,"type":"invalid_request_error"}}
+  ⏳ Progresso: 180/200 (90.0%)
+  ❌ Erro ao classificar com Mistral Large 3: An error occurred (ValidationException) when calling the InvokeModel operation: {"error":{"code":"validation_error","message":"Failed to deserialize the JSON body into the target type: missing field `messages` at line 1 column 2369","param":null,"type":"invalid_request_error"}}
+  ❌ Erro ao classificar com Mistral Large 3: An error occurred (ValidationException) when calling the InvokeModel operation: {"error":{"code":"validation_error","message":"Failed to deserialize the JSON body into the target type: missing field `messages` at line 1 column 5176","param":null,"type":"invalid_request_error"}}
+  ❌ Erro ao classificar com Mistral Large 3: An error occurred (ValidationException) when calling the InvokeModel operation: {"error":{"code":"validation_error","message":"Failed to deserialize the JSON body into the target type: missing field `messages` at line 1 column 12456","param":null,"type":"invalid_request_error"}}
+  ❌ Erro ao classificar com Mistral Large 3: An error occurred (ValidationException) when calling the InvokeModel operation: {"error":{"code":"validation_error","message":"Failed to deserialize the JSON body into the target type: missing field `messages` at line 1 column 7649","param":null,"type":"invalid_request_error"}}
+  ❌ Erro ao classificar com Mistral Large 3: An error occurred (ValidationException) when calling the InvokeModel operation: {"error":{"code":"validation_error","message":"Failed to deserialize the JSON body into the target type: missing field `messages` at line 1 column 2497","param":null,"type":"invalid_request_error"}}
+  ❌ Erro ao classificar com Mistral Large 3: An error occurred (ValidationException) when calling the InvokeModel operation: {"error":{"code":"validation_error","message":"Failed to deserialize the JSON body into the target type: missing field `messages` at line 1 column 6190","param":null,"type":"invalid_request_error"}}
+  ❌ Erro ao classificar com Mistral Large 3: An error occurred (ValidationException) when calling the InvokeModel operation: {"error":{"code":"validation_error","message":"Failed to deserialize the JSON body into the target type: missing field `messages` at line 1 column 2194","param":null,"type":"invalid_request_error"}}
+  ❌ Erro ao classificar com Mistral Large 3: An error occurred (ValidationException) when calling the InvokeModel operation: {"error":{"code":"validation_error","message":"Failed to deserialize the JSON body into the target type: missing field `messages` at line 1 column 6594","param":null,"type":"invalid_request_error"}}
+  ❌ Erro ao classificar com Mistral Large 3: An error occurred (ValidationException) when calling the InvokeModel operation: {"error":{"code":"validation_error","message":"Failed to deserialize the JSON body into the target type: missing field `messages` at line 1 column 4145","param":null,"type":"invalid_request_error"}}
+  ❌ Erro ao classificar com Mistral Large 3: An error occurred (ValidationException) when calling the InvokeModel operation: {"error":{"code":"validation_error","message":"Failed to deserialize the JSON body into the target type: missing field `messages` at line 1 column 2586","param":null,"type":"invalid_request_error"}}
+  ⏳ Progresso: 190/200 (95.0%)
+  ❌ Erro ao classificar com Mistral Large 3: An error occurred (ValidationException) when calling the InvokeModel operation: {"error":{"code":"validation_error","message":"Failed to deserialize the JSON body into the target type: missing field `messages` at line 1 column 7016","param":null,"type":"invalid_request_error"}}
+  ❌ Erro ao classificar com Mistral Large 3: An error occurred (ValidationException) when calling the InvokeModel operation: {"error":{"code":"validation_error","message":"Failed to deserialize the JSON body into the target type: missing field `messages` at line 1 column 2502","param":null,"type":"invalid_request_error"}}
+  ❌ Erro ao classificar com Mistral Large 3: An error occurred (ValidationException) when calling the InvokeModel operation: {"error":{"code":"validation_error","message":"Failed to deserialize the JSON body into the target type: missing field `messages` at line 1 column 2198","param":null,"type":"invalid_request_error"}}
+  ❌ Erro ao classificar com Mistral Large 3: An error occurred (ValidationException) when calling the InvokeModel operation: {"error":{"code":"validation_error","message":"Failed to deserialize the JSON body into the target type: missing field `messages` at line 1 column 2757","param":null,"type":"invalid_request_error"}}
+  ❌ Erro ao classificar com Mistral Large 3: An error occurred (ValidationException) when calling the InvokeModel operation: {"error":{"code":"validation_error","message":"Failed to deserialize the JSON body into the target type: missing field `messages` at line 1 column 2550","param":null,"type":"invalid_request_error"}}
+  ❌ Erro ao classificar com Mistral Large 3: An error occurred (ValidationException) when calling the InvokeModel operation: {"error":{"code":"validation_error","message":"Failed to deserialize the JSON body into the target type: missing field `messages` at line 1 column 3558","param":null,"type":"invalid_request_error"}}
+  ❌ Erro ao classificar com Mistral Large 3: An error occurred (ValidationException) when calling the InvokeModel operation: {"error":{"code":"validation_error","message":"Failed to deserialize the JSON body into the target type: missing field `messages` at line 1 column 2584","param":null,"type":"invalid_request_error"}}
+  ❌ Erro ao classificar com Mistral Large 3: An error occurred (ValidationException) when calling the InvokeModel operation: {"error":{"code":"validation_error","message":"Failed to deserialize the JSON body into the target type: missing field `messages` at line 1 column 4359","param":null,"type":"invalid_request_error"}}
+  ❌ Erro ao classificar com Mistral Large 3: An error occurred (ValidationException) when calling the InvokeModel operation: {"error":{"code":"validation_error","message":"Failed to deserialize the JSON body into the target type: missing field `messages` at line 1 column 5072","param":null,"type":"invalid_request_error"}}
+  ❌ Erro ao classificar com Mistral Large 3: An error occurred (ValidationException) when calling the InvokeModel operation: {"error":{"code":"validation_error","message":"Failed to deserialize the JSON body into the target type: missing field `messages` at line 1 column 2374","param":null,"type":"invalid_request_error"}}
+  ⏳ Progresso: 200/200 (100.0%)
+  ❌ Erro ao classificar com Mistral Large 3: An error occurred (ValidationException) when calling the InvokeModel operation: {"error":{"code":"validation_error","message":"Failed to deserialize the JSON body into the target type: missing field `messages` at line 1 column 2481","param":null,"type":"invalid_request_error"}}
+  ✅ Classificação completa: 200 notícias
+
+❌ ERRO ao avaliar Mistral Large 3: At least one label specified must be in y_true
+   Pulando este modelo...
+
+================================================================================
+MODELO 4/12
+================================================================================
+
+================================================================================
+🤖 Avaliando: Mistral Large 2
+   ID: mistral.mistral-large-2402-v1:0
+   Provider: mistral
+   Estratégia: chain-of-thought
+================================================================================
+  ⚠️  Categoria inválida 'Passo 1 (Grande Área):', usando fallback: 20.01.01 - Controle Interno
+  ⚠️  Categoria inválida '---', usando fallback: 20.01.01 - Controle Interno
+  ⚠️  Categoria inválida 'A notícia não contém informações suficientes para classificação.', usando fallback: 20.01.01 - Controle Interno
+  ⚠️  Categoria inválida '---', usando fallback: 20.01.01 - Controle Interno
+  ⚠️  Categoria inválida '---', usando fallback: 20.01.01 - Controle Interno
+  ⚠️  Categoria inválida 'PASSO 1 (Grande Área):', usando fallback: 20.01.01 - Controle Interno
+  ⚠️  Categoria inválida '---', usando fallback: 20.01.01 - Controle Interno
+  ⏳ Progresso: 10/200 (5.0%)
+  ⚠️  Categoria inválida '16.02.08 - Radioteranóstico', usando fallback: 20.01.01 - Controle Interno
+  ⚠️  Categoria inválida 'Código: 13.02.07 - Receita Saúde', inferindo '03.01.01 - Atenção Primária' (mesma grande área)
+  ⚠️  Categoria inválida '---', usando fallback: 20.01.01 - Controle Interno
+  ⚠️  Categoria inválida '---', usando fallback: 20.01.01 - Controle Interno
+  ⚠️  Categoria inválida '1. Relações Internacionais e Diplomacia', inferindo '12.01.01 - Acordos Comerciais' (mesma grande área)
+  ⚠️  Categoria inválida '```', usando fallback: 20.01.01 - Controle Interno
+  ⏳ Progresso: 20/200 (10.0%)
+  ⚠️  Categoria inválida '---', usando fallback: 20.01.01 - Controle Interno
+  ⚠️  Categoria inválida '---', usando fallback: 20.01.01 - Controle Interno
+  ⚠️  Categoria inválida 'Código: 02.04.12 - Piscicultura', usando fallback: 20.01.01 - Controle Interno
+  ⚠️  Categoria inválida '02.03.10 - Olimpíadas Científicas', usando fallback: 20.01.01 - Controle Interno
+  ⏳ Progresso: 30/200 (15.0%)
+  ⚠️  Categoria inválida 'Código: 11.02.03 - Seleção de Bolsistas Acadêmicos', usando fallback: 20.01.01 - Controle Interno
+  ⚠️  Categoria inválida 'Passo 1 (Grande Área):', usando fallback: 20.01.01 - Controle Interno
+  ⚠️  Categoria inválida 'Passo 1 (Grande Área):', usando fallback: 20.01.01 - Controle Interno
+  ⚠️  Categoria inválida '---', usando fallback: 20.01.01 - Controle Interno
+  ⚠️  Categoria inválida 'Código: 22.02.07 - Recrutamento e Seleção de Pessoal
+
+RACIOCÍNIO:
+Passo 1 (Grande Área): A notícia fala sobre um processo seletivo para recrutamento, o que se enquadra na área de Trabalho e Emprego.
+Passo 2 (Subcategoria): Dent', inferindo '14.01.01 - Emprego e Renda' (mesma grande área)
+  ⚠️  Categoria inválida '---', usando fallback: 20.01.01 - Controle Interno
+  ⚠️  Categoria inválida '---', usando fallback: 20.01.01 - Controle Interno
+  ⏳ Progresso: 40/200 (20.0%)
+  ⚠️  Categoria inválida '10.02.04 - Prêmio Sérgio Mamberti', usando fallback: 20.01.01 - Controle Interno
+  ⚠️  Categoria inválida '---', usando fallback: 20.01.01 - Controle Interno
+  ⚠️  Categoria inválida 'Dentro da', usando fallback: 20.01.01 - Controle Interno
+  ⚠️  Categoria inválida '---', usando fallback: 20.01.01 - Controle Interno
+  ⚠️  Categoria inválida '---', usando fallback: 20.01.01 - Controle Interno
+  ⚠️  Categoria inválida '---', usando fallback: 20.01.01 - Controle Interno
+  ⚠️  Categoria inválida 'Passo 1 (Grande Área):', usando fallback: 20.01.01 - Controle Interno
+  ⏳ Progresso: 50/200 (25.0%)
+  ⚠️  Categoria inválida '---', usando fallback: 20.01.01 - Controle Interno
+  ⚠️  Categoria inválida '1. Cultura, Artes e Patrimônio', inferindo '08.01.01 - Festivais e Feiras' (mesma grande área)
+  ⚠️  Categoria inválida '---', usando fallback: 20.01.01 - Controle Interno
+  ⚠️  Categoria inválida '```', usando fallback: 20.01.01 - Controle Interno
+  ⏳ Progresso: 60/200 (30.0%)
+  ⚠️  Categoria inválida '---', usando fallback: 20.01.01 - Controle Interno
+  ⚠️  Categoria inválida 'Passo 1 (Grande Área):', usando fallback: 20.01.01 - Controle Interno
+  ⚠️  Categoria inválida '---', usando fallback: 20.01.01 - Controle Interno
+  ⚠️  Categoria inválida 'CÓDIGO: 21.03.02 - Armas e Explosivos', usando fallback: 20.01.01 - Controle Interno
+  ⚠️  Categoria inválida '---', usando fallback: 20.01.01 - Controle Interno
+  ⚠️  Categoria inválida '---', usando fallback: 20.01.01 - Controle Interno
+  ⏳ Progresso: 70/200 (35.0%)
+  ⚠️  Categoria inválida '---', usando fallback: 20.01.01 - Controle Interno
+  ⚠️  Categoria inválida 'A notícia em questão trata principalmente sobre a estimativa de novos casos de câncer no Brasil entre 2026 e 2028, divulgada pelo Instituto Nacional de Câncer (INCA). A grande área a que esta notícia pertence é a Saúde.
+
+Dentro da grande área da Saúde, a subcategoria mais apropriada é a de Camp', inferindo '03.01.01 - Atenção Primária' (mesma grande área)

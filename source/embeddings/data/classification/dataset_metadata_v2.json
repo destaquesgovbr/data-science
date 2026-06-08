@@ -1,0 +1,18 @@
+{
+  "source": "govbrnews_recent_10000_clean.parquet",
+  "total_docs": 599,
+  "train_size": 449,
+  "val_size": 60,
+  "test_size": 90,
+  "n_categories": 3,
+  "categories": [
+    "Ciência e Tecnologia",
+    "Meio Ambiente",
+    "Outros"
+  ],
+  "category_distribution": {
+    "Ciência e Tecnologia": 200,
+    "Meio Ambiente": 200,
+    "Outros": 199
+  }
+}

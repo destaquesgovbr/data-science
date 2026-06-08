@@ -1,0 +1,8 @@
+model,consistency_mean,consistency_median,perfect_count,zero_count
+multilingual-e5-large,0.9922,1.0000,83,0
+multilingual-e5-small,0.9882,1.0000,82,0
+multilingual-e5-base,0.9853,1.0000,81,0
+labse,0.9059,1.0000,65,0
+paraphrase-mpnet,0.7608,1.0000,47,7
+bertimbau,0.6784,0.6667,41,9
+paraphrase-miniml,0.6667,0.6667,39,11

@@ -1,0 +1,632 @@
+{
+  "ms-marco-L-12 (baseline)": [
+    {
+      "query": "Plano Safra crédito rural agricultura",
+      "expected_category": "Agricultura",
+      "top_category": "Agricultura",
+      "top_score": 7.21942138671875,
+      "latency_ms": 160.23588180541992,
+      "category_match": true,
+      "num_results": 4,
+      "scores": [
+        -3.175675392150879,
+        7.21942138671875,
+        -11.280925750732422
+      ]
+    },
+    {
+      "query": "microcrédito MEIs renda",
+      "expected_category": "Agricultura",
+      "top_category": "Agricultura",
+      "top_score": 1.2204766273498535,
+      "latency_ms": 650.432825088501,
+      "category_match": true,
+      "num_results": 10,
+      "scores": [
+        1.2204766273498535,
+        -4.822999954223633,
+        -11.262743949890137
+      ]
+    },
+    {
+      "query": "proteção social assistência periferias",
+      "expected_category": "Assistência Social",
+      "top_category": "Assistência Social",
+      "top_score": 1.9637424945831299,
+      "latency_ms": 451.6417980194092,
+      "category_match": true,
+      "num_results": 10,
+      "scores": [
+        -4.7479753494262695,
+        1.9637424945831299,
+        -5.0210981369018555
+      ]
+    },
+    {
+      "query": "violência contra mulher Ligue 180",
+      "expected_category": "Assistência Social",
+      "top_category": "Assistência Social",
+      "top_score": 7.560181617736816,
+      "latency_ms": 645.2279090881348,
+      "category_match": true,
+      "num_results": 7,
+      "scores": [
+        7.560181617736816,
+        2.2194714546203613,
+        -11.296830177307129
+      ]
+    },
+    {
+      "query": "inteligência artificial IA guia nacional",
+      "expected_category": "Ciência e Tecnologia",
+      "top_category": "Ciência e Tecnologia",
+      "top_score": 4.737060070037842,
+      "latency_ms": 417.8798198699951,
+      "category_match": true,
+      "num_results": 8,
+      "scores": [
+        -11.258358001708984,
+        4.737060070037842,
+        -11.309986114501953
+      ]
+    },
+    {
+      "query": "reator multipropósito brasileiro nuclear",
+      "expected_category": "Ciência e Tecnologia",
+      "top_category": "Ciência e Tecnologia",
+      "top_score": 7.7912068367004395,
+      "latency_ms": 782.1681499481201,
+      "category_match": true,
+      "num_results": 10,
+      "scores": [
+        -11.315387725830078,
+        7.7912068367004395,
+        -11.315387725830078
+      ]
+    },
+    {
+      "query": "conectividade digital agricultura familiar territórios",
+      "expected_category": "Ciência e Tecnologia",
+      "top_category": "Agricultura",
+      "top_score": -5.870330810546875,
+      "latency_ms": 913.4562015533447,
+      "category_match": false,
+      "num_results": 10,
+      "scores": [
+        -11.240942001342773,
+        -11.044635772705078,
+        -5.870330810546875
+      ]
+    },
+    {
+      "query": "chuvas enchentes Zona da Mata Mineira",
+      "expected_category": "Assistência Social",
+      "top_category": "Assistência Social",
+      "top_score": -8.173432350158691,
+      "latency_ms": 734.5247268676758,
+      "category_match": true,
+      "num_results": 10,
+      "scores": [
+        -8.238768577575684,
+        -11.30370807647705,
+        -11.322030067443848
+      ]
+    },
+    {
+      "query": "cuidadores informais mulheres Brasil",
+      "expected_category": "Assistência Social",
+      "top_category": "Assistência Social",
+      "top_score": 7.627662658691406,
+      "latency_ms": 133.74638557434082,
+      "category_match": true,
+      "num_results": 1,
+      "scores": [
+        7.627662658691406
+      ]
+    },
+    {
+      "query": "pesca amadora esportiva plano nacional",
+      "expected_category": "Agricultura",
+      "top_category": "Agricultura",
+      "top_score": 7.292584419250488,
+      "latency_ms": 220.7784652709961,
+      "category_match": true,
+      "num_results": 4,
+      "scores": [
+        -10.813352584838867,
+        7.292584419250488,
+        -10.03907299041748
+      ]
+    },
+    {
+      "query": "Garantia-Safra agricultores perda produção",
+      "expected_category": "Agricultura",
+      "top_category": "Agricultura",
+      "top_score": -5.278558731079102,
+      "latency_ms": 482.27715492248535,
+      "category_match": true,
+      "num_results": 10,
+      "scores": [
+        -6.380268096923828,
+        -11.311901092529297,
+        -7.3613080978393555
+      ]
+    },
+    {
+      "query": "cooperação FAO agricultura alimentação",
+      "expected_category": "Agricultura",
+      "top_category": "Agricultura",
+      "top_score": 6.40169620513916,
+      "latency_ms": 764.0998363494873,
+      "category_match": true,
+      "num_results": 10,
+      "scores": [
+        6.40169620513916,
+        4.654310703277588,
+        4.8079986572265625
+      ]
+    },
+    {
+      "query": "yanomami proteção indígena equipamentos",
+      "expected_category": "Assistência Social",
+      "top_category": "Assistência Social",
+      "top_score": 6.145903587341309,
+      "latency_ms": 1123.6786842346191,
+      "category_match": true,
+      "num_results": 10,
+      "scores": [
+        4.1196818351745605,
+        6.145903587341309,
+        0.29967987537384033
+      ]
+    },
+    {
+      "query": "previdência social atendimento Teresina",
+      "expected_category": "Assistência Social",
+      "top_category": "Assistência Social",
+      "top_score": 7.020281791687012,
+      "latency_ms": 1159.2988967895508,
+      "category_match": true,
+      "num_results": 10,
+      "scores": [
+        -11.025472640991211,
+        5.972034454345703,
+        -11.175100326538086
+      ]
+    },
+    {
+      "query": "envelhecimento população LGBTQIA+",
+      "expected_category": "Assistência Social",
+      "top_category": "Assistência Social",
+      "top_score": 8.101152420043945,
+      "latency_ms": 489.0913963317871,
+      "category_match": true,
+      "num_results": 7,
+      "scores": [
+        -11.121451377868652,
+        7.288795471191406,
+        7.320158958435059
+      ]
+    }
+  ],
+  "ms-marco-L-6 (fast)": [
+    {
+      "query": "Plano Safra crédito rural agricultura",
+      "expected_category": "Agricultura",
+      "top_category": "Agricultura",
+      "top_score": 7.0092058181762695,
+      "latency_ms": 179.88038063049316,
+      "category_match": true,
+      "num_results": 4,
+      "scores": [
+        -2.4835522174835205,
+        7.0092058181762695,
+        -11.400165557861328
+      ]
+    },
+    {
+      "query": "microcrédito MEIs renda",
+      "expected_category": "Agricultura",
+      "top_category": "Agricultura",
+      "top_score": -0.8980398178100586,
+      "latency_ms": 346.5924263000488,
+      "category_match": true,
+      "num_results": 10,
+      "scores": [
+        -0.8980398178100586,
+        -6.488559722900391,
+        -11.3722505569458
+      ]
+    },
+    {
+      "query": "proteção social assistência periferias",
+      "expected_category": "Assistência Social",
+      "top_category": "Assistência Social",
+      "top_score": 1.2892447710037231,
+      "latency_ms": 266.6921615600586,
+      "category_match": true,
+      "num_results": 10,
+      "scores": [
+        -4.867128372192383,
+        1.2892447710037231,
+        -4.606718063354492
+      ]
+    },
+    {
+      "query": "violência contra mulher Ligue 180",
+      "expected_category": "Assistência Social",
+      "top_category": "Assistência Social",
+      "top_score": 7.764998912811279,
+      "latency_ms": 390.3980255126953,
+      "category_match": true,
+      "num_results": 7,
+      "scores": [
+        7.764998912811279,
+        1.9055670499801636,
+        -11.29544734954834
+      ]
+    },
+    {
+      "query": "inteligência artificial IA guia nacional",
+      "expected_category": "Ciência e Tecnologia",
+      "top_category": "Ciência e Tecnologia",
+      "top_score": -0.21378326416015625,
+      "latency_ms": 230.00764846801758,
+      "category_match": true,
+      "num_results": 8,
+      "scores": [
+        -11.338741302490234,
+        -0.21378326416015625,
+        -11.337499618530273
+      ]
+    },
+    {
+      "query": "reator multipropósito brasileiro nuclear",
+      "expected_category": "Ciência e Tecnologia",
+      "top_category": "Ciência e Tecnologia",
+      "top_score": 7.863175868988037,
+      "latency_ms": 465.3208255767822,
+      "category_match": true,
+      "num_results": 10,
+      "scores": [
+        -11.415353775024414,
+        7.863175868988037,
+        -11.415353775024414
+      ]
+    },
+    {
+      "query": "conectividade digital agricultura familiar territórios",
+      "expected_category": "Ciência e Tecnologia",
+      "top_category": "Agricultura",
+      "top_score": -5.09731388092041,
+      "latency_ms": 480.7422161102295,
+      "category_match": false,
+      "num_results": 10,
+      "scores": [
+        -11.361028671264648,
+        -10.594402313232422,
+        -5.09731388092041
+      ]
+    },
+    {
+      "query": "chuvas enchentes Zona da Mata Mineira",
+      "expected_category": "Assistência Social",
+      "top_category": "Meio Ambiente",
+      "top_score": -7.155882358551025,
+      "latency_ms": 402.4198055267334,
+      "category_match": false,
+      "num_results": 10,
+      "scores": [
+        -7.155882358551025,
+        -11.241686820983887,
+        -11.280414581298828
+      ]
+    },
+    {
+      "query": "cuidadores informais mulheres Brasil",
+      "expected_category": "Assistência Social",
+      "top_category": "Assistência Social",
+      "top_score": 6.17805290222168,
+      "latency_ms": 86.90452575683594,
+      "category_match": true,
+      "num_results": 1,
+      "scores": [
+        6.17805290222168
+      ]
+    },
+    {
+      "query": "pesca amadora esportiva plano nacional",
+      "expected_category": "Agricultura",
+      "top_category": "Agricultura",
+      "top_score": 6.763086795806885,
+      "latency_ms": 132.90715217590332,
+      "category_match": true,
+      "num_results": 4,
+      "scores": [
+        -10.837257385253906,
+        6.763086795806885,
+        -9.870131492614746
+      ]
+    },
+    {
+      "query": "Garantia-Safra agricultores perda produção",
+      "expected_category": "Agricultura",
+      "top_category": "Agricultura",
+      "top_score": -5.043874740600586,
+      "latency_ms": 248.28696250915527,
+      "category_match": true,
+      "num_results": 10,
+      "scores": [
+        -6.4871087074279785,
+        -11.306116104125977,
+        -5.627975940704346
+      ]
+    },
+    {
+      "query": "cooperação FAO agricultura alimentação",
+      "expected_category": "Agricultura",
+      "top_category": "Saúde",
+      "top_score": 5.410732269287109,
+      "latency_ms": 367.01321601867676,
+      "category_match": false,
+      "num_results": 10,
+      "scores": [
+        5.325378894805908,
+        2.793302059173584,
+        1.8040516376495361
+      ]
+    },
+    {
+      "query": "yanomami proteção indígena equipamentos",
+      "expected_category": "Assistência Social",
+      "top_category": "Assistência Social",
+      "top_score": 4.938893795013428,
+      "latency_ms": 588.8149738311768,
+      "category_match": true,
+      "num_results": 10,
+      "scores": [
+        3.6247010231018066,
+        4.938893795013428,
+        -1.2264056205749512
+      ]
+    },
+    {
+      "query": "previdência social atendimento Teresina",
+      "expected_category": "Assistência Social",
+      "top_category": "Assistência Social",
+      "top_score": 6.34353494644165,
+      "latency_ms": 578.3450603485107,
+      "category_match": true,
+      "num_results": 10,
+      "scores": [
+        -11.126471519470215,
+        3.9235591888427734,
+        -10.99812126159668
+      ]
+    },
+    {
+      "query": "envelhecimento população LGBTQIA+",
+      "expected_category": "Assistência Social",
+      "top_category": "Assistência Social",
+      "top_score": 8.245214462280273,
+      "latency_ms": 265.66290855407715,
+      "category_match": true,
+      "num_results": 7,
+      "scores": [
+        -11.083956718444824,
+        7.100388526916504,
+        7.016534805297852
+      ]
+    }
+  ],
+  "bge-reranker-v2-m3 (multilingual)": [
+    {
+      "query": "Plano Safra crédito rural agricultura",
+      "expected_category": "Agricultura",
+      "top_category": "Agricultura",
+      "top_score": 0.9977028965950012,
+      "latency_ms": 959.0232372283936,
+      "category_match": true,
+      "num_results": 4,
+      "scores": [
+        0.4413115084171295,
+        0.9977028965950012,
+        2.070925256703049e-05
+      ]
+    },
+    {
+      "query": "microcrédito MEIs renda",
+      "expected_category": "Agricultura",
+      "top_category": "Agricultura",
+      "top_score": 0.9059507846832275,
+      "latency_ms": 4597.2418785095215,
+      "category_match": true,
+      "num_results": 10,
+      "scores": [
+        0.9059507846832275,
+        0.00972429197281599,
+        0.00047787706716917455
+      ]
+    },
+    {
+      "query": "proteção social assistência periferias",
+      "expected_category": "Assistência Social",
+      "top_category": "Assistência Social",
+      "top_score": 0.12199380248785019,
+      "latency_ms": 2999.4523525238037,
+      "category_match": true,
+      "num_results": 10,
+      "scores": [
+        0.0062890732660889626,
+        0.12199380248785019,
+        0.005008518695831299
+      ]
+    },
+    {
+      "query": "violência contra mulher Ligue 180",
+      "expected_category": "Assistência Social",
+      "top_category": "Assistência Social",
+      "top_score": 0.9947386384010315,
+      "latency_ms": 4379.801511764526,
+      "category_match": true,
+      "num_results": 7,
+      "scores": [
+        0.9947386384010315,
+        0.02388184703886509,
+        0.001773133291862905
+      ]
+    },
+    {
+      "query": "inteligência artificial IA guia nacional",
+      "expected_category": "Ciência e Tecnologia",
+      "top_category": "Ciência e Tecnologia",
+      "top_score": 0.8921884298324585,
+      "latency_ms": 3339.815378189087,
+      "category_match": true,
+      "num_results": 8,
+      "scores": [
+        0.0003613681183196604,
+        0.8921884298324585,
+        6.246334669413045e-05
+      ]
+    },
+    {
+      "query": "reator multipropósito brasileiro nuclear",
+      "expected_category": "Ciência e Tecnologia",
+      "top_category": "Ciência e Tecnologia",
+      "top_score": 0.9877479076385498,
+      "latency_ms": 6191.110134124756,
+      "category_match": true,
+      "num_results": 10,
+      "scores": [
+        3.542027116054669e-05,
+        0.9877479076385498,
+        3.542027116054669e-05
+      ]
+    },
+    {
+      "query": "conectividade digital agricultura familiar territórios",
+      "expected_category": "Ciência e Tecnologia",
+      "top_category": "Agricultura",
+      "top_score": 0.04120717942714691,
+      "latency_ms": 5851.723432540894,
+      "category_match": false,
+      "num_results": 10,
+      "scores": [
+        0.04120717942714691,
+        2.3211770894704387e-05,
+        0.0012855380773544312
+      ]
+    },
+    {
+      "query": "chuvas enchentes Zona da Mata Mineira",
+      "expected_category": "Assistência Social",
+      "top_category": "Meio Ambiente",
+      "top_score": 0.08986038714647293,
+      "latency_ms": 6008.469820022583,
+      "category_match": false,
+      "num_results": 10,
+      "scores": [
+        0.08986038714647293,
+        0.0015096873976290226,
+        0.012503957375884056
+      ]
+    },
+    {
+      "query": "cuidadores informais mulheres Brasil",
+      "expected_category": "Assistência Social",
+      "top_category": "Assistência Social",
+      "top_score": 0.9984017014503479,
+      "latency_ms": 414.3247604370117,
+      "category_match": true,
+      "num_results": 1,
+      "scores": [
+        0.9984017014503479
+      ]
+    },
+    {
+      "query": "pesca amadora esportiva plano nacional",
+      "expected_category": "Agricultura",
+      "top_category": "Agricultura",
+      "top_score": 0.997414231300354,
+      "latency_ms": 1823.2975006103516,
+      "category_match": true,
+      "num_results": 4,
+      "scores": [
+        2.5190491214743815e-05,
+        0.997414231300354,
+        3.9827664295444265e-05
+      ]
+    },
+    {
+      "query": "Garantia-Safra agricultores perda produção",
+      "expected_category": "Agricultura",
+      "top_category": "Agricultura",
+      "top_score": 0.05012492835521698,
+      "latency_ms": 3950.7086277008057,
+      "category_match": true,
+      "num_results": 10,
+      "scores": [
+        0.01921907067298889,
+        0.0007064712117426097,
+        0.05012492835521698
+      ]
+    },
+    {
+      "query": "cooperação FAO agricultura alimentação",
+      "expected_category": "Agricultura",
+      "top_category": "Agricultura",
+      "top_score": 0.8109050989151001,
+      "latency_ms": 5746.936798095703,
+      "category_match": true,
+      "num_results": 10,
+      "scores": [
+        0.07308188825845718,
+        0.8109050989151001,
+        0.5816394090652466
+      ]
+    },
+    {
+      "query": "yanomami proteção indígena equipamentos",
+      "expected_category": "Assistência Social",
+      "top_category": "Assistência Social",
+      "top_score": 0.9428322911262512,
+      "latency_ms": 10264.872789382935,
+      "category_match": true,
+      "num_results": 10,
+      "scores": [
+        0.4446280896663666,
+        0.9428322911262512,
+        0.0003211479925084859
+      ]
+    },
+    {
+      "query": "previdência social atendimento Teresina",
+      "expected_category": "Assistência Social",
+      "top_category": "Assistência Social",
+      "top_score": 0.975923478603363,
+      "latency_ms": 12982.00798034668,
+      "category_match": true,
+      "num_results": 10,
+      "scores": [
+        0.0016072883736342192,
+        0.9445107579231262,
+        0.0006994304712861776
+      ]
+    },
+    {
+      "query": "envelhecimento população LGBTQIA+",
+      "expected_category": "Assistência Social",
+      "top_category": "Assistência Social",
+      "top_score": 0.9967723488807678,
+      "latency_ms": 4521.697521209717,
+      "category_match": true,
+      "num_results": 7,
+      "scores": [
+        0.0009183934889733791,
+        0.9967723488807678,
+        0.9865385293960571
+      ]
+    }
+  ]
+}
