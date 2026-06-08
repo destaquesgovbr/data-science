@@ -73,12 +73,15 @@ docs/
 
 **Objetivo:** Fine-tuning de modelos de embedding
 
+**Relatório Final:**
+- [relatorio_final_issue2.md](02_issue2_finetuning/relatorio_final_issue2.md) ⭐ **RELATÓRIO COMPLETO**
+
 **Documentos principais:**
 - [README_issue2.md](02_issue2_finetuning/README_issue2.md) - Plano de fine-tuning
 - [analise_finetuning.md](02_issue2_finetuning/analise_finetuning.md) - Análise fine-tuning vs zero-shot
 - [guia_finetuning.md](02_issue2_finetuning/guia_finetuning.md) - Guia prático
 
-**Total:** 3 arquivos
+**Total:** 4 arquivos
 
 ---
 
@@ -112,6 +115,9 @@ docs/
 
 **Objetivo:** Sumarização automática de notícias governamentais
 
+**Relatório Final:**
+- [relatorio_final_issue4.md](04_issue4_summarization/relatorio_final_issue4.md) ⭐ **RELATÓRIO COMPLETO**
+
 **Documentos principais:**
 - [README_issue4.md](04_issue4_summarization/README_issue4.md) - Visão geral
 - [experimento_completo.md](04_issue4_summarization/experimento_completo.md) ⭐ **CRÍTICO**
@@ -125,7 +131,7 @@ docs/
 - amostra_analise.md
 - analise_llama_70b.md
 
-**Total:** 7 arquivos
+**Total:** 8 arquivos
 
 ---
 
@@ -222,22 +228,25 @@ docs/
 ### Relatórios Executivos (Prioridade Máxima)
 
 1. **Issue #1:**
-   - [relatorio_final_issue1.md](01_issue1_embeddings/relatorio_final_issue1.md)
+   - [relatorio_final_issue1.md](01_issue1_embeddings/relatorio_final_issue1.md) ⭐
 
-2. **Issue #3:**
-   - [relatorio_executivo_final.md](03_issue3_classification/relatorio_executivo_final.md)
-   - [relatorio_tecnico_completo.md](03_issue3_classification/relatorio_tecnico_completo.md)
+2. **Issue #2:**
+   - [relatorio_final_issue2.md](02_issue2_finetuning/relatorio_final_issue2.md) ⭐
 
-3. **Issue #5:**
+3. **Issue #3:**
+   - [relatorio_executivo_final.md](03_issue3_classification/relatorio_executivo_final.md) ⭐
+   - [relatorio_tecnico_completo.md](03_issue3_classification/relatorio_tecnico_completo.md) ⭐
+
+4. **Issue #4:**
+   - [relatorio_final_issue4.md](04_issue4_summarization/relatorio_final_issue4.md) ⭐
+
+5. **Issue #5:**
    - [README_issue5.md](05_issue5_rag/README_issue5.md) (status e progresso)
    - [fase7_producao_ollama.md](05_issue5_rag/fase7_producao_ollama.md) (análises comparativas)
 
-4. **Experimentos RAG:**
+6. **Experimentos RAG:**
    - [comparacao_3_abordagens.md](06_experiments_rag/comparacao_3_abordagens.md)
    - [sumario_executivo.md](06_experiments_rag/sumario_executivo.md) (1 página)
-
-5. **Issue #4:**
-   - [experimento_completo.md](04_issue4_summarization/experimento_completo.md)
 
 ### Relatórios Técnicos (Prioridade Alta)
 
@@ -276,10 +285,11 @@ docs/
 
 | Métrica | Valor |
 |---------|-------|
-| **Total de Arquivos** | 72 |
+| **Total de Arquivos** | 76 |
 | **Issues Documentadas** | 5 (completas) |
+| **Relatórios Finais** | 4 (Issues #1, #2, #3, #4) |
 | **Experimentos** | 1 (RAG Comparison) |
-| **Páginas Estimadas** | 1000-1500 |
+| **Páginas Estimadas** | 1200-1700 |
 | **Maior Projeto** | Issue #5 (17 docs, ~200 páginas) |
 | **Mais Completo** | Issue #3 (relatórios executivo + técnico) |
 
@@ -305,6 +315,13 @@ Documentação consolidada das seguintes branches:
 **Responsável:** Luis Felipe de Moraes
 
 **Nota:** Os conteúdos dos documentos não foram alterados, apenas organizados e renomeados para padronização.
+
+**Relatórios Finais Criados:**
+- Issue #1: ✅ relatorio_final_issue1.md
+- Issue #2: ✅ relatorio_final_issue2.md  
+- Issue #3: ✅ relatorio_executivo_final.md + relatorio_tecnico_completo.md
+- Issue #4: ✅ relatorio_final_issue4.md
+- Issue #5: 🔄 Em progresso (fases 1-7 documentadas)
 
 ---
 
