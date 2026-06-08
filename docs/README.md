@@ -10,7 +10,7 @@
 
 Este diretório contém toda a documentação técnica consolidada dos projetos de Data Science desenvolvidos, organizados por issue/projeto com nomenclatura padronizada.
 
-**Total de Documentos:** 72 arquivos  
+**Total de Documentos:** 74 arquivos  
 **Páginas Estimadas:** ~1000-1500 páginas  
 **Issues Documentadas:** 5 issues + 1 experimento
 
@@ -36,10 +36,14 @@ docs/
 
 **Objetivo:** Avaliar modelos de embedding para português brasileiro
 
+**Relatório Final:**
+- [relatorio_final_issue1.md](01_issue1_embeddings/relatorio_final_issue1.md) ⭐ **RELATÓRIO COMPLETO**
+
 **Documentos principais:**
 - [README_issue1.md](01_issue1_embeddings/README_issue1.md) - Comparativo de modelos
 - [quickstart.md](01_issue1_embeddings/quickstart.md) - Guia rápido
 - [roteiro_testes.md](01_issue1_embeddings/roteiro_testes.md) - Roteiro completo de testes
+- [validacao_ranking.md](01_issue1_embeddings/validacao_ranking.md) - Validação externa
 
 **Metodologia:**
 - [metodologia_metricas.md](01_issue1_embeddings/metodologia_metricas.md) - Métricas (NDCG, MRR, MAP)
@@ -61,7 +65,7 @@ docs/
 - criacao_queries_85.md
 - corpus_teste.md
 
-**Total:** 15 arquivos
+**Total:** 16 arquivos
 
 ---
 
@@ -217,19 +221,22 @@ docs/
 
 ### Relatórios Executivos (Prioridade Máxima)
 
-1. **Issue #3:**
+1. **Issue #1:**
+   - [relatorio_final_issue1.md](01_issue1_embeddings/relatorio_final_issue1.md)
+
+2. **Issue #3:**
    - [relatorio_executivo_final.md](03_issue3_classification/relatorio_executivo_final.md)
    - [relatorio_tecnico_completo.md](03_issue3_classification/relatorio_tecnico_completo.md)
 
-2. **Issue #5:**
+3. **Issue #5:**
    - [README_issue5.md](05_issue5_rag/README_issue5.md) (status e progresso)
    - [fase7_producao_ollama.md](05_issue5_rag/fase7_producao_ollama.md) (análises comparativas)
 
-3. **Experimentos RAG:**
+4. **Experimentos RAG:**
    - [comparacao_3_abordagens.md](06_experiments_rag/comparacao_3_abordagens.md)
    - [sumario_executivo.md](06_experiments_rag/sumario_executivo.md) (1 página)
 
-4. **Issue #4:**
+5. **Issue #4:**
    - [experimento_completo.md](04_issue4_summarization/experimento_completo.md)
 
 ### Relatórios Técnicos (Prioridade Alta)
