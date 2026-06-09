@@ -84,6 +84,17 @@ CREATE INDEX idx_documents_agency ON news_documents(source_agency);
 -- Create AFTER inserting data for better performance
 -- Uncomment and run after indexing documents:
 
+-- IMPORTANT: Increase maintenance_work_mem for faster index creation!
+-- For 10k docs (~77k chunks): SET maintenance_work_mem = '2GB';
+-- For 50k docs (~300k chunks): SET maintenance_work_mem = '4GB';
+--
+-- Temporary (current session only):
+-- SET maintenance_work_mem = '2GB';
+--
+-- Permanent (add to postgresql.conf):
+-- maintenance_work_mem = 2GB
+
+-- HNSW Index (recommended for <1M vectors)
 -- CREATE INDEX idx_chunks_embedding ON document_chunks
 --   USING hnsw (embedding vector_cosine_ops)
 --   WITH (m = 16, ef_construction = 64);

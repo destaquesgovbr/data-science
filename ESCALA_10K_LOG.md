@@ -140,11 +140,11 @@ EMBEDDING_DEVICE=cuda
 
 ---
 
-## 🔄 Passo 4: Indexação 10k Documentos (EM ANDAMENTO)
+## ✅ Passo 4: Indexação 10k Documentos (COMPLETO)
 
 **Iniciado:** 2026-06-09 ~09:45  
-**Tempo estimado:** 30-40 minutos  
-**Status:** Rodando...
+**Concluído:** 2026-06-09 ~12:30  
+**Tempo total:** 2h 44min 45s (9,885 segundos)
 
 **Comando:**
 ```bash
@@ -154,19 +154,63 @@ export PYTHONPATH="/l/disk0/lpmoraes/rag:$PYTHONPATH"
 python scripts/index_corpus.py --input data/corpus_10k.json --format json
 ```
 
-**Progresso esperado:**
-- ✅ Embedding model carregado: BGE-M3 (1024d) em CUDA
-- ✅ 10,000 documentos carregados
-- ✅ Pipeline criado: semantic chunker, batch 32
-- 🔄 Indexando: ~4-7 docs/s
-- ⏳ Chunks gerados: ~40,000 esperados (ratio 4:1)
+**Resultados:**
+- ✅ 10,000 documentos indexados (100% sucesso)
+- ✅ 0 documentos falhados
+- ✅ 0 documentos pulados
+- ✅ **77,630 chunks criados** (ratio 7.76:1 - melhor que esperado!)
+- 📊 Taxa média: **1.01 docs/segundo**
+- 🎯 Performance: iniciou em ~3 it/s, estabilizou em ~1 it/s
+
+**Observação:** Ratio de chunks muito superior ao esperado (7.76:1 vs 4:1) indica:
+- Semantic chunker funcionando bem
+- Documentos bem segmentados
+- Mais granularidade para retrieval (bom!)
+
+---
+
+## 🔄 Passo 5: Criar Índice HNSW Vetorial (EM ANDAMENTO)
+
+**Iniciado:** 2026-06-09 ~12:35  
+**Tempo estimado:** 20-30 minutos (sem otimização de memória)
+
+**Comando:**
+```bash
+PGPASSWORD=postgres123 psql -h localhost -U postgres -d ragdb << 'EOF'
+CREATE INDEX idx_chunks_embedding ON document_chunks 
+  USING hnsw (embedding vector_cosine_ops)
+  WITH (m = 16, ef_construction = 64);
+ANALYZE document_chunks;
+EOF
+```
+
+**Aviso Recebido:**
+```
+NOTICE: hnsw graph no longer fits into maintenance_work_mem after 13,170 tuples
+DETAIL: Building will take significantly more time.
+HINT: Increase maintenance_work_mem to speed up builds.
+```
+
+**Análise:**
+- ⚠️ `maintenance_work_mem` padrão (~64MB) insuficiente para 77k chunks
+- ⏱️ Criação vai demorar 3x mais (20-30 min ao invés de 5-10 min)
+- ✅ Índice SERÁ criado normalmente (só mais devagar)
+- 💾 PostgreSQL vai usar disco temporário
+
+**Lição Aprendida:**
+Para próxima vez (50k docs), **SEMPRE** aumentar antes:
+```sql
+SET maintenance_work_mem = '2GB';  -- 10k docs
+SET maintenance_work_mem = '4GB';  -- 50k docs
+```
+
+**Recomendação geral:** ~25% da RAM, max 2-4GB
 
 ---
 
 ## ⏳ Próximos Passos
 
-5. ⏳ Aguardar conclusão da indexação (~15 min restantes)
-6. 📊 Criar índice HNSW vetorial
+6. ⏳ Aguardar conclusão do índice HNSW (~20 min)
 7. 🔍 Testar retrieval com queries conhecidas
 8. 🤖 Testar generation com perguntas conhecidas  
 9. 📈 Comparar métricas: 250 vs 10k

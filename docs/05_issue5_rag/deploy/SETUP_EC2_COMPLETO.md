@@ -289,10 +289,24 @@ Indexing documents: 100%|████████████| 10000/10000 [35:2
 
 ### 13. Criar Índices Vetoriais (Pós-indexação)
 
-**Após indexação completa**, criar índice HNSW para busca rápida:
+**Após indexação completa**, criar índice HNSW para busca rápida.
+
+#### 13.1 Aumentar memória de manutenção (IMPORTANTE!)
+
+**Problema:** Por default, `maintenance_work_mem` é pequeno (~64MB). Para índices HNSW grandes, isso causa:
+- ⚠️ Warning: "hnsw graph no longer fits into maintenance_work_mem"
+- ⏱️ Criação **muito mais lenta** (usa disco ao invés de RAM)
+
+**Solução:** Aumentar antes de criar índice
 
 ```bash
 PGPASSWORD=postgres123 psql -h localhost -U postgres -d ragdb << 'EOF'
+
+-- Aumentar memória de manutenção (temporário para esta sessão)
+-- 10k docs (~77k chunks): 2GB
+-- 50k docs (~300k chunks): 4GB
+-- 100k docs (~600k chunks): 8GB
+SET maintenance_work_mem = '2GB';
 
 -- Criar índice HNSW (melhor que IVFFlat para <1M vetores)
 CREATE INDEX idx_chunks_embedding ON document_chunks 
@@ -305,7 +319,30 @@ ANALYZE document_chunks;
 EOF
 ```
 
-**Tempo:** ~5-10 minutos para 40k chunks
+**Tempo com memória adequada:**
+- 10k docs (77k chunks): ~5-10 minutos
+- 50k docs (300k chunks): ~20-30 minutos
+
+**Tempo SEM memória adequada:**
+- 10k docs: ~20-30 minutos (3x mais lento)
+- 50k docs: ~1-2 horas (3x mais lento)
+
+#### 13.2 Configuração Permanente (Opcional)
+
+Para tornar a configuração permanente:
+
+```bash
+# Editar postgresql.conf
+sudo nano /etc/postgresql/16/main/postgresql.conf
+
+# Adicionar/alterar linha:
+maintenance_work_mem = 2GB  # ou 4GB para corpus maior
+
+# Reiniciar PostgreSQL
+sudo systemctl restart postgresql
+```
+
+**Recomendação:** ~25% da RAM disponível, mas não exceder 2-4GB (diminishing returns)
 
 ---
 
