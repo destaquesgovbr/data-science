@@ -1,0 +1,18 @@
+version: "3.1"
+services:
+  scheduler:
+    volumes:
+      - ../src/news_enrichment:/usr/local/airflow/include/news_enrichment:ro
+      - ../dags:/usr/local/airflow/dags:ro
+  dag-processor:
+    volumes:
+      - ../src/news_enrichment:/usr/local/airflow/include/news_enrichment:ro
+      - ../dags:/usr/local/airflow/dags:ro
+  api-server:
+    volumes:
+      - ../src/news_enrichment:/usr/local/airflow/include/news_enrichment:ro
+      - ../dags:/usr/local/airflow/dags:ro
+  triggerer:
+    volumes:
+      - ../src/news_enrichment:/usr/local/airflow/include/news_enrichment:ro
+      - ../dags:/usr/local/airflow/dags:ro

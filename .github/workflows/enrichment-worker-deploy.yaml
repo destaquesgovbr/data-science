@@ -1,0 +1,25 @@
+name: Deploy Enrichment Worker
+
+on:
+  push:
+    branches: [ "main" ]
+    paths:
+      - 'src/news_enrichment/**'
+      - 'docker/enrichment-worker/**'
+      - 'pyproject.toml'
+      - 'poetry.lock'
+      - '.github/workflows/enrichment-worker-deploy.yaml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  deploy:
+    uses: destaquesgovbr/reusable-workflows/.github/workflows/cloud-run-deploy.yml@v2
+    with:
+      dockerfile: docker/enrichment-worker/Dockerfile
+      ar_repository: destaquesgovbr-enrichment-worker
+      image_name: enrichment-worker
+      cloud_run_service: destaquesgovbr-enrichment-worker
