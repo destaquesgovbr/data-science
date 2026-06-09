@@ -1,0 +1,190 @@
+# LLM Configuration for RAG Generation
+
+# Default provider: anthropic, bedrock, openai
+default_provider: anthropic
+
+# Provider configurations
+providers:
+  # Anthropic Claude (direct API)
+  anthropic:
+    api_key: ${ANTHROPIC_API_KEY}
+
+    # Model selection
+    models:
+      default: claude-sonnet-4-20250514
+      fast: claude-haiku-4-20250514  # For simple queries
+      quality: claude-opus-4-20250514  # For complex queries
+
+    # Generation parameters
+    generation:
+      temperature: 0  # Deterministic for factual QA
+      max_tokens: ${LLM_MAX_TOKENS:1000}
+      top_p: 1.0
+      top_k: 0
+
+    # Request settings
+    timeout: ${LLM_TIMEOUT:30}
+    max_retries: 3
+    retry_delay: 2  # seconds
+
+  # AWS Bedrock (Claude via Bedrock)
+  bedrock:
+    region: ${AWS_REGION:us-east-1}
+    access_key: ${AWS_ACCESS_KEY_ID}
+    secret_key: ${AWS_SECRET_ACCESS_KEY}
+
+    # Model ID
+    model_id: ${BEDROCK_MODEL_ID:anthropic.claude-sonnet-4-20250514-v1:0}
+
+    # Generation parameters (Bedrock format)
+    generation:
+      temperature: 0
+      max_tokens: ${LLM_MAX_TOKENS:1000}
+      top_p: 1.0
+
+    # Request settings
+    timeout: ${LLM_TIMEOUT:30}
+    max_retries: 3
+
+  # OpenAI (GPT)
+  openai:
+    api_key: ${OPENAI_API_KEY}
+
+    # Model selection
+    models:
+      default: gpt-4o
+      fast: gpt-4o-mini
+      quality: gpt-4o
+
+    # Generation parameters
+    generation:
+      temperature: 0
+      max_tokens: ${LLM_MAX_TOKENS:1000}
+      top_p: 1.0
+      frequency_penalty: 0
+      presence_penalty: 0
+
+    # Request settings
+    timeout: ${LLM_TIMEOUT:30}
+    max_retries: 3
+
+# Prompt templates
+prompts:
+  # Main RAG prompt
+  rag_qa:
+    system: |
+      Você é um assistente especializado em notícias governamentais brasileiras.
+      Sua tarefa é responder perguntas com base EXCLUSIVAMENTE no contexto fornecido.
+
+      REGRAS IMPORTANTES:
+      1. Use APENAS informações presentes no contexto
+      2. Se a informação não estiver no contexto, diga "Não encontrei informação sobre isso nos documentos disponíveis"
+      3. Cite as fontes usando [Fonte N] no texto
+      4. Seja conciso e objetivo
+      5. NUNCA invente ou especule informações
+
+    user: |
+      Contexto (documentos relevantes):
+
+      {context}
+
+      Pergunta: {query}
+
+      Resposta (com citações):
+
+  # Contextual enrichment (Anthropic pattern)
+  # Used during indexing to enrich chunks
+  contextual_enrichment:
+    system: |
+      Você receberá um trecho (chunk) de uma notícia governamental.
+      Sua tarefa é gerar uma breve contextualização (1-2 sentenças) que situe esse trecho
+      no documento maior, para melhorar a recuperação por busca semântica.
+
+      A contextualização deve incluir:
+      - Tema geral do documento
+      - Órgão/ministério envolvido
+      - Data ou período relevante (se houver)
+
+      Seja conciso e factual.
+
+    user: |
+      Documento completo:
+      Título: {document_title}
+      Categoria: {document_category}
+      Órgão: {document_agency}
+
+      Trecho a contextualizar:
+      {chunk_text}
+
+      Contextualização (1-2 sentenças):
+
+  # Hallucination check (entailment)
+  hallucination_check:
+    system: |
+      Você é um verificador de fidelidade textual.
+      Dada uma resposta e um contexto, determine se a resposta é completamente suportada pelo contexto.
+
+      Responda apenas: FIEL ou INFIEL
+
+      FIEL = todas as informações da resposta estão presentes no contexto
+      INFIEL = há informações na resposta que NÃO estão no contexto
+
+    user: |
+      Contexto:
+      {context}
+
+      Resposta a verificar:
+      {answer}
+
+      Verificação:
+
+# Context assembly
+context:
+  # Max context length (tokens)
+  # Leave room for query + instructions + answer
+  max_length: ${MAX_CONTEXT_LENGTH:8000}
+
+  # Format for each chunk
+  chunk_format: |
+    [Fonte {source_id}: {title}]
+    Publicado em: {date}
+    Órgão: {agency}
+
+    {content}
+
+    ---
+
+  # Truncation strategy if context too long
+  truncation: top_k  # top_k, summarize, none
+
+# Post-processing
+post_processing:
+  # Extract citations
+  extract_citations: true
+  citation_pattern: '\[Fonte \d+\]'
+
+  # Check hallucinations
+  check_hallucinations: true
+  hallucination_threshold: 0.8  # Confidence threshold
+
+  # Calculate confidence score
+  calculate_confidence: true
+
+# Monitoring
+monitoring:
+  # Log all prompts (careful with PII)
+  log_prompts: false
+
+  # Log all completions
+  log_completions: true
+
+  # Track token usage
+  track_tokens: true
+
+  # Track latency
+  track_latency: true
+
+  # Alert thresholds
+  alerts:
+    high_latency: 5.0  # seconds
+    high_cost: 0.50  # USD per query
