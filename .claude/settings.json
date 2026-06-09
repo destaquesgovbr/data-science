@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(PGPASSWORD=postgres123 psql -h localhost -p 5433 -U postgres -d news_db -f extract_10k_simple.sql)"
+    ]
+  }
+}

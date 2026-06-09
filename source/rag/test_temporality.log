@@ -1,0 +1,101 @@
+/l/disk0/lpmoraes/environments/data-science/.venv/lib/python3.12/site-packages/requests/__init__.py:113: RequestsDependencyWarning: urllib3 (2.6.3) or chardet (7.4.3)/charset_normalizer (3.4.4) doesn't match a supported version!
+  warnings.warn(
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+Loading embedder...
+Loading weights:   0%|          | 0/391 [00:00<?, ?it/s]Loading weights: 100%|██████████| 391/391 [00:00<00:00, 21202.25it/s]
+Creating retriever...
+Creating LLM provider...
+✓ Bedrock provider initialized: us.anthropic.claude-haiku-4-5-20251001-v1:0 (us-east-1)
+Creating generator...
+
+================================================================================
+QUERY: Quais as notícias mais recentes sobre periferias?
+================================================================================
+
+ANSWER:
+Com base nas fontes disponíveis, a notícia mais recente sobre periferias é de **19 de março de 2026** [1]:
+
+## Encontro Nacional das Periferias
+
+A Secretaria Nacional de Periferias (SNP) realizou um encontro que reuniu representantes de favelas de todo o país [1]. Durante o evento, foram apresentadas várias iniciativas:
+
+**Principais destaques:**
+
+- **Lançamento do "Raio-X das Iniciativas Periféricas"**: um levantamento da Secretaria Nacional de Periferias sobre as condições de atuação das iniciativas periféricas no Brasil [1]
+
+- **Premiações**: As três edições de programas da SNP somam mais de 400 iniciativas já premiadas, com mais de R$19 milhões em incentivo financeiro destinados a quem trabalha nas periferias brasileiras [1]
+
+- **Programas em andamento**: A SNP desenvolve iniciativas como o Programa Periferia Viva (urbanização), a Estratégia Periferia Sem Risco (prevenção de desastres) e a Rede Nós Periféricos (fortalecimento do protagonismo das iniciativas periféricas) [1]
+
+- **Fábrica de Potências**: Uma incubadora de iniciativas com programa de formação e mentoria, que desde 2025 conta com 65 iniciativas participantes [1]
+
+A Secretaria Nacional de Periferias foi criada em 2023 pelo presidente Lula, dentro do Ministério das Cidades [1].
+
+SOURCES:
+  [1] Encontro Nacional das Periferias reúne representantes de favelas de todo o país
+      Data: 19/03/2026 | Score: 0.557
+
+================================================================================
+QUERY: O que aconteceu em março de 2026?
+================================================================================
+
+ANSWER:
+# O que aconteceu em março de 2026
+
+Com base nas fontes disponíveis, em março de 2026 ocorreram os seguintes eventos:
+
+## Políticas de Enfrentamento à Violência contra Mulheres
+
+Em **5 de março de 2026**, o Governo do Brasil apresentou uma série de agendas, ações e entretas voltadas ao fortalecimento das políticas de enfrentamento à violência contra as mulheres e meninas, com participação do Ministério das Mulheres e do Ministério dos Direitos Humanos e da Cidadania [1].
+
+## Preparação para Conferência Nacional de Arquivos
+
+Em **23 de março de 2026**, estados de todas as regiões do país iniciaram uma série de eventos preparatórios para a 2ª Conferência Nacional de Arquivos (2ª CNArq), marcada para maio de 2026, em Brasília. Essas etapas estaduais mobilizaram gestores públicos, profissionais e sociedade civil em todo o país [4].
+
+SOURCES:
+  [1] Estupro coletivo no Rio de Janeiro reforça urgência do debate sobre consentimento e educação para prevenção da violência
+      Data: 05/03/2026 | Score: 0.488
+  [2] Parceria entre MJSP e USP avança na criação de guia nacional sobre IA responsável
+      Data: 02/03/2026 | Score: 0.464
+  [3] Olimpíadas Nucleares da América Latina abrem inscrições para edição 2026
+      Data: 12/02/2026 | Score: 0.423
+  [4] Estados iniciam maratona de eventos preparatórios da 2ª Conferência Nacional de Arquivos
+      Data: 23/03/2026 | Score: 0.416
+  [5] Ministra Luciana Santos destaca projeto do Reator Multipropósito Brasileiro, em reunião do CCT
+      Data: 11/12/2025 | Score: 0.413
+
+================================================================================
+QUERY: Notícias sobre conferência de arquivos
+================================================================================
+
+ANSWER:
+# Notícias sobre a 2ª Conferência Nacional de Arquivos
+
+## Eventos Preparatórios em Andamento
+
+Estados de todas as regiões do país iniciaram, a partir de março de 2026, uma série de eventos preparatórios para a **2ª Conferência Nacional de Arquivos (2ª CNArq)**, marcada para maio de 2026, em Brasília [1].
+
+## Tema e Objetivos
+
+A conferência tem como tema **"Arquivos: agentes da cidadania e da democracia"** e busca reposicionar os arquivos como infraestruturas essenciais ao funcionamento do Estado e à vida democrática [1].
+
+## Contexto
+
+Este processo ocorre após mais de uma década da primeira conferência nacional do setor, realizada em 2011, em um contexto marcado por profundas transformações tecnológicas, ampliação da produção de documentos digitais e novas demandas sociais por transparência e acesso à informação [1].
+
+## Participação
+
+A participação nas etapas estaduais é aberta a profissionais da área, gestores públicos, pesquisadores, estudantes e demais interessados [1].
+
+## Cronograma
+
+- **Etapas estaduais**: calendário disponível em 2cnarquivos.org [1]
+- **Etapa nacional**: 26 a 28 de maio de 2026, em Brasília/DF [1]
+
+As propostas aprovadas ao final da Conferência terão abrangência nacional e deverão orientar o aprimoramento da Política Nacional de Arquivos [1].
+
+SOURCES:
+  [1] Estados iniciam maratona de eventos preparatórios da 2ª Conferência Nacional de Arquivos
+      Data: 23/03/2026 | Score: 0.514
+  [2] Brasília recebe a 39ª Conferência Regional da ONU para a Alimentação e a Agricultura
+      Data: 24/02/2026 | Score: 0.479
