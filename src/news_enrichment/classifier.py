@@ -44,6 +44,7 @@ class NewsClassifier:
         taxonomy: Optional[Dict] = None,
         batch_size: int = 4, # recomendo manter pequeno para evitar timeouts e erros de rate limit
         sleep_between_batches: float = 0.5, # recomendo 0.5s para balancear velocidade e evitar rate limit
+        ner_model_id: Optional[str] = None,
         aws_access_key_id: Optional[str] = None,
         aws_secret_access_key: Optional[str] = None,
         aws_session_token: Optional[str] = None,
@@ -76,6 +77,7 @@ class NewsClassifier:
             taxonomy=taxonomy,
             batch_size=batch_size,
             sleep_between_batches=sleep_between_batches,
+            ner_model_id=ner_model_id,
             aws_access_key_id=aws_access_key_id,
             aws_secret_access_key=aws_secret_access_key,
             aws_session_token=aws_session_token
@@ -229,8 +231,7 @@ class NewsClassifier:
             'most_specific_theme_code',
             'most_specific_theme_label',
             'summary',
-            'sentiment',
-            'entities'
+            'sentiment'
         ]
 
         # Incluir unique_id se existir (útil para rastreabilidade)

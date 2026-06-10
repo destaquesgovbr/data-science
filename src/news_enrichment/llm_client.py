@@ -8,11 +8,48 @@ import time
 import logging
 import re
 import random
-from typing import Optional, Dict, List
+import hashlib
+from typing import Optional, Dict, List, Tuple, Union
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from botocore.exceptions import ClientError
 
 logger = logging.getLogger(__name__)
+
+# =============================================================================
+# NER — Fase 2 (taxonomia evoluída)
+# =============================================================================
+
+# Versão do prompt NER. Incrementar ao mudar a taxonomia/few-shots/instruções.
+# Gravado em news_llm_raw.prompt_version para rastreabilidade/idempotência.
+NER_PROMPT_VERSION = "ner-v1"
+
+# Modelos Bedrock — IDs SEMPRE configuráveis por env/config (nunca hardcode adivinhado).
+#
+# Chamada combinada (tema + resumo + sentimento): mantém o Haiku legado por ora.
+DEFAULT_ENRICHMENT_MODEL_ID = "anthropic.claude-3-haiku-20240307-v1:0"
+# Chamada NER dedicada: em produção é Claude Sonnet 4.6 via inference-profile do
+# Bedrock, definido pela env var NER_MODEL_ID no deploy (Terraform).
+# TODO(NER): definir NER_MODEL_ID em produção com o ID do inference-profile do
+# Claude Sonnet 4.6 (algo como "us.anthropic.claude-sonnet-4-6-<...>"). NÃO
+# inventar o sufixo aqui — confirmar no console do Bedrock (us-east-1). O default
+# abaixo cai no Haiku legado apenas para que dev/testes locais funcionem sem env.
+DEFAULT_NER_MODEL_ID = DEFAULT_ENRICHMENT_MODEL_ID
+
+# Tipos sancionados na saída do NER. MISC NÃO é sancionado (vira resíduo descartado).
+SANCTIONED_ENTITY_TYPES = frozenset(
+    {"ORG", "PER", "LOC", "EVENT", "POLICY", "LAW", "WORK", "PRODUCT"}
+)
+
+# Normalização da cauda de tipos: variantes que o modelo às vezes emite → tipo sancionado.
+_TYPE_TAIL_NORMALIZATION = {
+    "PROGRAM": "POLICY",
+    "PROGRAMA": "POLICY",
+    "DECRETO": "POLICY",
+    "DECREE": "POLICY",
+    "AWARD": "EVENT",
+    "PREMIO": "EVENT",
+    "PRÊMIO": "EVENT",
+}
 
 
 class BedrockLLMClient:
@@ -20,12 +57,13 @@ class BedrockLLMClient:
 
     def __init__(
         self,
-        model_id: str = "anthropic.claude-3-haiku-20240307-v1:0",
+        model_id: str = DEFAULT_ENRICHMENT_MODEL_ID,
         region: str = "us-east-1",
         taxonomy: Optional[Dict] = None,
         batch_size: int = 8,
         sleep_between_batches: float = 0.2,
         max_retries: int = 3,
+        ner_model_id: Optional[str] = None,
         # Credenciais AWS (opcionais - para portabilidade)
         aws_access_key_id: Optional[str] = None,
         aws_secret_access_key: Optional[str] = None,
@@ -35,17 +73,20 @@ class BedrockLLMClient:
         Inicializa o cliente Bedrock.
 
         Args:
-            model_id: ID do modelo Claude no Bedrock
+            model_id: ID do modelo Claude para a chamada COMBINADA (tema+resumo+sentimento)
             region: Região AWS
             taxonomy: Taxonomia predefinida (opcional)
             batch_size: Número de notícias processadas em paralelo
             sleep_between_batches: Delay entre batches (rate limiting)
             max_retries: Número máximo de tentativas em caso de erro
+            ner_model_id: ID do modelo Claude para a chamada NER dedicada
+                (Sonnet 4.6 em prod). Se None, usa DEFAULT_NER_MODEL_ID.
             aws_access_key_id: AWS Access Key (opcional - usa env vars se None)
             aws_secret_access_key: AWS Secret Key (opcional - usa env vars se None)
             aws_session_token: Token de sessão AWS (opcional - para credenciais temporárias)
         """
         self.model_id = model_id
+        self.ner_model_id = ner_model_id or DEFAULT_NER_MODEL_ID
         self.region = region
         self.taxonomy = taxonomy
         self.batch_size = batch_size
@@ -66,7 +107,10 @@ class BedrockLLMClient:
             logger.info("Usando credenciais AWS do ambiente (env vars, ~/.aws/credentials ou IAM role)")
 
         self.client = boto3.client('bedrock-runtime', **client_kwargs)
-        logger.info(f"Cliente Bedrock inicializado: {model_id} na região {region}")
+        logger.info(
+            f"Cliente Bedrock inicializado: enrichment={model_id} "
+            f"ner={self.ner_model_id} na região {region}"
+        )
 
     def enrich_news_batch(self, rows: List[Dict]) -> List[Dict]:
         """
@@ -237,7 +281,6 @@ TAREFAS OBRIGATÓRIAS:
 1. Classifique a notícia em 3 níveis hierárquicos (theme_1_level_1/2/3).
 2. Gere um campo "summary" com um resumo conciso da notícia em 1-2 frases. O summary é OBRIGATÓRIO.
 3. Analise o sentimento da notícia (positive, neutral ou negative) e atribua um score entre -1.0 e 1.0.
-4. Extraia as entidades mencionadas (organizações, pessoas, locais, outros) com contagem de ocorrências.
 
 NOTÍCIA:
 Título: {title}
@@ -260,10 +303,7 @@ FORMATO DE SAÍDA (JSON VÁLIDO — todos os campos são obrigatórios):
   "sentiment": {{
     "label": "positive" | "neutral" | "negative",
     "score": <float entre -1.0 e 1.0>
-  }},
-  "entities": [
-    {{"text": "<nome da entidade>", "type": "ORG|PER|LOC|MISC", "count": <int>}}
-  ]
+  }}
 }}"""
 
         return prompt
@@ -374,8 +414,279 @@ FORMATO DE SAÍDA (JSON VÁLIDO — todos os campos são obrigatórios):
             'most_specific_theme_code': None,
             'most_specific_theme_label': None,
             'summary': None,
-            'sentiment': None,
-            'entities': []
+            'sentiment': None
         }
 
         return {**row, **fallback_fields}
+
+    # =========================================================================
+    # NER — chamada Bedrock dedicada (Fase 2)
+    # =========================================================================
+
+    def _build_ner_prompt(self, article: Dict) -> str:
+        """
+        Constrói o prompt PT do NER com taxonomia explícita e bloco
+        "NÃO é entidade". Pede forma_canonica + salience por entidade.
+        NÃO pede QID do Wikidata (linkagem é fase posterior).
+
+        Args:
+            article: Dicionário com title/subtitle/editorial_lead/content
+
+        Returns:
+            String com o prompt (determinística para o mesmo artigo).
+        """
+        title = article.get('title', '') or ''
+        subtitle = article.get('subtitle', '') or ''
+        editorial_lead = article.get('editorial_lead', '') or ''
+        content = article.get('content', '') or ''
+        content_preview = content[:3000]
+
+        prompt = f"""Você é um especialista em extração de entidades nomeadas (NER) em notícias governamentais brasileiras.
+
+Sua tarefa é identificar as ENTIDADES mencionadas no texto e classificá-las segundo a taxonomia abaixo. Responda APENAS com um JSON válido (sem markdown, sem comentários, sem explicações).
+
+TAXONOMIA (use EXATAMENTE estes tipos):
+- ORG — organização nomeada: órgão público, empresa, instituição, partido, time. Ex.: "Ministério da Educação (MEC)", "Petrobras", "Finep".
+- PER — pessoa específica (nome próprio). Ex.: "Luiz Inácio Lula da Silva", "Fernanda Torres".
+- LOC — local nomeado: país, estado, município, região, bioma. Ex.: "Brasil", "São Paulo", "Amazônia".
+- EVENT — evento nomeado e datável: campeonato, conferência, edição de prova, prêmio. Ex.: "Copa do Mundo Feminina da FIFA 2027", "Enem 2026", "COP30".
+- POLICY — política ou programa público nomeado. Ex.: "Bolsa Família", "Pé-de-Meia", "Novo PAC", "Minha Casa, Minha Vida", "Cadastro Único".
+- LAW — norma jurídica nomeada: lei, decreto, medida provisória, emenda. Ex.: "Lei Maria da Penha", "Constituição Federal".
+- WORK — obra nomeada (livro, filme, álbum, plano/relatório nomeado). Use só quando claramente uma obra. Ex.: "Plano Safra".
+- PRODUCT — produto/serviço nomeado de marca. Use só quando claramente um produto. Ex.: "Pix".
+
+NÃO é entidade (NUNCA inclua estes — omita-os da saída):
+- Tópicos/conceitos genéricos: "inteligência artificial", "dólar", "inflação", "mudança climática", "vacinação".
+- Grupos demográficos / categorias de pessoas: "mulheres", "quilombolas", "idosos", "trabalhadores", "estudantes".
+- Cargos e papéis genéricos sem nome próprio: "o presidente", "o ministro", "a secretária".
+- Datas, números, valores monetários soltos.
+Se algo não couber claramente em UM dos tipos da taxonomia, NÃO o inclua. Nunca invente tipos genéricos de "diversos"/"outro" — só os tipos da taxonomia são válidos.
+
+EXEMPLOS DE CLASSIFICAÇÃO:
+- "Bolsa Família" → POLICY · "Copa do Mundo Feminina da FIFA 2027" → EVENT · "Ministério da Saúde" → ORG.
+- IMPORTANTE: "Ministério da Saúde" (Brasil) e "Ministério da Saúde do Líbano" são entidades DISTINTAS — mantenha o nome como aparece no texto; não funda.
+
+PARA CADA ENTIDADE, retorne:
+- "text": a forma de superfície exatamente como aparece no texto.
+- "type": um dos tipos da taxonomia acima.
+- "forma_canonica": o nome normalizado da entidade no contexto deste artigo (resolva siglas/variações para a forma mais completa mencionada no texto). Não consulte fontes externas.
+- "salience": número entre 0.0 e 1.0 indicando o quão central a entidade é para a notícia.
+- "count": número de ocorrências da entidade no texto (inteiro ≥ 1).
+
+NOTÍCIA:
+Título: {title}
+Subtítulo: {subtitle}
+Lead: {editorial_lead}
+Conteúdo: {content_preview}
+
+FORMATO DE SAÍDA (JSON VÁLIDO):
+{{
+  "entities": [
+    {{"text": "Bolsa Família", "type": "POLICY", "forma_canonica": "Bolsa Família", "salience": 0.9, "count": 3}}
+  ]
+}}"""
+
+        return prompt
+
+    def _call_bedrock_ner(self, prompt: str) -> str:
+        """Realiza a chamada NER ao Bedrock usando o modelo NER configurável."""
+        request_body = {
+            "anthropic_version": "bedrock-2023-05-31",
+            "max_tokens": 2000,
+            "temperature": 0.0,
+            "messages": [
+                {
+                    "role": "user",
+                    "content": prompt
+                }
+            ]
+        }
+
+        response = self.client.invoke_model(
+            modelId=self.ner_model_id,
+            body=json.dumps(request_body)
+        )
+
+        response_body = json.loads(response['body'].read())
+        return response_body['content'][0]['text']
+
+    def extract_entities(
+        self, article: Dict, return_raw: bool = False
+    ) -> Union[List[Dict], Tuple[List[Dict], Optional[Dict]]]:
+        """
+        Extrai entidades de um artigo via chamada Bedrock dedicada (NER).
+
+        Resiliente: qualquer falha (Bedrock, parse) resulta em lista vazia,
+        nunca levanta exceção.
+
+        Args:
+            article: Dicionário com campos do artigo.
+            return_raw: Se True, também devolve metadados da resposta crua
+                (model_id, prompt_version, prompt_hash, raw_response) para
+                gravação em news_llm_raw.
+
+        Returns:
+            Lista de entidades parseadas, OU (entities, raw_meta) se return_raw.
+            raw_meta é None quando a chamada Bedrock falhou.
+        """
+        prompt = self._build_ner_prompt(article)
+        prompt_hash = hashlib.sha256(prompt.encode("utf-8")).hexdigest()
+
+        raw_text: Optional[str] = None
+        max_retries = getattr(self, "max_retries", 3)
+        for attempt in range(max_retries):
+            try:
+                raw_text = self._call_bedrock_ner(prompt)
+                break
+            except ClientError as e:
+                error_code = e.response.get('Error', {}).get('Code', '')
+                logger.warning(
+                    f"NER tentativa {attempt + 1}/{max_retries} falhou "
+                    f"para {article.get('unique_id', 'unknown')}: {error_code} - {e}"
+                )
+                if attempt < max_retries - 1:
+                    sleep_time = 0.5 * (2 ** attempt) + random.uniform(0, 0.5)
+                    time.sleep(sleep_time)
+            except Exception as e:
+                logger.warning(
+                    f"NER tentativa {attempt + 1}/{max_retries} falhou "
+                    f"para {article.get('unique_id', 'unknown')}: {e}"
+                )
+                if attempt < max_retries - 1:
+                    time.sleep(0.2 * (2 ** attempt))
+
+        if raw_text is None:
+            logger.error(
+                f"NER falhou em todas as tentativas para "
+                f"{article.get('unique_id', 'unknown')}"
+            )
+            return ([], None) if return_raw else []
+
+        entities = self._parse_entities(raw_text)
+
+        if return_raw:
+            raw_meta = {
+                "model_id": self.ner_model_id,
+                "prompt_version": NER_PROMPT_VERSION,
+                "prompt_hash": prompt_hash,
+                "raw_response": raw_text,
+            }
+            return entities, raw_meta
+        return entities
+
+    def _parse_entities(self, response: str) -> List[Dict]:
+        """
+        Parser tolerante da resposta NER.
+
+        - JSON malformado / ausente → lista vazia (nunca levanta).
+        - count ausente → 1; salience ausente → None; forma_canonica ausente → text.
+        - Normaliza cauda de tipos (PROGRAM/PROGRAMA/DECRETO→POLICY, AWARD→EVENT).
+        - Descarta qualquer tipo fora do conjunto sancionado (trata como não-entidade).
+
+        Args:
+            response: Texto bruto retornado pelo modelo.
+
+        Returns:
+            Lista de menções com shape {text, type, forma_canonica, salience, count}.
+        """
+        if not response:
+            return []
+
+        # Localiza o JSON (objeto OU lista) tolerando markdown/texto ao redor.
+        parsed = self._extract_json(response)
+        if parsed is None:
+            return []
+
+        if isinstance(parsed, dict):
+            raw_entities = parsed.get("entities")
+        elif isinstance(parsed, list):
+            raw_entities = parsed
+        else:
+            return []
+
+        if not isinstance(raw_entities, list):
+            return []
+
+        entities: List[Dict] = []
+        for raw in raw_entities:
+            ent = self._normalize_entity(raw)
+            if ent is not None:
+                entities.append(ent)
+        return entities
+
+    @staticmethod
+    def _extract_json(response: str):
+        """Tenta extrair um objeto ou lista JSON de um texto. Retorna None se falhar."""
+        candidates = []
+        obj_start = response.find('{')
+        obj_end = response.rfind('}')
+        if obj_start != -1 and obj_end > obj_start:
+            candidates.append(response[obj_start:obj_end + 1])
+        list_start = response.find('[')
+        list_end = response.rfind(']')
+        if list_start != -1 and list_end > list_start:
+            candidates.append(response[list_start:list_end + 1])
+
+        # Prioriza o que aparece primeiro no texto.
+        candidates.sort(key=lambda c: response.find(c[0]))
+        for candidate in candidates:
+            try:
+                return json.loads(candidate)
+            except (json.JSONDecodeError, ValueError):
+                continue
+        return None
+
+    @staticmethod
+    def _normalize_entity(raw) -> Optional[Dict]:
+        """
+        Normaliza uma entidade crua para o shape sancionado, ou None se inválida.
+        """
+        if not isinstance(raw, dict):
+            return None
+
+        text = raw.get("text")
+        raw_type = raw.get("type")
+        if not text or not isinstance(text, str) or not raw_type:
+            return None
+        if not isinstance(raw_type, str):
+            return None
+
+        # Normaliza o tipo: upper + tail-mapping + filtro de sancionados.
+        ent_type = raw_type.strip().upper()
+        ent_type = _TYPE_TAIL_NORMALIZATION.get(ent_type, ent_type)
+        if ent_type not in SANCTIONED_ENTITY_TYPES:
+            # Resíduo (inclui MISC e tópicos/grupos rotulados errado) → não-entidade.
+            return None
+
+        # count → int ≥ 1, default 1.
+        count = raw.get("count", 1)
+        try:
+            count = int(count)
+        except (TypeError, ValueError):
+            count = 1
+        if count < 1:
+            count = 1
+
+        # salience → float em [0,1] ou None.
+        salience = raw.get("salience")
+        if salience is not None:
+            try:
+                salience = float(salience)
+                if salience < 0.0:
+                    salience = 0.0
+                elif salience > 1.0:
+                    salience = 1.0
+            except (TypeError, ValueError):
+                salience = None
+
+        forma_canonica = raw.get("forma_canonica")
+        if not forma_canonica or not isinstance(forma_canonica, str):
+            forma_canonica = text
+
+        return {
+            "text": text,
+            "type": ent_type,
+            "forma_canonica": forma_canonica,
+            "salience": salience,
+            "count": count,
+        }

@@ -2,6 +2,12 @@
 __pycache__/
 *.pyc
 
+# Python virtual envs
+.venv/
+venv/
+.coverage
+htmlcov/
+
 # Airflow local
 airflow/.env
 airflow/logs/
