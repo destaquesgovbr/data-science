@@ -471,7 +471,7 @@ PARA CADA ENTIDADE, retorne:
 - "type": um dos tipos da taxonomia acima.
 - "forma_canonica": o nome normalizado da entidade no contexto deste artigo (resolva siglas/variações para a forma mais completa mencionada no texto). Não consulte fontes externas.
 - "salience": número entre 0.0 e 1.0 indicando o quão central a entidade é para a notícia.
-- "count": número de ocorrências da entidade no texto (inteiro ≥ 1).
+- "count": estimativa APROXIMADA do número de ocorrências da entidade no texto (inteiro ≥ 1). Não conte com precisão — apenas estime.
 
 NOTÍCIA:
 Título: {title}
@@ -565,11 +565,20 @@ FORMATO DE SAÍDA (JSON VÁLIDO):
         entities = self._parse_entities(raw_text)
 
         if return_raw:
+            # Armazena o objeto estruturado em news_llm_raw.raw_response (JSONB),
+            # NÃO a string crua — senão psycopg2 grava um escalar JSON
+            # ("{...}") e todo re-parse futuro precisaria de json.loads duplo.
+            # Fallback de prosa: resposta não-JSON vira {"raw_text": ...},
+            # ainda um objeto (evita double-encoding no caso comum).
+            try:
+                parsed_raw = json.loads(raw_text)
+            except (ValueError, TypeError):
+                parsed_raw = {"raw_text": raw_text}
             raw_meta = {
                 "model_id": self.ner_model_id,
                 "prompt_version": NER_PROMPT_VERSION,
                 "prompt_hash": prompt_hash,
-                "raw_response": raw_text,
+                "raw_response": parsed_raw,
             }
             return entities, raw_meta
         return entities

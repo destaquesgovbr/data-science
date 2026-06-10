@@ -389,7 +389,18 @@ class TestExtractEntities:
         assert raw["model_id"] == "ner-model-test"
         assert raw["prompt_version"] == NER_PROMPT_VERSION
         assert isinstance(raw["prompt_hash"], str) and len(raw["prompt_hash"]) == 64
-        assert raw["raw_response"] == canned
+        # raw_response é o OBJETO estruturado (não a string crua) → JSONB sem
+        # double-encoding.
+        assert raw["raw_response"] == json.loads(canned)
+        assert isinstance(raw["raw_response"], dict)
+
+    def test_raw_response_prose_fallback_is_object(self):
+        """Resposta não-JSON é capturada como {'raw_text': ...}, ainda um objeto."""
+        prose = "Não consegui extrair entidades desta notícia."
+        client = self._client_with_mocked_bedrock(prose)
+        _, raw = client.extract_entities(SAMPLE_ARTICLE, return_raw=True)
+        assert raw["raw_response"] == {"raw_text": prose}
+        assert isinstance(raw["raw_response"], dict)
 
     def test_prompt_hash_is_deterministic(self):
         canned = json.dumps({"entities": []})

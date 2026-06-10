@@ -164,6 +164,56 @@ class TestStoreRawLlmResponse:
             handler.store_raw_llm_response("uid-1", "ner", None)
             mock_connect.assert_not_called()
 
+    @patch("news_enrichment.worker.handler.psycopg2.connect")
+    @patch("news_enrichment.worker.handler._get_database_url", return_value="postgresql://test")
+    def test_raw_response_stored_as_object_not_quoted_string(self, mock_url, mock_connect):
+        """
+        raw_response deve ir para o JSONB como OBJETO estruturado (dict/list),
+        nunca como string crua (que viraria escalar JSON com double-encoding).
+        """
+        mock_cursor = MagicMock()
+        mock_conn = MagicMock()
+        mock_conn.cursor.return_value = mock_cursor
+        mock_connect.return_value = mock_conn
+
+        # extract_entities já entrega raw_response parseado (objeto).
+        raw = {
+            "model_id": "sonnet-ner",
+            "prompt_version": "ner-v1",
+            "prompt_hash": "abc123",
+            "raw_response": {"entities": [{"text": "Finep", "type": "ORG", "count": 1}]},
+        }
+        handler.store_raw_llm_response("uid-1", "ner", raw)
+
+        json_arg = mock_cursor.execute.call_args[0][1][-1]  # último param = Json(...)
+        wrapped = json_arg.adapted if hasattr(json_arg, "adapted") else json_arg
+        assert isinstance(wrapped, (dict, list))
+        assert not isinstance(wrapped, str)
+        assert wrapped == {"entities": [{"text": "Finep", "type": "ORG", "count": 1}]}
+
+    @patch("news_enrichment.worker.handler.psycopg2.connect")
+    @patch("news_enrichment.worker.handler._get_database_url", return_value="postgresql://test")
+    def test_raw_response_prose_fallback_stored_as_object(self, mock_url, mock_connect):
+        """Resposta não-JSON (prosa) chega como {'raw_text': ...} — objeto, não string."""
+        mock_cursor = MagicMock()
+        mock_conn = MagicMock()
+        mock_conn.cursor.return_value = mock_cursor
+        mock_connect.return_value = mock_conn
+
+        raw = {
+            "model_id": "sonnet-ner",
+            "prompt_version": "ner-v1",
+            "prompt_hash": "abc123",
+            "raw_response": {"raw_text": "Não há entidades nesta notícia."},
+        }
+        handler.store_raw_llm_response("uid-1", "ner", raw)
+
+        json_arg = mock_cursor.execute.call_args[0][1][-1]
+        wrapped = json_arg.adapted if hasattr(json_arg, "adapted") else json_arg
+        assert isinstance(wrapped, dict)
+        assert not isinstance(wrapped, str)
+        assert wrapped == {"raw_text": "Não há entidades nesta notícia."}
+
 
 # --- enrich_article: wires NER as a separate call ---
 
