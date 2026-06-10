@@ -68,10 +68,20 @@ def _get_classifier() -> NewsClassifier:
         database_url = _get_database_url()
         taxonomy = load_taxonomy_from_postgres(database_url)
         aws_access_key, aws_secret_key, aws_region = _parse_aws_credentials()
+        # Modelo combinado (tema+resumo+sentimento) — configurável.
+        # ENRICHMENT_MODEL_ID é o nome preferido; BEDROCK_MODEL_ID mantido por
+        # retrocompatibilidade com o env atual.
+        enrichment_model_id = (
+            os.environ.get("ENRICHMENT_MODEL_ID")
+            or os.environ.get("BEDROCK_MODEL_ID")
+            or "anthropic.claude-3-haiku-20240307-v1:0"
+        )
+        # Modelo NER dedicado (Sonnet 4.6 em prod) — configurável via NER_MODEL_ID.
+        # Em prod o Terraform define o inference-profile id do Sonnet 4.6 (us-east-1).
+        ner_model_id = os.environ.get("NER_MODEL_ID") or enrichment_model_id
         _classifier = NewsClassifier(
-            model_id=os.environ.get(
-                "BEDROCK_MODEL_ID", "anthropic.claude-3-haiku-20240307-v1:0"
-            ),
+            model_id=enrichment_model_id,
+            ner_model_id=ner_model_id,
             region=aws_region,
             taxonomy=taxonomy,
             batch_size=1,
@@ -177,7 +187,7 @@ def enrich_article(unique_id: str) -> dict[str, Any]:
         logger.warning(f"Article not found: {unique_id}")
         return {"status": "not_found"}
 
-    # Classify
+    # Classify (chamada COMBINADA: tema + resumo + sentimento)
     classifier = _get_classifier()
     result = classifier.classify_single(article, return_format="dict")
 
@@ -187,6 +197,19 @@ def enrich_article(unique_id: str) -> dict[str, Any]:
 
     # Ensure unique_id is in result for update_news_enrichment
     result["unique_id"] = unique_id
+
+    # NER (chamada DEDICADA, modelo Sonnet 4.6 em prod). Resiliente: uma falha
+    # no NER não derruba o enriquecimento de tema/sentimento.
+    try:
+        entities, ner_raw = classifier.llm_client.extract_entities(
+            article, return_raw=True
+        )
+        result["entities"] = entities
+        # Grava a resposta crua em news_llm_raw (não fatal se falhar).
+        store_raw_llm_response(unique_id, "ner", ner_raw)
+    except Exception as e:
+        logger.error(f"NER extraction failed for {unique_id}: {e}")
+        result["entities"] = []
 
     # Update PostgreSQL
     code_to_id = _get_code_to_id()
@@ -209,6 +232,30 @@ def enrich_article(unique_id: str) -> dict[str, Any]:
     return {"status": "enriched", "stats": stats}
 
 
+def _normalize_mention(raw: dict) -> dict:
+    """
+    Garante o shape evoluído da menção em news_features.features.entities[]:
+    {text, type, count, forma_canonica, salience}.
+
+    canonical_id e offsets ficam DE FORA (preenchidos por fases posteriores).
+    """
+    text = raw.get("text")
+    count = raw.get("count", 1)
+    try:
+        count = int(count)
+    except (TypeError, ValueError):
+        count = 1
+    salience = raw.get("salience")
+    forma_canonica = raw.get("forma_canonica") or text
+    return {
+        "text": text,
+        "type": raw.get("type"),
+        "count": count,
+        "forma_canonica": forma_canonica,
+        "salience": salience,
+    }
+
+
 def _upsert_ai_features(unique_id: str, enrichment_result: dict) -> None:
     """Upsert AI-computed features (sentiment, entities) to news_features table."""
     from psycopg2.extras import Json
@@ -219,7 +266,8 @@ def _upsert_ai_features(unique_id: str, enrichment_result: dict) -> None:
         features["sentiment"] = sentiment
     entities = enrichment_result.get("entities")
     if entities:
-        features["entities"] = entities
+        # Shape evoluído: {text, type, count, forma_canonica, salience}.
+        features["entities"] = [_normalize_mention(e) for e in entities]
 
     if not features:
         return
@@ -245,3 +293,64 @@ def _upsert_ai_features(unique_id: str, enrichment_result: dict) -> None:
         logger.error(f"Failed to upsert AI features for {unique_id}: {e}")
     finally:
         conn.close()
+
+
+def store_raw_llm_response(unique_id: str, task: str, raw: dict | None) -> None:
+    """
+    Append-only: grava a resposta crua do LLM em news_llm_raw para
+    reprocessabilidade (re-parse sem re-chamar o Bedrock).
+
+    Resiliente: qualquer falha (tabela ausente, DB indisponível) é logada e
+    ignorada — NUNCA derruba o enriquecimento. `raw` None (chamada Bedrock
+    falhou) é no-op.
+
+    Args:
+        unique_id: ID da notícia.
+        task: rótulo da tarefa, ex.: 'ner'.
+        raw: dict com model_id, prompt_version, prompt_hash, raw_response.
+
+    A tabela news_llm_raw é criada pela migração 019 do data-platform.
+    """
+    if not raw:
+        return
+
+    from psycopg2.extras import Json
+
+    try:
+        conn = psycopg2.connect(_get_database_url())
+    except Exception as e:
+        logger.warning(f"Failed to connect to store raw LLM response for {unique_id}: {e}")
+        return
+
+    try:
+        cursor = conn.cursor()
+        cursor.execute(
+            """
+            INSERT INTO news_llm_raw
+                (unique_id, task, model_id, prompt_version, prompt_hash, raw_response)
+            VALUES (%s, %s, %s, %s, %s, %s)
+            """,
+            (
+                unique_id,
+                task,
+                raw.get("model_id"),
+                raw.get("prompt_version"),
+                raw.get("prompt_hash"),
+                Json(raw.get("raw_response")),
+            ),
+        )
+        conn.commit()
+        cursor.close()
+        logger.info(f"Stored raw LLM response for {unique_id} (task={task})")
+    except Exception as e:
+        # Não fatal: o enriquecimento continua mesmo sem o raw armazenado.
+        try:
+            conn.rollback()
+        except Exception:
+            pass
+        logger.warning(f"Failed to store raw LLM response for {unique_id} (task={task}): {e}")
+    finally:
+        try:
+            conn.close()
+        except Exception:
+            pass
