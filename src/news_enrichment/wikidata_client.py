@@ -25,6 +25,13 @@ WIKIDATA_API_URL = "https://www.wikidata.org/w/api.php"
 DEFAULT_TIMEOUT = 8.0
 DEFAULT_MAX_RETRIES = 2
 
+# A Wikimedia bloqueia (HTTP 403) requisições sem um User-Agent descritivo.
+# Politica: https://meta.wikimedia.org/wiki/User-Agent_policy
+WIKIDATA_USER_AGENT = (
+    "DestaquesGovBr-EntityCanonicalization/1.0 "
+    "(https://destaquesgovbr.com.br; contato@destaquesgovbr.com.br)"
+)
+
 # Property IDs usados na desambiguação.
 P_COUNTRY = "P17"        # país (claim usado para BR vs estrangeiro)
 P_INSTANCE_OF = "P31"    # instância de (tipo da entidade)
@@ -62,7 +69,9 @@ class WikidataClient:
         self.api_url = api_url
         self.timeout = timeout
         self.max_retries = max_retries
-        self._client = client or httpx.Client(timeout=timeout)
+        self._client = client or httpx.Client(
+            timeout=timeout, headers={"User-Agent": WIKIDATA_USER_AGENT}
+        )
         # Caches em memória (por processo).
         self._search_cache: Dict[tuple, List[Candidate]] = {}
         self._claims_cache: Dict[str, dict] = {}
