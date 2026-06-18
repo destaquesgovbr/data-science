@@ -650,7 +650,7 @@ class TestDedup:
         # "lei estatuto surdocegueira 2024") = 3/4 = 0.75 >= threshold 0.75
         db.seed_registry("dgb_lei-estatuto-surdocegueira", "Lei Estatuto Surdocegueira", "LAW")
         db.seed_registry(
-            "dgb_lei-estatuto-surdocegueira-2024", "Lei Estatuto Surdocegueira 2024", "LAW"
+            "dgb_lei-do-estatuto-surdocegueira", "Lei do Estatuto Surdocegueira", "LAW"
         )
         conn = db.conn()
         result = J.run_dedup(conn, entity_type="LAW", dry_run=True)
@@ -708,7 +708,7 @@ class TestDedup:
         db = FakeDB()
         # dgb_lei-a tem 2 aliases; dgb_lei-b tem 0
         db.seed_registry("dgb_lei-a", "Lei Estatuto Surdocegueira", "LAW")
-        db.seed_registry("dgb_lei-b", "Lei Estatuto Surdocegueira 2024", "LAW")
+        db.seed_registry("dgb_lei-b", "Lei do Estatuto Surdocegueira", "LAW")
         # Adiciona 2 aliases para dgb_lei-a
         db.seed_alias("lei estatuto surdocegueira", "LAW", "dgb_lei-a")
         db.seed_alias("lei estatuto", "LAW", "dgb_lei-a")
@@ -718,6 +718,40 @@ class TestDedup:
         assert "dgb_lei-a" in db.registry
         assert "dgb_lei-b" not in db.registry
         assert result["merged"] >= 1
+
+
+class TestDedupYearGuard:
+    """run_dedup: nomes que diferem por ano (edições) nunca fundem."""
+
+    def test_edition_by_year_not_merged(self):
+        """'ENGP' vs 'ENGP 2026' NÃO funde (edições distintas), apesar do Jaccard alto."""
+        db = FakeDB()
+        db.seed_registry("dgb_engp", "Encontro Nacional de Gestao de Pessoas (ENGP)", "EVENT")
+        db.seed_registry("dgb_engp-2026", "Encontro Nacional de Gestao de Pessoas (ENGP) 2026", "EVENT")
+        conn = db.conn()
+        result = J.run_dedup(conn, entity_type="EVENT", dry_run=False)
+        assert result["merged"] == 0
+        assert result["proposed"] == 0
+        assert len(db.registry) == 2
+
+    def test_same_year_still_merges(self):
+        """'... de 2026' vs '... 2026' (mesmo ano) ainda funde (Copa)."""
+        db = FakeDB()
+        db.seed_registry("dgb_copa-de-2026", "Copa do Mundo FIFA de 2026", "EVENT")
+        db.seed_registry("dgb_copa-2026", "Copa do Mundo FIFA 2026", "EVENT")
+        conn = db.conn()
+        result = J.run_dedup(conn, entity_type="EVENT", dry_run=False)
+        assert result["merged"] >= 1
+        assert len(db.registry) == 1
+
+    def test_different_years_not_merged(self):
+        db = FakeDB()
+        db.seed_registry("dgb_enem-2025", "Enem 2025", "EVENT")
+        db.seed_registry("dgb_enem-2026", "Enem 2026", "EVENT")
+        conn = db.conn()
+        result = J.run_dedup(conn, entity_type="EVENT", dry_run=False)
+        assert result["merged"] == 0
+        assert len(db.registry) == 2
 
 
 class TestDedupWikidataWins:
@@ -764,7 +798,7 @@ class TestDedupWikidataWins:
         """Par dgb_×dgb_ (sem QID) mantém a heurística de mais-aliases=target."""
         db = FakeDB()
         db.seed_registry("dgb_a", "Lei Estatuto Surdocegueira", "LAW")
-        db.seed_registry("dgb_b", "Lei Estatuto Surdocegueira 2024", "LAW")
+        db.seed_registry("dgb_b", "Lei do Estatuto Surdocegueira", "LAW")
         db.seed_alias("lei estatuto surdocegueira", "LAW", "dgb_a")
         db.seed_alias("lei estatuto", "LAW", "dgb_a")
         conn = db.conn()

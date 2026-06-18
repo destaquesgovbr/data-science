@@ -927,6 +927,39 @@ class TestMergeEntities:
         assert n == 2
 
 
+class TestDiffersByYear:
+    """Guard de edição: nomes que diferem por ano são edições distintas."""
+
+    def test_same_year_does_not_differ(self):
+        # Copa: "de 2026" vs "2026" → mesmo ano → pode fundir.
+        assert not C.differs_by_year(
+            "Copa do Mundo FIFA de 2026", "Copa do Mundo FIFA 2026"
+        )
+
+    def test_year_vs_no_year_differs(self):
+        # ENGP genérico vs edição 2026.
+        assert C.differs_by_year(
+            "Encontro Nacional de Gestão de Pessoas (ENGP)",
+            "Encontro Nacional de Gestão de Pessoas (ENGP) 2026",
+        )
+
+    def test_different_years_differ(self):
+        assert C.differs_by_year("Enem 2025", "Enem 2026")
+
+    def test_no_year_either_side_does_not_differ(self):
+        assert not C.differs_by_year("Ministério da Educação", "Ministério da Educação (MEC)")
+
+    def test_symmetric(self):
+        a, b = "Enem", "Enem 2026"
+        assert C.differs_by_year(a, b) == C.differs_by_year(b, a)
+
+    def test_not_confused_by_long_numbers(self):
+        # "20240" não contém um token de ano isolado (\b protege).
+        assert not C.differs_by_year("Processo 20240", "Processo 20240")
+        # mas anos reais embutidos em datas contam:
+        assert C.differs_by_year("Lei 14.967/2024", "Lei 14.967/2025")
+
+
 # ---------------------------------------------------------------------- #
 # add_alias Wikidata-wins (dgb_ vs QID promotion)                        #
 # ---------------------------------------------------------------------- #
