@@ -1055,17 +1055,70 @@ def upsert_entity(
         cursor.close()
 
 
+def _rewrite_mentions_canonical_id(conn, source_id: str, target_id: str) -> int:
+    """Reescreve canonical_id source→target nas menções de news_features.
+
+    Sem isto, após deletar o source de entity_registry as menções
+    (`news_features.features.entities[].canonical_id`) que apontavam para o
+    source ficariam órfãs, e a tabela de grafo `news_entities` (FK ON DELETE
+    CASCADE) perderia essas linhas no próximo rebuild. Espelha o padrão de
+    `backfill_canonical_ids` (Step C): seleciona só os artigos afetados via o
+    índice GIN (migração 018), reescreve o array entities em Python e regrava
+    com jsonb_set (preserva as outras chaves de features). Idempotente.
+
+    Returns: número de artigos (linhas news_features) atualizados.
+    """
+    cursor = conn.cursor()
+    try:
+        cursor.execute(
+            "SELECT unique_id, features FROM news_features "
+            "WHERE features->'entities' @> %s::jsonb",
+            (json.dumps([{"canonical_id": source_id}]),),
+        )
+        rows = cursor.fetchall()
+    finally:
+        cursor.close()
+
+    updated = 0
+    for unique_id, features in rows:
+        entities = (features or {}).get("entities") or []
+        changed = False
+        new_entities = []
+        for ent in entities:
+            ent = dict(ent)
+            if ent.get("canonical_id") == source_id:
+                ent["canonical_id"] = target_id
+                changed = True
+            new_entities.append(ent)
+        if not changed:
+            continue
+        ucur = conn.cursor()
+        try:
+            ucur.execute(
+                "UPDATE news_features "
+                "SET features = jsonb_set(features, '{entities}', %s::jsonb, true) "
+                "WHERE unique_id = %s",
+                (json.dumps(new_entities, ensure_ascii=False), unique_id),
+            )
+            updated += 1
+        finally:
+            ucur.close()
+    return updated
+
+
 def merge_entities(conn, source_id: str, target_id: str) -> int:
     """Merge source_id → target_id: migra aliases, herda metadata, deleta source.
 
     1. Herda wikidata_id/wikidata_url do source para o target (COALESCE — só atualiza se target não tem).
     2. Merge do JSONB aliases: union das listas do target e source.
-    3. Redireciona aliases em entity_alias que apontam para source → target
+    3. Reescreve canonical_id source→target nas menções de news_features (evita
+       órfãos + perda de arestas no grafo).
+    4. Redireciona aliases em entity_alias que apontam para source → target
        (apenas os que não criariam conflito de PK, i.e., (alias_norm, type) ainda não existe no target).
-    4. Deleta aliases restantes do source em entity_alias.
-    5. Deleta source de entity_registry.
+    5. Deleta aliases restantes do source em entity_alias.
+    6. Deleta source de entity_registry.
 
-    Returns: número de alias rows migradas (passo 3).
+    Returns: número de alias rows migradas (passo 4).
     """
     cursor = conn.cursor()
     try:
@@ -1087,7 +1140,10 @@ def merge_entities(conn, source_id: str, target_id: str) -> int:
             (target_id, source_id),
         )
 
-        # 3: redirecionar aliases sem conflito de PK
+        # 3: reescrever canonical_id source→target nas menções (news_features)
+        _rewrite_mentions_canonical_id(conn, source_id, target_id)
+
+        # 4: redirecionar aliases sem conflito de PK
         cursor.execute(
             """
             UPDATE entity_alias SET entity_id = %s
@@ -1103,13 +1159,13 @@ def merge_entities(conn, source_id: str, target_id: str) -> int:
         )
         migrated = cursor.rowcount
 
-        # 4: limpar aliases restantes do source
+        # 5: limpar aliases restantes do source
         cursor.execute(
             "DELETE FROM entity_alias WHERE entity_id = %s",
             (source_id,),
         )
 
-        # 5: deletar source da registry
+        # 6: deletar source da registry
         cursor.execute(
             "DELETE FROM entity_registry WHERE entity_id = %s",
             (source_id,),

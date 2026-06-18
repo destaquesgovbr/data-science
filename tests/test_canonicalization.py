@@ -883,6 +883,49 @@ class TestMergeEntities:
         assert "Src Alias 2" in merged
         assert "Tgt Alias 1" in merged
 
+    def test_mentions_canonical_id_rewritten_to_target(self):
+        """Menções em news_features apontando p/ source são reescritas p/ target.
+
+        Sem isto, após deletar o source as menções ficariam órfãs (e o grafo,
+        com FK ON DELETE CASCADE, perderia as arestas).
+        """
+        db = self._setup()
+        db.seed_news_features("uid1", [
+            {"text": "Source Entity", "type": "ORG", "canonical_id": "src_id"},
+            {"text": "Outra", "type": "ORG", "canonical_id": "outra_id"},
+        ])
+        db.seed_news_features("uid2", [
+            {"text": "Source Entity", "type": "ORG", "canonical_id": "src_id"},
+        ])
+        conn = db.conn()
+        C.merge_entities(conn, "src_id", "tgt_id")
+        ids_uid1 = [e["canonical_id"] for e in db.news_features["uid1"]["entities"]]
+        ids_uid2 = [e["canonical_id"] for e in db.news_features["uid2"]["entities"]]
+        assert "src_id" not in ids_uid1
+        assert "tgt_id" in ids_uid1
+        assert "outra_id" in ids_uid1  # menção não-afetada preservada
+        assert ids_uid2 == ["tgt_id"]
+
+    def test_mentions_without_source_untouched(self):
+        """Artigos que não mencionam o source não são alterados."""
+        db = self._setup()
+        db.seed_news_features("uid_other", [
+            {"text": "X", "type": "ORG", "canonical_id": "other_a"},
+        ])
+        conn = db.conn()
+        C.merge_entities(conn, "src_id", "tgt_id")
+        assert db.news_features["uid_other"]["entities"][0]["canonical_id"] == "other_a"
+
+    def test_rewrite_helper_returns_article_count(self):
+        """_rewrite_mentions_canonical_id retorna o nº de artigos atualizados."""
+        db = self._setup()
+        db.seed_news_features("uid1", [{"text": "S", "type": "ORG", "canonical_id": "src_id"}])
+        db.seed_news_features("uid2", [{"text": "S", "type": "ORG", "canonical_id": "src_id"}])
+        db.seed_news_features("uid3", [{"text": "Z", "type": "ORG", "canonical_id": "zzz"}])
+        conn = db.conn()
+        n = C._rewrite_mentions_canonical_id(conn, "src_id", "tgt_id")
+        assert n == 2
+
 
 # ---------------------------------------------------------------------- #
 # add_alias Wikidata-wins (dgb_ vs QID promotion)                        #
