@@ -27,6 +27,7 @@ import hashlib
 import json
 import logging
 import os
+import re
 from datetime import datetime, timedelta, timezone
 from typing import Dict, List, Optional
 
@@ -770,6 +771,15 @@ _DEDUP_THRESHOLDS: Dict[str, float] = {
     "ORG": 0.85,
 }
 
+# entity_id de um QID Wikidata: "Q" seguido de dígitos ("Q216330"). Os ids
+# internos têm prefixo "dgb_". Usado para Wikidata-wins na seleção de target.
+_QID_RE = re.compile(r"^Q\d+$")
+
+
+def _is_qid(entity_id: str) -> bool:
+    """True se entity_id é um QID Wikidata (ex.: 'Q216330'), não um id interno dgb_."""
+    return bool(entity_id) and bool(_QID_RE.match(entity_id))
+
 
 def run_dedup(
     conn,
@@ -877,20 +887,31 @@ def run_dedup(
                 if dry_run:
                     continue
 
-                # Decide source (fewer aliases) and target (more aliases).
-                count_a = alias_count.get(eid_a, 0)
-                count_b = alias_count.get(eid_b, 0)
-
-                if count_a > count_b:
+                # Decide source/target. Regra de identidade do projeto: o QID do
+                # Wikidata é a chave canônica preferida sobre o id interno dgb_
+                # (linked-data / SAME_AS no grafo). Por isso, num par QID×dgb_, o
+                # QID SEMPRE vence (vira target), independentemente da contagem de
+                # aliases. Só quando ambos são do mesmo tipo de id (QID×QID ou
+                # dgb_×dgb_) cai-se na heurística de "mais aliases = target".
+                a_qid = _is_qid(eid_a)
+                b_qid = _is_qid(eid_b)
+                if a_qid and not b_qid:
                     target_id, source_id = eid_a, eid_b
-                elif count_b > count_a:
+                elif b_qid and not a_qid:
                     target_id, source_id = eid_b, eid_a
                 else:
-                    # Tie-break: lexicographically smaller id is target (stable).
-                    if eid_a <= eid_b:
+                    count_a = alias_count.get(eid_a, 0)
+                    count_b = alias_count.get(eid_b, 0)
+                    if count_a > count_b:
                         target_id, source_id = eid_a, eid_b
-                    else:
+                    elif count_b > count_a:
                         target_id, source_id = eid_b, eid_a
+                    else:
+                        # Tie-break: lexicographically smaller id is target (stable).
+                        if eid_a <= eid_b:
+                            target_id, source_id = eid_a, eid_b
+                        else:
+                            target_id, source_id = eid_b, eid_a
 
                 try:
                     merge_entities(conn, source_id, target_id)

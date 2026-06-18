@@ -173,10 +173,31 @@ class FakeCursor:
             self._result = list(self.db.features_rows)
             return
 
-        # news_features jsonb_set update
+        # merge_entities: SELECT artigos cujas menções referenciam um canonical_id
+        # (filtro GIN `features->'entities' @> [{"canonical_id": ...}]`)
+        if low.startswith("select unique_id, features from news_features") and "entities" in low:
+            import json as _json
+            try:
+                wanted = _json.loads(params[0])[0].get("canonical_id") if params else None
+            except Exception:
+                wanted = None
+            res = []
+            for uid, feats in self.db.news_features.items():
+                ents = (feats or {}).get("entities") or []
+                if any(e.get("canonical_id") == wanted for e in ents):
+                    res.append((uid, feats))
+            self._result = res
+            return
+
+        # news_features jsonb_set update (backfill Step C e merge rewrite)
         if "update news_features set features = jsonb_set" in low:
             new_json, uid = params[0], params[1]
             self.db.backfilled[uid] = new_json
+            # se o artigo está no store mutável, aplica a reescrita do array entities
+            if uid in self.db.news_features:
+                import json as _json
+                parsed = _json.loads(new_json) if isinstance(new_json, str) else new_json
+                self.db.news_features[uid]["entities"] = parsed
             return
 
         # merge_entities SQL 1 — UPDATE entity_registry AS t SET (herda metadata + merge aliases JSONB)
@@ -309,6 +330,7 @@ class FakeDB:
         self.gather_rows = []  # (surface, type, sample_uid)
         self.features_rows = []  # (unique_id, features dict)
         self.backfilled = {}   # unique_id -> new entities json str
+        self.news_features = {}  # unique_id -> features dict (mutável; menções)
         self.ledger = {}       # model_id -> {input_tokens, output_tokens}
         self.log = []          # (sql, params)
 
@@ -317,6 +339,10 @@ class FakeDB:
 
     def seed_alias(self, alias_norm, type, entity_id):
         self.alias[(alias_norm, type)] = entity_id
+
+    def seed_news_features(self, unique_id, entities):
+        """Semeia uma linha news_features com lista de menções (entities)."""
+        self.news_features[unique_id] = {"entities": [dict(e) for e in entities]}
 
     def seed_registry(self, entity_id, canonical_name, type, **kw):
         self.registry[entity_id] = {

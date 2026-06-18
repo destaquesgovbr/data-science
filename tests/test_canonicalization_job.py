@@ -720,6 +720,59 @@ class TestDedup:
         assert result["merged"] >= 1
 
 
+class TestDedupWikidataWins:
+    """run_dedup: num par QID×dgb_, o QID Wikidata vence (vira target),
+    independentemente da contagem de aliases (regra de identidade do projeto)."""
+
+    def test_is_qid_helper(self):
+        assert J._is_qid("Q216330")
+        assert J._is_qid("Q5")
+        assert not J._is_qid("dgb_ans")
+        assert not J._is_qid("Qabc")
+        assert not J._is_qid("")
+        assert not J._is_qid("XQ123")
+
+    def test_qid_is_target_even_with_fewer_aliases(self):
+        """QID vence o dgb_ mesmo tendo MENOS aliases que o dgb_."""
+        db = FakeDB()
+        # mesma org: "X" vs "X (SIGLA)" → variante por sigla (path a)
+        db.seed_registry("dgb_ans", "Agencia Nacional de Saude Suplementar", "ORG")
+        db.seed_registry("Q9592631", "Agencia Nacional de Saude Suplementar (ANS)", "ORG")
+        # dgb_ tem MAIS aliases — pela heurística antiga seria target (errado)
+        db.seed_alias("ans", "ORG", "dgb_ans")
+        db.seed_alias("agencia nacional de saude suplementar", "ORG", "dgb_ans")
+        conn = db.conn()
+        result = J.run_dedup(conn, entity_type="ORG", dry_run=False)
+        assert result["merged"] >= 1
+        # O QID sobreviveu como chave canônica; o dgb_ foi o source removido.
+        assert "Q9592631" in db.registry
+        assert "dgb_ans" not in db.registry
+
+    def test_qid_is_target_regardless_of_order(self):
+        """Direção QID-wins independe da ordem de varredura (QID semeado primeiro
+        = eid_a no laço, exercita o ramo `a_qid and not b_qid`)."""
+        db = FakeDB()
+        db.seed_registry("Q4314917", "Agencia Nacional de Aviacao Civil (Anac)", "ORG")
+        db.seed_registry("dgb_anac", "Agencia Nacional de Aviacao Civil", "ORG")
+        db.seed_alias("anac", "ORG", "dgb_anac")  # dgb_ tem o alias; QID não
+        conn = db.conn()
+        J.run_dedup(conn, entity_type="ORG", dry_run=False)
+        assert "Q4314917" in db.registry
+        assert "dgb_anac" not in db.registry
+
+    def test_both_dgb_uses_alias_count_heuristic(self):
+        """Par dgb_×dgb_ (sem QID) mantém a heurística de mais-aliases=target."""
+        db = FakeDB()
+        db.seed_registry("dgb_a", "Lei Estatuto Surdocegueira", "LAW")
+        db.seed_registry("dgb_b", "Lei Estatuto Surdocegueira 2024", "LAW")
+        db.seed_alias("lei estatuto surdocegueira", "LAW", "dgb_a")
+        db.seed_alias("lei estatuto", "LAW", "dgb_a")
+        conn = db.conn()
+        J.run_dedup(conn, entity_type="LAW", dry_run=False)
+        assert "dgb_a" in db.registry  # mais aliases = target
+        assert "dgb_b" not in db.registry
+
+
 class TestDedupOrgThreshold:
     """run_dedup ORG: threshold dedicado (0.85) + detector de variante por sigla."""
 
