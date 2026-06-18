@@ -719,47 +719,13 @@ def _jaccard(a: set, b: set) -> float:
     return inter / union if union else 0.0
 
 
-# Stopwords (preposições/artigos/conjunções PT) ignoradas ao construir um
-# acrônimo a partir das palavras significativas de um nome.
-_ACRONYM_STOPWORDS = frozenset(
-    {"de", "da", "do", "das", "dos", "e", "a", "o", "as", "os", "em", "para", "no", "na"}
-)
-
-# Captura um grupo parentético (a última ocorrência, p.ex. "(MEC)").
+# Captura um grupo parentético (p.ex. "(MEC)").
 _PAREN_RE = re.compile(r"\(([^()]*)\)")
 
 
 def _strip_parens(name: str) -> str:
     """Remove todos os grupos `(...)` de um nome (sem normalizar)."""
     return _PAREN_RE.sub(" ", name)
-
-
-def _significant_words(name: str) -> List[str]:
-    """Palavras significativas de um nome (sem parênteses, sem stopwords)."""
-    stripped = _strip_parens(name)
-    words = [w for w in normalize(stripped).split(" ") if w]
-    return [w for w in words if w not in _ACRONYM_STOPWORDS]
-
-
-def _acronym_of(name: str) -> str:
-    """Acrônimo construído pelas iniciais das palavras significativas de `name`."""
-    return "".join(w[0] for w in _significant_words(name) if w)
-
-
-def _paren_acronyms(name: str) -> List[str]:
-    """Conteúdos parentéticos de `name` que parecem siglas (uppercase, len>=2).
-
-    Devolve a sigla normalizada (minúscula) para comparação. Considera apenas
-    grupos cujo conteúdo original é majoritariamente maiúsculo (uma sigla), não
-    uma frase entre parênteses.
-    """
-    out: List[str] = []
-    for m in _PAREN_RE.findall(name):
-        raw = m.strip()
-        letters = [c for c in raw if c.isalpha()]
-        if len(letters) >= 2 and all(c.isupper() for c in letters):
-            out.append("".join(letters).lower())
-    return out
 
 
 def _paren_contents(name: str) -> List[str]:
@@ -860,44 +826,18 @@ def _is_acronym_variant(name_a: str, name_b: str) -> bool:
         if ok_a and ok_b:
             return True
 
-    # (b) Acronym expansion match. As siglas candidatas vêm do conteúdo
-    #     parentético de cada nome OU do nome inteiro quando ele é uma sigla
-    #     solta (ex.: "MEC"). Cada sigla é confrontada com o acrônimo das
-    #     palavras significativas do nome PARCEIRO (e do próprio nome despido).
-    def _bare_acronym(name: str, norm: str, stripped: str) -> Optional[str]:
-        # nome solto que é uma sigla (uma só "palavra" toda em maiúsculas).
-        letters = [c for c in name.strip() if c.isalpha()]
-        if (
-            stripped == norm  # sem parêntese
-            and " " not in norm  # token único
-            and len(letters) >= 2
-            and all(c.isupper() for c in name.strip() if c.isalpha())
-        ):
-            return "".join(letters).lower()
-        return None
-
-    candidates_a = list(_paren_acronyms(name_a))
-    bare_a = _bare_acronym(name_a, norm_a, stripped_a)
-    if bare_a:
-        candidates_a.append(bare_a)
-
-    candidates_b = list(_paren_acronyms(name_b))
-    bare_b = _bare_acronym(name_b, norm_b, stripped_b)
-    if bare_b:
-        candidates_b.append(bare_b)
-
-    acr_a = _acronym_of(name_a)  # iniciais das palavras significativas de A
-    acr_b = _acronym_of(name_b)  # iniciais das palavras significativas de B
-
-    # Uma sigla de A deve expandir para as iniciais de B (o nome parceiro) — ou
-    # para as do próprio A (caso "(MEC)" dentro de "Ministério da Educação (MEC)").
-    for sig in candidates_a:
-        if len(sig) >= 2 and sig in {acr_b, acr_a}:
-            return True
-    for sig in candidates_b:
-        if len(sig) >= 2 and sig in {acr_a, acr_b}:
-            return True
-
+    # NOTA: NÃO existe um path (b) de "expansão de acrônimo entre bases
+    # diferentes" (ex.: casar "MEC" com "Ministério da Educação e Cultura" só
+    # pelas iniciais). Tentativas desse tipo geram falsos-positivos graves em
+    # dados reais por DOIS motivos: (1) colisão de sigla — orgs distintas que
+    # compartilham acrônimo ("Forças Armadas do Brasil" e "Força Aérea
+    # Brasileira" ambas → "FAB"; duas "SPA"); (2) sub-unidade vs pai — a
+    # sub-unidade carrega a sigla do pai no parêntese ("Diretoria Colegiada da
+    # ANM (ANM)" vs "Agência Nacional de Mineração"), o que é uma relação
+    # SUBORDINATE_TO, não um merge. O único sinal confiável para AUTO-merge é o
+    # path (a): MESMA base + sigla-do-base anexada. Casos de sigla solta ("MEC"
+    # como nome inteiro) são raros no registry e, se surgirem, é mais seguro
+    # deixá-los para needs_review do que arriscar fundir entidades distintas.
     return False
 
 

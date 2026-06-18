@@ -1111,13 +1111,29 @@ class TestIsAcronymVariant:
             "Financiadora de Estudos e Projetos",
         )
 
-    def test_acronym_expansion_match_true(self):
-        """A sigla parentética é o acrônimo das palavras significativas do outro nome."""
-        # "(MEC)" = iniciais de "Ministério (da) Educação" + ... — aqui o nome
-        # parceiro NÃO é literalmente igual ao stripped, mas a sigla expande.
-        assert C._is_acronym_variant(
+    def test_bare_sigla_cross_base_not_merged(self):
+        """Sigla solta vs nome completo (bases diferentes) NÃO é auto-merge.
+
+        Match por expansão de acrônimo entre bases diferentes ("MEC" vs
+        "Ministério da Educação e Cultura") foi REMOVIDO: em dados reais gera
+        falsos-positivos graves por colisão de sigla (ex.: "FAB" = "Forças
+        Armadas do Brasil" E "Força Aérea Brasileira"; duas "SPA") e por
+        confundir sub-unidade com pai ("Diretoria Colegiada da ANM (ANM)" vs
+        "Agência Nacional de Mineração"). O único sinal confiável de merge é o
+        path (a): MESMA base + sigla-do-base anexada.
+        """
+        assert not C._is_acronym_variant(
             "Ministério da Educação e Cultura",
             "MEC",
+        )
+        # Colisão de sigla entre orgs distintas → nunca funde:
+        assert not C._is_acronym_variant(
+            "Forças Armadas do Brasil",
+            "Força Aérea Brasileira (FAB)",
+        )
+        assert not C._is_acronym_variant(
+            "Secretaria de Política Agrícola (SPA)",
+            "Secretaria de Prêmios e Apostas (SPA)",
         )
 
     def test_symmetric(self):
