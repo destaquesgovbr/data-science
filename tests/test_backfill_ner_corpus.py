@@ -43,10 +43,10 @@ class TestSelectSql:
         sql = bnc.build_select_sql(order="desc")
         assert "DESC" in sql
 
-    def test_default_order_is_asc_oldest_first(self):
-        # O default do CLI é asc (oldest-first) — cobre o acervo histórico.
+    def test_default_order_is_desc_newest_first(self):
+        # O default do CLI é desc (newest-first) — prioriza artigos recentes.
         args = bnc.build_arg_parser().parse_args([])
-        assert args.order == "asc"
+        assert args.order == "desc"
 
     def test_does_not_require_existing_features(self):
         """Cobre os ~314k SEM NER: NÃO exige nf.features ? 'entities'."""

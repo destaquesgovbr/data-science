@@ -219,8 +219,8 @@ def build_arg_parser() -> argparse.ArgumentParser:
     ap.add_argument("--limit", type=int, default=500, help="teto de artigos neste run")
     ap.add_argument("--workers", type=int, default=1, help="concorrência de chamadas Bedrock")
     ap.add_argument(
-        "--order", choices=["asc", "desc"], default="asc",
-        help="ordem por published_at (asc=oldest-first, cobre o acervo histórico)",
+        "--order", choices=["asc", "desc"], default="desc",
+        help="ordem por published_at (desc=newest-first default; asc para histórico puro)",
     )
     ap.add_argument("--dry-run", action="store_true", help="não escreve nada (lê só)")
     return ap
