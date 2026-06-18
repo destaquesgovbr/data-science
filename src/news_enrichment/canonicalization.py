@@ -18,12 +18,13 @@ Princípios:
     que lookups de alias batam nas linhas semeadas.
 """
 
+import hashlib
 import json
 import logging
 import os
 import re
 import unicodedata
-from typing import List, Optional
+from typing import Dict, List, Optional, Tuple
 
 logger = logging.getLogger(__name__)
 
@@ -31,19 +32,19 @@ logger = logging.getLogger(__name__)
 # Config
 # =============================================================================
 
-# ID do modelo Opus 4.8 (inference-profile do Bedrock) usado na canonicalização.
-# SEMPRE configurável por env — NUNCA hardcode adivinhado.
+# ID do modelo de canonicalização (inference-profile do Bedrock).
+# SEMPRE configurável por env CANON_MODEL_ID — NUNCA hardcode adivinhado.
 #
-# TODO(CANON): definir CANON_MODEL_ID em produção com o ID exato do
-# inference-profile do Claude Opus 4.8 (us-east-1), algo como
-# "us.anthropic.claude-opus-4-8-<...>". NÃO inventar o sufixo aqui — confirmar no
-# console do Bedrock. O placeholder abaixo serve apenas para dev/testes locais e
-# é sempre sobreposto pela env CANON_MODEL_ID no deploy (Terraform).
+# Em produção (Terraform) CANON_MODEL_ID = "us.anthropic.claude-sonnet-4-6"
+# (Sonnet 4.6 — confirmado funcionando; Opus 4.8 dá AccessDenied). Opus 4.6 segue
+# disponível como upgrade futuro de qualidade, sem mudança de código (só env).
+# O placeholder abaixo serve APENAS para dev/testes locais (sem env) e é sempre
+# sobreposto pela env no deploy.
 CANON_MODEL_ID_PLACEHOLDER = "anthropic.claude-3-haiku-20240307-v1:0"
 
 
 def get_canon_model_id() -> str:
-    """Resolve o id do modelo Opus de canonicalização (env CANON_MODEL_ID)."""
+    """Resolve o id do modelo de canonicalização (env CANON_MODEL_ID)."""
     return os.environ.get("CANON_MODEL_ID") or CANON_MODEL_ID_PLACEHOLDER
 
 
@@ -104,9 +105,29 @@ def slugify(s: Optional[str]) -> str:
     return slug
 
 
+# entity_registry.entity_id é VARCHAR(64). Mantemos os ids dentro desse limite.
+_ENTITY_ID_MAX_LEN = 64
+_MINT_PREFIX = "dgb_"
+# Quando o slug não cabe, truncamos e anexamos um sufixo de hash determinístico
+# para preservar unicidade: dgb_ (4) + slug[:52] (52) + _ (1) + hash6 (6) = 63 ≤ 64.
+_MINT_SLUG_TRUNC = 52
+_MINT_HASH_LEN = 6
+
+
 def mint_internal_id(canonical_name: str) -> str:
-    """Mint de id interno `dgb_<slug>` para entidade sem QID."""
-    return f"dgb_{slugify(canonical_name)}"
+    """Mint de id interno `dgb_<slug>` para entidade sem QID (≤ 64 chars).
+
+    - Nome curto: `dgb_<slug>` (determinístico; ids existentes NÃO mudam).
+    - Nome longo (slug que estouraria VARCHAR(64)): trunca o slug a 52 chars e
+      anexa `_<hash6>` (sha1 do canonical_name completo) → determinístico e único.
+    """
+    slug = slugify(canonical_name)
+    candidate = f"{_MINT_PREFIX}{slug}"
+    if len(candidate) <= _ENTITY_ID_MAX_LEN:
+        return candidate
+    truncated = slug[:_MINT_SLUG_TRUNC].rstrip("-")
+    digest = hashlib.sha1(canonical_name.encode("utf-8")).hexdigest()[:_MINT_HASH_LEN]
+    return f"{_MINT_PREFIX}{truncated}_{digest}"
 
 
 # =============================================================================
@@ -285,27 +306,66 @@ def _extract_json_object(response: str):
         return None
 
 
+def _zero_usage() -> Dict[str, int]:
+    return {"input_tokens": 0, "output_tokens": 0}
+
+
+def _add_usage(acc: Dict[str, int], delta: Optional[Dict[str, int]]) -> Dict[str, int]:
+    """Soma tokens de `delta` em `acc` (in-place-safe). delta None → no-op."""
+    if not delta:
+        return acc
+    acc["input_tokens"] = int(acc.get("input_tokens", 0)) + int(delta.get("input_tokens", 0) or 0)
+    acc["output_tokens"] = int(acc.get("output_tokens", 0)) + int(delta.get("output_tokens", 0) or 0)
+    return acc
+
+
+def _extract_usage(response_body: dict) -> Dict[str, int]:
+    """Extrai usage{input_tokens,output_tokens} do corpo Anthropic-on-Bedrock (→ 0)."""
+    usage = (response_body or {}).get("usage") or {}
+    try:
+        in_tok = int(usage.get("input_tokens", 0) or 0)
+    except (TypeError, ValueError):
+        in_tok = 0
+    try:
+        out_tok = int(usage.get("output_tokens", 0) or 0)
+    except (TypeError, ValueError):
+        out_tok = 0
+    return {"input_tokens": in_tok, "output_tokens": out_tok}
+
+
 def llm_canonicalize(form: str, sample_context: str, model_id: str, bedrock_client) -> dict:
-    """Chamada Opus de canonicalização para UMA forma distinta.
+    """Chamada Sonnet de canonicalização para UMA forma distinta.
 
     Args:
         form: forma de superfície distinta (não normalizada).
         sample_context: trecho de news.content de um artigo de amostra.
-        model_id: id do modelo Opus (CANON_MODEL_ID).
+        model_id: id do modelo de canonicalização (CANON_MODEL_ID).
         bedrock_client: BedrockLLMClient (ou compatível) com `.client.invoke_model`.
 
     Returns:
         dict canonicalizado (parse tolerante). Em falha de Bedrock → default seguro.
+        Sempre inclui a chave `usage` (tokens da chamada) para o ledger de cota.
     """
     prompt = build_canon_prompt(form, sample_context)
-    raw = _invoke_bedrock_text(bedrock_client, model_id, prompt, max_tokens=800)
+    raw, usage = _invoke_bedrock_text(bedrock_client, model_id, prompt, max_tokens=800)
     if raw is None:
-        return _canon_safe_default(form)
-    return parse_canon_response(raw, form)
+        out = _canon_safe_default(form)
+        out["usage"] = usage
+        return out
+    out = parse_canon_response(raw, form)
+    out["usage"] = usage
+    return out
 
 
-def _invoke_bedrock_text(bedrock_client, model_id: str, prompt: str, max_tokens: int = 800) -> Optional[str]:
-    """Invoca o Bedrock (Anthropic messages) e devolve o texto, ou None em falha."""
+def _invoke_bedrock_text(
+    bedrock_client, model_id: str, prompt: str, max_tokens: int = 800
+) -> Tuple[Optional[str], Dict[str, int]]:
+    """Invoca o Bedrock (Anthropic messages) e devolve (texto, usage).
+
+    Em falha → (None, usage zerado). usage = {input_tokens, output_tokens} extraído
+    do corpo da resposta (para o ledger de cota); campos ausentes → 0. O caller
+    grava o usage; este módulo permanece SEM dependência de conexão de DB.
+    """
     request_body = {
         "anthropic_version": "bedrock-2023-05-31",
         "max_tokens": max_tokens,
@@ -318,10 +378,10 @@ def _invoke_bedrock_text(bedrock_client, model_id: str, prompt: str, max_tokens:
             body=json.dumps(request_body),
         )
         response_body = json.loads(response["body"].read())
-        return response_body["content"][0]["text"]
+        return response_body["content"][0]["text"], _extract_usage(response_body)
     except Exception as e:  # noqa: BLE001 — resiliência: falha → None
         logger.warning("Chamada Bedrock (canon) falhou para modelo %s: %s", model_id, e)
-        return None
+        return None, _zero_usage()
 
 
 # =============================================================================
@@ -414,30 +474,50 @@ def resolve_per_homonym(
     model_id: str,
     bedrock_client,
 ) -> Optional[dict]:
-    """Escalada contextual (Opus) para desambiguar entre múltiplos QIDs.
+    """Escalada contextual (Sonnet) para desambiguar entre múltiplos QIDs.
 
     Returns:
-        {qid, confidence} com o QID escolhido (que DEVE estar entre os candidatos),
-        ou None se o modelo não escolher / responder ruído / qid fora da lista.
-        Em falha de Bedrock → None.
+        {qid, confidence, usage} com o QID escolhido (que DEVE estar entre os
+        candidatos), ou None se o modelo não escolher / responder ruído / qid fora
+        da lista. Em falha de Bedrock → None. Quando retorna None mas houve chamada,
+        o usage não é perdido: use `resolve_per_homonym_with_usage` para tê-lo.
+    """
+    result, _usage = resolve_per_homonym_with_usage(
+        form, sample_context, candidates, model_id, bedrock_client
+    )
+    return result
+
+
+def resolve_per_homonym_with_usage(
+    form: str,
+    sample_context: str,
+    candidates: List[dict],
+    model_id: str,
+    bedrock_client,
+) -> Tuple[Optional[dict], Dict[str, int]]:
+    """Como resolve_per_homonym, mas também devolve o usage da chamada (p/ ledger).
+
+    Returns:
+        (decisão|None, usage). usage é sempre contabilizado mesmo quando a decisão
+        é None (o token gasto na escalada conta para a cota).
     """
     if not candidates:
-        return None
+        return None, _zero_usage()
     prompt = build_homonym_prompt(form, sample_context, candidates)
-    raw = _invoke_bedrock_text(bedrock_client, model_id, prompt, max_tokens=200)
+    raw, usage = _invoke_bedrock_text(bedrock_client, model_id, prompt, max_tokens=200)
     if raw is None:
-        return None
+        return None, usage
     parsed = _extract_json_object(raw)
     if not isinstance(parsed, dict):
-        return None
+        return None, usage
     qid = parsed.get("qid")
     if not isinstance(qid, str) or not qid.strip():
-        return None
+        return None, usage
     qid = qid.strip()
     valid_qids = {c.get("qid") for c in candidates}
     if qid not in valid_qids:
-        return None
-    return {"qid": qid, "confidence": _clamp_confidence(parsed.get("confidence"))}
+        return None, usage
+    return {"qid": qid, "confidence": _clamp_confidence(parsed.get("confidence"))}, usage
 
 
 # =============================================================================
@@ -529,7 +609,7 @@ def apply_gates(
 
     # 4) escalada contextual (múltiplos QIDs / baixa conf / PER)
     if candidates:
-        escalation = resolve_per_homonym(
+        escalation, esc_usage = resolve_per_homonym_with_usage(
             form, sample_context, candidates, model_id, bedrock_client
         )
         if escalation and escalation.get("qid"):
@@ -547,6 +627,7 @@ def apply_gates(
                     write_alias=True,
                     canon=canon,
                     link=chosen,
+                    usage=esc_usage,
                 )
         # escalada não chegou a uma escolha confiante → needs_review
         return _decision(
@@ -558,6 +639,7 @@ def apply_gates(
             write_alias=False,
             canon=canon,
             link=None,
+            usage=esc_usage,
         )
 
     # 5) sem candidatos mas precisava escalar (PER sem QID, ou conf baixa) →
@@ -587,7 +669,9 @@ def apply_gates(
     )
 
 
-def _decision(*, action, status, entity_id, qid, provenance, write_alias, canon, link) -> dict:
+def _decision(
+    *, action, status, entity_id, qid, provenance, write_alias, canon, link, usage=None
+) -> dict:
     return {
         "action": action,
         "status": status,
@@ -597,6 +681,9 @@ def _decision(*, action, status, entity_id, qid, provenance, write_alias, canon,
         "write_alias": write_alias,
         "canon": canon,
         "link": link,
+        # usage da(s) chamada(s) extra(s) feitas DENTRO de apply_gates (escalada).
+        # NÃO inclui o usage da llm_canonicalize (esse vem em canon["usage"]).
+        "usage": usage or _zero_usage(),
     }
 
 

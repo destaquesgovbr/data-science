@@ -131,6 +131,26 @@ class FakeCursor:
             self.db.llm_raw.append(params)
             return
 
+        # llm_daily_usage UPSERT (ledger de cota)
+        if "insert into llm_daily_usage" in low:
+            model_id, in_tok, out_tok = params[0], params[1], params[2]
+            row = self.db.ledger.setdefault(
+                model_id, {"input_tokens": 0, "output_tokens": 0}
+            )
+            row["input_tokens"] += int(in_tok or 0)
+            row["output_tokens"] += int(out_tok or 0)
+            return
+
+        # llm_daily_usage SUM (tokens usados hoje)
+        if "from llm_daily_usage" in low and "sum" in low:
+            model_id = params[0]
+            row = self.db.ledger.get(model_id)
+            if row is None:
+                self._result = [(0,)]
+            else:
+                self._result = [(row["input_tokens"] + row["output_tokens"],)]
+            return
+
         # entity_alias full dump
         if low.startswith("select alias_norm, type, entity_id from entity_alias"):
             self._result = [(k[0], k[1], v) for k, v in self.db.alias.items()]
@@ -224,6 +244,7 @@ class FakeDB:
         self.gather_rows = []  # (surface, type, sample_uid)
         self.features_rows = []  # (unique_id, features dict)
         self.backfilled = {}   # unique_id -> new entities json str
+        self.ledger = {}       # model_id -> {input_tokens, output_tokens}
         self.log = []          # (sql, params)
 
     def conn(self):
