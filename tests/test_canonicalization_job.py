@@ -366,3 +366,300 @@ class TestResolvePendingGovernor:
         # Sem cota → não bloqueia, resolve tudo.
         assert stats["resolved"] == 2
         assert stats["budget_exhausted"] is False
+
+
+# ---------------------------------------------------------------------- #
+# _persist_decision — reuso por nome para LAW e ORG                     #
+# ---------------------------------------------------------------------- #
+
+
+class TestPersistDecisionLawReuse:
+    def test_law_near_duplicate_does_not_mint_new_entity(self):
+        """LAW com nome similar a uma já registrada deve reusar o id existente."""
+        db = FakeDB()
+        # Registry já tem "Estatuto da Surdocegueira" como LAW
+        db.seed_registry("dgb_estatuto-da-surdocegueira", "Estatuto da Surdocegueira", "LAW")
+        conn = db.conn()
+        db.content["uid"] = "O Estatuto Surdocegueira foi aprovado..."
+        wikidata = FakeWikidata(candidates_by_query={"*": []})
+
+        # LLM canonicaliza para um nome quase idêntico (Jaccard = 1.0, nome exato)
+        bedrock = make_bedrock(
+            canon_json(
+                canonical_name="Estatuto da Surdocegueira",
+                type="LAW",
+                is_br_gov_org=False,
+                confidence=0.9,
+            )
+        )
+        J.resolve_form(
+            conn, "estatuto surdocegueira", "LAW", "uid", 0,
+            bedrock_client=bedrock, wikidata_client=wikidata, model_id="m",
+        )
+
+        # Deve reusar dgb_estatuto-da-surdocegueira, não criar novo nó
+        reused_id = db.alias.get(("estatuto surdocegueira", "LAW"))
+        assert reused_id == "dgb_estatuto-da-surdocegueira"
+        # Apenas 1 entidade LAW no registry (sem duplicata)
+        law_entries = [
+            r for r in db.registry.values() if r.get("type") == "LAW"
+        ]
+        assert len(law_entries) == 1
+
+    def test_law_different_number_mints_new_entity(self):
+        """LAW com número diferente (baixa similaridade) cria nova entidade."""
+        db = FakeDB()
+        db.seed_registry("dgb_lei-14-100", "Lei nº 14.100/2022", "LAW")
+        conn = db.conn()
+        db.content["uid"] = "A nova lei foi sancionada..."
+        wikidata = FakeWikidata(candidates_by_query={"*": []})
+
+        bedrock = make_bedrock(
+            canon_json(
+                canonical_name="Lei nº 14.967/2024",
+                type="LAW",
+                is_br_gov_org=False,
+                confidence=0.9,
+            )
+        )
+        J.resolve_form(
+            conn, "lei no 14 967 2024", "LAW", "uid", 0,
+            bedrock_client=bedrock, wikidata_client=wikidata, model_id="m",
+        )
+
+        # Nova entidade criada (id diferente)
+        new_id = db.alias.get(("lei no 14 967 2024", "LAW"))
+        assert new_id is not None
+        assert new_id != "dgb_lei-14-100"
+        law_entries = [
+            r for r in db.registry.values() if r.get("type") == "LAW"
+        ]
+        assert len(law_entries) == 2
+
+    def test_org_reuse_still_works(self):
+        """Backward compat: ORG com nomes similares ainda reusa (threshold 0.62)."""
+        db = FakeDB()
+        db.seed_registry("dgb_mec", "Ministério da Educação (MEC)", "ORG",
+                         provenance="agencies_seed")
+        conn = db.conn()
+        db.content["uid"] = "O ministério anunciou..."
+        wikidata = FakeWikidata(candidates_by_query={"*": []})
+
+        bedrock = make_bedrock(
+            canon_json(
+                canonical_name="Ministério da Educação (MEC)",
+                type="ORG",
+                is_br_gov_org=True,
+                confidence=0.95,
+            )
+        )
+        J.resolve_form(
+            conn, "ministerio da educacao", "ORG", "uid", 0,
+            bedrock_client=bedrock, wikidata_client=wikidata, model_id="m",
+        )
+
+        reused_id = db.alias.get(("ministerio da educacao", "ORG"))
+        assert reused_id == "dgb_mec"
+        org_entries = [r for r in db.registry.values() if r.get("type") == "ORG"]
+        assert len(org_entries) == 1
+
+
+# ---------------------------------------------------------------------- #
+# PER short-circuit — skip Bedrock when Wikidata has no candidates        #
+# ---------------------------------------------------------------------- #
+
+
+class TestPERShortCircuit:
+    def test_per_no_wikidata_skips_bedrock(self):
+        """PER sem candidatos Wikidata → needs_review direto, Bedrock não chamado."""
+        db = FakeDB()
+        db.content["uid"] = "José Silva é servidor público federal."
+        # FakeWikidata retorna [] para qualquer busca (default)
+        wikidata = FakeWikidata()
+        bedrock = make_bedrock(canon_json(canonical_name="José Silva", type="PER"))
+        conn = db.conn()
+        decision = J.resolve_form(
+            conn, "jose silva", "PER", "uid", 0,
+            bedrock_client=bedrock, wikidata_client=wikidata, model_id="m",
+        )
+        # Bedrock NÃO deve ter sido chamado
+        bedrock.client.invoke_model.assert_not_called()
+        # Decisão deve ser needs_review
+        assert decision["action"] == "needs_review"
+        assert decision["status"] == "needs_review"
+        assert decision["entity_id"] is None
+        # seen deve estar marcado como needs_review
+        seen = db.seen[("jose silva", "PER")]
+        assert seen["status"] == "needs_review"
+
+    def test_per_with_wikidata_candidates_calls_bedrock(self):
+        """PER com candidatos Wikidata → Bedrock É chamado (caminho normal)."""
+        db = FakeDB()
+        db.content["uid"] = "Lula anunciou novas medidas econômicas."
+        # FakeWikidata retorna candidato para qualquer query (chave especial "*")
+        wikidata = FakeWikidata(
+            candidates_by_query={
+                "*": [{"qid": "Q37181", "label": "Lula", "description": "presidente do Brasil"}]
+            }
+        )
+        bedrock = make_bedrock(
+            [
+                canon_json(canonical_name="Lula", type="PER", confidence=0.9),
+                json.dumps({"qid": "Q37181", "confidence": 0.9}),
+            ]
+        )
+        conn = db.conn()
+        J.resolve_form(
+            conn, "lula", "PER", "uid", 0,
+            bedrock_client=bedrock, wikidata_client=wikidata, model_id="m",
+        )
+        # Bedrock DEVE ter sido chamado (ao menos 1 vez)
+        assert bedrock.client.invoke_model.call_count >= 1
+
+    def test_per_short_circuit_dry_run_does_not_write_seen(self):
+        """dry_run=True: short-circuit retorna needs_review mas não escreve no DB."""
+        db = FakeDB()
+        db.content["uid"] = "ctx"
+        wikidata = FakeWikidata()  # retorna [] para qualquer busca
+        bedrock = make_bedrock(canon_json(canonical_name="Joao Ninguem", type="PER"))
+        conn = db.conn()
+        decision = J.resolve_form(
+            conn, "joao ninguem", "PER", "uid", 0,
+            bedrock_client=bedrock, wikidata_client=wikidata, model_id="m",
+            dry_run=True,
+        )
+        # seen NÃO deve ter sido escrito
+        assert ("joao ninguem", "PER") not in db.seen
+        # Decisão ainda deve ser needs_review
+        assert decision["action"] == "needs_review"
+        # Bedrock não chamado
+        bedrock.client.invoke_model.assert_not_called()
+
+    def test_org_type_not_short_circuited(self):
+        """ORG não sofre short-circuit (apenas PER). Bedrock É chamado."""
+        db = FakeDB()
+        db.content["uid"] = "ctx"
+        # Wikidata retorna [] para qualquer query
+        wikidata = FakeWikidata()
+        bedrock = make_bedrock(canon_json(canonical_name="Empresa X", type="ORG", confidence=0.9))
+        conn = db.conn()
+        J.resolve_form(
+            conn, "empresa x", "ORG", "uid", 0,
+            bedrock_client=bedrock, wikidata_client=wikidata, model_id="m",
+        )
+        # Bedrock DEVE ter sido chamado (ORG não tem short-circuit)
+        assert bedrock.client.invoke_model.call_count >= 1
+
+    def test_per_gazetteer_hit_bypasses_short_circuit(self):
+        """Gazetteer tem prioridade máxima: se hit, não consulta Wikidata para pre-check."""
+        db = FakeDB()
+        # Alias "lula" → "Q37181" já no gazetteer
+        db.seed_alias("lula", "PER", "Q37181")
+        db.content["uid"] = "ctx"
+        # FakeWikidata com spy para detectar chamadas de search
+        class SpyWikidata(FakeWikidata):
+            def __init__(self):
+                super().__init__()
+                self.search_calls = []
+
+            def search(self, name, type=None, lang="pt", limit=7):
+                self.search_calls.append(name)
+                return super().search(name, type=type, lang=lang, limit=limit)
+
+        spy_wikidata = SpyWikidata()
+        bedrock = make_bedrock(canon_json(canonical_name="Lula", type="PER"))
+        conn = db.conn()
+        decision = J.resolve_form(
+            conn, "lula", "PER", "uid", 0,
+            bedrock_client=bedrock, wikidata_client=spy_wikidata, model_id="m",
+        )
+        # Deve retornar "gazetteer"
+        assert decision["action"] == "gazetteer"
+        assert decision["entity_id"] == "Q37181"
+        # Wikidata NÃO deve ter sido chamado para pre-check
+        assert spy_wikidata.search_calls == []
+        # Bedrock também não chamado
+        bedrock.client.invoke_model.assert_not_called()
+
+
+# ---------------------------------------------------------------------- #
+# --dedup CLI: run_dedup                                                  #
+# ---------------------------------------------------------------------- #
+
+
+class TestDedup:
+    def test_dry_run_does_not_merge(self):
+        """dry_run=True: near-duplicates são propostos mas não mergeados."""
+        db = FakeDB()
+        # Dois LAWs near-duplicate: Jaccard("lei estatuto surdocegueira",
+        # "lei estatuto surdocegueira 2024") = 3/4 = 0.75 >= threshold 0.75
+        db.seed_registry("dgb_lei-estatuto-surdocegueira", "Lei Estatuto Surdocegueira", "LAW")
+        db.seed_registry(
+            "dgb_lei-estatuto-surdocegueira-2024", "Lei Estatuto Surdocegueira 2024", "LAW"
+        )
+        conn = db.conn()
+        result = J.run_dedup(conn, entity_type="LAW", dry_run=True)
+        # Nenhum merge deve ter ocorrido
+        assert len(db.registry) == 2
+        # Mas deve ter proposto 1 merge
+        assert result["proposed"] >= 1
+        assert result["merged"] == 0
+
+    def test_apply_merges_near_duplicates(self):
+        """dry_run=False: near-duplicates são efetivamente mergeados."""
+        db = FakeDB()
+        db.seed_registry("dgb_programa-nacional-habitacao", "Programa Nacional Habitacao", "LAW")
+        db.seed_registry(
+            "dgb_programa-nacional-habitacao-popular",
+            "Programa Nacional Habitacao Popular",
+            "LAW",
+        )
+        conn = db.conn()
+        result = J.run_dedup(conn, entity_type="LAW", dry_run=False)
+        # Após merge: apenas 1 entidade restante
+        assert len(db.registry) == 1
+        assert result["merged"] >= 1
+        assert result["proposed"] >= 1
+
+    def test_dissimilar_entities_not_merged(self):
+        """Entidades com nomes muito diferentes não são mergeadas."""
+        db = FakeDB()
+        # Jaccard("lei 14967 2024", "codigo civil") é muito baixo (< 0.75)
+        db.seed_registry("dgb_lei-14967-2024", "Lei 14967 2024", "LAW")
+        db.seed_registry("dgb_codigo-civil", "Codigo Civil", "LAW")
+        conn = db.conn()
+        result = J.run_dedup(conn, entity_type="LAW", dry_run=False)
+        # Nada deve ter sido mergeado nem proposto
+        assert result["merged"] == 0
+        assert result["proposed"] == 0
+        assert len(db.registry) == 2
+
+    def test_dedup_all_types_when_no_type_given(self):
+        """Sem entity_type: processa todos os tipos em _ENTITY_REUSE_THRESHOLDS."""
+        from news_enrichment.canonicalization import _ENTITY_REUSE_THRESHOLDS
+
+        db = FakeDB()
+        # Adiciona entidades para dois tipos diferentes
+        db.seed_registry("dgb_org-a", "Ministerio Educacao", "ORG")
+        db.seed_registry("dgb_org-b", "Ministerio Educacao Federal", "ORG")
+        conn = db.conn()
+        result = J.run_dedup(conn, entity_type=None, dry_run=True)
+        # Deve ter processado pelo menos todos os tipos com threshold definido
+        for t in _ENTITY_REUSE_THRESHOLDS:
+            assert t in result["types_processed"]
+
+    def test_dedup_target_is_entity_with_more_aliases(self):
+        """O target do merge é a entidade com mais aliases (source é a com menos)."""
+        db = FakeDB()
+        # dgb_lei-a tem 2 aliases; dgb_lei-b tem 0
+        db.seed_registry("dgb_lei-a", "Lei Estatuto Surdocegueira", "LAW")
+        db.seed_registry("dgb_lei-b", "Lei Estatuto Surdocegueira 2024", "LAW")
+        # Adiciona 2 aliases para dgb_lei-a
+        db.seed_alias("lei estatuto surdocegueira", "LAW", "dgb_lei-a")
+        db.seed_alias("lei estatuto", "LAW", "dgb_lei-a")
+        conn = db.conn()
+        result = J.run_dedup(conn, entity_type="LAW", dry_run=False)
+        # dgb_lei-a deve ter sobrevivido (mais aliases = target)
+        assert "dgb_lei-a" in db.registry
+        assert "dgb_lei-b" not in db.registry
+        assert result["merged"] >= 1

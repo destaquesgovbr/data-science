@@ -74,6 +74,15 @@ NEEDS_REVIEW_CONFIDENCE = 0.70
 # (proxy local de trigram quando não há pg_trgm disponível no caminho de teste).
 ORG_REUSE_SIMILARITY = 0.62
 
+# Limiares de similaridade para reuso por tipo (previne duplicatas dgb_).
+_ENTITY_REUSE_THRESHOLDS: dict[str, float] = {
+    "ORG":     0.62,   # herdado do ORG_REUSE_SIMILARITY
+    "LAW":     0.75,   # lei 14.967/2024 vs lei nº 14.967, de 9 de setembro de 2024
+    "POLICY":  0.70,
+    "PROGRAM": 0.70,
+    "EVENT":   0.80,
+}
+
 
 # =============================================================================
 # normalize() — byte-idêntico ao helper da migração 017 do data-platform
@@ -782,6 +791,64 @@ def find_existing_org_by_name(conn, canonical_name: str, threshold: float = ORG_
         cursor.close()
 
 
+def find_existing_entity_by_name(
+    conn, canonical_name: str, entity_type: str,
+    threshold: float = 0.70,
+) -> Optional[str]:
+    """Reuso por nome para qualquer tipo (mesma estratégia pg_trgm + Jaccard de find_existing_org_by_name).
+
+    Parametrizado por entity_type — permite usar em LAW, POLICY, PROGRAM, EVENT além de ORG.
+    """
+    if not canonical_name:
+        return None
+    cursor = conn.cursor()
+    try:
+        # Caminho preferido: pg_trgm. Resiliente — se a função/operador não existir,
+        # cai no fallback Python.
+        try:
+            cursor.execute(
+                """
+                SELECT entity_id, canonical_name, similarity(canonical_name, %s) AS sim
+                FROM entity_registry
+                WHERE type = %s
+                ORDER BY sim DESC
+                LIMIT 10
+                """,
+                (canonical_name, entity_type),
+            )
+            rows = cursor.fetchall()
+        except Exception:
+            # Fallback: pega entidades do tipo e compara em Python.
+            try:
+                cursor.connection.rollback()
+            except Exception:
+                pass
+            cursor.execute(
+                "SELECT entity_id, canonical_name FROM entity_registry WHERE type = %s",
+                (entity_type,),
+            )
+            rows = [(r[0], r[1], None) for r in cursor.fetchall()]
+
+        target_tokens = _name_tokens(canonical_name)
+        best_id = None
+        best_score = 0.0
+        for row in rows:
+            entity_id = row[0]
+            cand_name = row[1]
+            trgm_sim = row[2] if len(row) > 2 else None
+            jac = _jaccard(target_tokens, _name_tokens(cand_name))
+            # combina: usa o maior entre trigram (se houver) e Jaccard de tokens.
+            score = max(jac, float(trgm_sim) if trgm_sim is not None else 0.0)
+            if score > best_score:
+                best_score = score
+                best_id = entity_id
+        if best_id is not None and best_score >= threshold:
+            return best_id
+        return None
+    finally:
+        cursor.close()
+
+
 # =============================================================================
 # Persistência: upsert_entity / add_alias
 # =============================================================================
@@ -848,6 +915,71 @@ def upsert_entity(
         cursor.close()
 
 
+def merge_entities(conn, source_id: str, target_id: str) -> int:
+    """Merge source_id → target_id: migra aliases, herda metadata, deleta source.
+
+    1. Herda wikidata_id/wikidata_url do source para o target (COALESCE — só atualiza se target não tem).
+    2. Merge do JSONB aliases: union das listas do target e source.
+    3. Redireciona aliases em entity_alias que apontam para source → target
+       (apenas os que não criariam conflito de PK, i.e., (alias_norm, type) ainda não existe no target).
+    4. Deleta aliases restantes do source em entity_alias.
+    5. Deleta source de entity_registry.
+
+    Returns: número de alias rows migradas (passo 3).
+    """
+    cursor = conn.cursor()
+    try:
+        # 1+2: herdar metadata (COALESCE) e merge aliases JSONB
+        cursor.execute(
+            """
+            UPDATE entity_registry AS t SET
+                wikidata_id  = COALESCE(t.wikidata_id, s.wikidata_id),
+                wikidata_url = COALESCE(t.wikidata_url, s.wikidata_url),
+                aliases      = (SELECT jsonb_agg(a) FROM (
+                                    SELECT jsonb_array_elements_text(COALESCE(t.aliases, '[]'::jsonb))
+                                    UNION
+                                    SELECT jsonb_array_elements_text(COALESCE(s.aliases, '[]'::jsonb))
+                                ) sub(a)),
+                updated_at = NOW()
+            FROM entity_registry s
+            WHERE t.entity_id = %s AND s.entity_id = %s
+            """,
+            (target_id, source_id),
+        )
+
+        # 3: redirecionar aliases sem conflito de PK
+        cursor.execute(
+            """
+            UPDATE entity_alias SET entity_id = %s
+            WHERE entity_id = %s
+            AND NOT EXISTS (
+                SELECT 1 FROM entity_alias ea2
+                WHERE ea2.alias_norm = entity_alias.alias_norm
+                  AND ea2.type = entity_alias.type
+                  AND ea2.entity_id = %s
+            )
+            """,
+            (target_id, source_id, target_id),
+        )
+        migrated = cursor.rowcount
+
+        # 4: limpar aliases restantes do source
+        cursor.execute(
+            "DELETE FROM entity_alias WHERE entity_id = %s",
+            (source_id,),
+        )
+
+        # 5: deletar source da registry
+        cursor.execute(
+            "DELETE FROM entity_registry WHERE entity_id = %s",
+            (source_id,),
+        )
+
+        return migrated
+    finally:
+        cursor.close()
+
+
 def add_alias(
     conn,
     surface_norm: str,
@@ -879,6 +1011,20 @@ def add_alias(
             if existing == entity_id:
                 # já mapeado para a mesma entidade — no-op idempotente.
                 return {"written": False, "ambiguous": False, "existing_entity_id": existing}
+            # Wikidata-wins: existing é dgb_ e novo entity_id é QID (não começa com dgb_)
+            # → promover o alias para o QID via merge_entities.
+            if existing.startswith(_MINT_PREFIX) and not entity_id.startswith(_MINT_PREFIX):
+                merge_entities(conn, source_id=existing, target_id=entity_id)
+                # Reescreve o alias para apontar para o QID (ON CONFLICT DO UPDATE SET entity_id).
+                cursor.execute(
+                    """
+                    INSERT INTO entity_alias (alias_norm, type, entity_id, source, confidence)
+                    VALUES (%s, %s, %s, %s, %s)
+                    ON CONFLICT (alias_norm, type) DO UPDATE SET entity_id = EXCLUDED.entity_id
+                    """,
+                    (surface_norm, type, entity_id, source, confidence),
+                )
+                return {"written": True, "merged": True, "existing_entity_id": existing}
             # mapeado para entidade DIFERENTE — ambiguidade: não sobrescreve.
             logger.warning(
                 "Alias ambíguo cross-entity ignorado: (%r, %s) já aponta para %s, "
