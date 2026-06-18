@@ -38,7 +38,10 @@ class FakeCursor:
         # entity_alias INSERT
         if "insert into entity_alias" in low:
             alias_norm, atype, entity_id = params[0], params[1], params[2]
-            self.db.alias.setdefault((alias_norm, atype), entity_id)
+            if "on conflict" in low and "do update" in low:
+                self.db.alias[(alias_norm, atype)] = entity_id  # sobrescreve (ON CONFLICT DO UPDATE)
+            else:
+                self.db.alias.setdefault((alias_norm, atype), entity_id)  # first-write-wins
             return
 
         # entity_registry reuse by wikidata
@@ -50,17 +53,20 @@ class FakeCursor:
                     return
             return
 
-        # entity_registry ORG name reuse (trigram path) — força fallback
+        # entity_registry name reuse (trigram path) — força fallback
         if "similarity(canonical_name" in low:
             raise Exception("similarity() not available in fake db")
 
-        # entity_registry ORG fallback select
-        if "select entity_id, canonical_name from entity_registry where type = 'org'" in low:
-            self._result = [
-                (r["entity_id"], r["canonical_name"])
-                for r in self.db.registry.values()
-                if r.get("type") == "ORG"
-            ]
+        # entity_registry fallback select por type (qualquer tipo, não só ORG)
+        if "select entity_id, canonical_name from entity_registry where type" in low:
+            # extrai o tipo do params
+            atype = params[0] if params else None
+            if atype:
+                self._result = [
+                    (r["entity_id"], r["canonical_name"])
+                    for r in self.db.registry.values()
+                    if r.get("type") == atype.upper()
+                ]
             return
 
         # entity_registry_seen SELECT status
@@ -171,6 +177,65 @@ class FakeCursor:
         if "update news_features set features = jsonb_set" in low:
             new_json, uid = params[0], params[1]
             self.db.backfilled[uid] = new_json
+            return
+
+        # merge_entities SQL 1 — UPDATE entity_registry AS t SET (herda metadata + merge aliases JSONB)
+        if low.startswith("update entity_registry as t set"):
+            import json as _json
+            target_id, source_id = params[0], params[1]
+            tgt = self.db.registry.get(target_id)
+            src = self.db.registry.get(source_id)
+            if tgt is not None and src is not None:
+                # COALESCE: só herda se target não tem
+                if not tgt.get("wikidata_id") and src.get("wikidata_id"):
+                    tgt["wikidata_id"] = src["wikidata_id"]
+                if not tgt.get("wikidata_url") and src.get("wikidata_url"):
+                    tgt["wikidata_url"] = src["wikidata_url"]
+                # merge aliases JSONB: union sem duplicatas
+                def _parse_aliases(val):
+                    if val is None:
+                        return []
+                    if isinstance(val, list):
+                        return val
+                    try:
+                        return _json.loads(val)
+                    except Exception:
+                        return []
+                tgt_aliases = _parse_aliases(tgt.get("aliases"))
+                src_aliases = _parse_aliases(src.get("aliases"))
+                merged = list({a for a in tgt_aliases + src_aliases})
+                tgt["aliases"] = _json.dumps(merged, ensure_ascii=False)
+            return
+
+        # merge_entities SQL 2 — UPDATE entity_alias SET entity_id (redirect aliases, NOT EXISTS)
+        if "update entity_alias set entity_id" in low and "not exists" in low:
+            target_id, source_id = params[0], params[1]
+            # target_id in params[2] is redundant check (same as params[0])
+            migrated = 0
+            to_update = []
+            for k, v in list(self.db.alias.items()):
+                if v == source_id:
+                    # check: does (k[0], k[1], target_id) already exist?
+                    if self.db.alias.get(k) != target_id:
+                        to_update.append(k)
+            for k in to_update:
+                self.db.alias[k] = target_id
+                migrated += 1
+            self.rowcount = migrated
+            return
+
+        # merge_entities SQL 3 — DELETE remaining source aliases from entity_alias
+        if "delete from entity_alias where entity_id" in low:
+            source_id = params[0]
+            keys_to_delete = [k for k, v in list(self.db.alias.items()) if v == source_id]
+            for k in keys_to_delete:
+                del self.db.alias[k]
+            return
+
+        # merge_entities SQL 4 — DELETE source from entity_registry
+        if "delete from entity_registry where entity_id" in low:
+            source_id = params[0]
+            self.db.registry.pop(source_id, None)
             return
 
         # default: no-op

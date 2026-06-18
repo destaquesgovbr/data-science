@@ -35,16 +35,21 @@ from psycopg2.extras import Json
 
 from .canonicalization import (
     CANON_PROMPT_VERSION,
+    _ENTITY_REUSE_THRESHOLDS,
     _add_usage,
+    _jaccard,
+    _name_tokens,
     _zero_usage,
     add_alias,
     apply_gates,
     find_existing_by_wikidata,
+    find_existing_entity_by_name,
     find_existing_org_by_name,
     gazetteer_lookup,
     get_canon_model_id,
     list_candidates,
     llm_canonicalize,
+    merge_entities,
     mint_internal_id,
     normalize,
     upsert_entity,
@@ -290,6 +295,16 @@ def resolve_form(
             "usage": _zero_usage(),
         }
 
+    # 1.5) PER fast-path: pre-check Wikidata sem Bedrock.
+    # Funcionários públicos brasileiros raramente têm entrada Wikidata → needs_review direto.
+    if type == "PER" and wikidata_client is not None:
+        pre_candidates = wikidata_client.search(form_norm)
+        if not pre_candidates:
+            if not dry_run:
+                _update_seen(conn, form_norm, type, "needs_review", None, attempts + 1)
+            return {"action": "needs_review", "status": "needs_review",
+                    "entity_id": None, "usage": _zero_usage()}
+
     # 2) LLM canonicalize (Sonnet).
     sample_context = _fetch_sample_context(conn, sample_unique_id)
     canon_result = llm_canonicalize(form_norm, sample_context, model_id, bedrock_client)
@@ -377,9 +392,12 @@ def _persist_decision(conn, form_norm: str, type: str, attempts: int, decision: 
         if link.get("instance_of"):
             extra["instance_of"] = link.get("instance_of")
     else:
-        # internal (sem QID): reuso de ORG por nome (esp. agencies dgb_<key>).
-        if resolved_type == "ORG" and is_br_gov_org:
-            existing = find_existing_org_by_name(conn, canonical_name)
+        # internal (sem QID): reuso por nome para tipos com threshold definido
+        # (previne duplicatas dgb_). ORG: threshold 0.62 (histórico); outros:
+        # conforme _ENTITY_REUSE_THRESHOLDS.
+        threshold = _ENTITY_REUSE_THRESHOLDS.get(resolved_type)
+        if threshold is not None:
+            existing = find_existing_entity_by_name(conn, canonical_name, resolved_type, threshold)
             if existing is not None:
                 entity_id = existing
         if entity_id is None:
@@ -735,6 +753,138 @@ def json_dumps(obj) -> str:
 
 
 # =============================================================================
+# Dedup — near-duplicate entity detection + merge
+# =============================================================================
+
+
+def run_dedup(
+    conn,
+    *,
+    entity_type: Optional[str] = None,
+    dry_run: bool = False,
+    threshold: Optional[float] = None,
+) -> dict:
+    """Encontra e merge entidades near-duplicate em entity_registry.
+
+    Para cada tipo em _ENTITY_REUSE_THRESHOLDS (ou só entity_type se fornecido):
+    1. Busca todas as entidades do tipo.
+    2. Compara pares por similaridade Jaccard de tokens.
+    3. Se score >= threshold do tipo: no dry_run só loga; no apply executa merge_entities.
+       Ao merging: source = entidade com MENOS aliases em entity_alias (ou menor
+       entity_id como desempate). target = entidade com MAIS aliases.
+
+    Returns:
+        {"merged": int, "proposed": int, "types_processed": list[str]}
+    """
+    types_to_process: List[str] = []
+    if entity_type is not None:
+        types_to_process = [entity_type]
+    else:
+        types_to_process = list(_ENTITY_REUSE_THRESHOLDS.keys())
+
+    merged_total = 0
+    proposed_total = 0
+
+    for etype in types_to_process:
+        thr = threshold if threshold is not None else _ENTITY_REUSE_THRESHOLDS.get(etype, 0.70)
+
+        # Fetch all entities of this type.
+        cursor = conn.cursor()
+        try:
+            cursor.execute(
+                "SELECT entity_id, canonical_name FROM entity_registry WHERE type = %s",
+                (etype,),
+            )
+            rows = cursor.fetchall()
+        finally:
+            cursor.close()
+
+        if len(rows) < 2:
+            continue
+
+        # Count aliases per entity_id in Python (avoid extra SQL round-trips in tests).
+        # Build a map: entity_id -> alias count from entity_alias
+        alias_cursor = conn.cursor()
+        try:
+            alias_cursor.execute("SELECT alias_norm, type, entity_id FROM entity_alias")
+            all_aliases = alias_cursor.fetchall()
+        finally:
+            alias_cursor.close()
+
+        alias_count: Dict[str, int] = {}
+        for _anorm, _atype, eid in all_aliases:
+            alias_count[eid] = alias_count.get(eid, 0) + 1
+
+        # Compare pairs (O(n^2), acceptable for small registries per type).
+        # Track which entity_ids have already been merged (source) to avoid
+        # merging deleted entities.
+        merged_sources: set = set()
+
+        for i in range(len(rows)):
+            eid_a, name_a = rows[i]
+            if eid_a in merged_sources:
+                continue
+            tokens_a = _name_tokens(name_a)
+
+            for j in range(i + 1, len(rows)):
+                eid_b, name_b = rows[j]
+                if eid_b in merged_sources:
+                    continue
+                tokens_b = _name_tokens(name_b)
+
+                score = _jaccard(tokens_a, tokens_b)
+                if score < thr:
+                    continue
+
+                proposed_total += 1
+                logger.info(
+                    "Dedup %s: '%s' ↔ '%s' (Jaccard=%.3f >= %.3f) %s",
+                    etype, name_a, name_b, score, thr,
+                    "[dry-run]" if dry_run else "[merge]",
+                )
+
+                if dry_run:
+                    continue
+
+                # Decide source (fewer aliases) and target (more aliases).
+                count_a = alias_count.get(eid_a, 0)
+                count_b = alias_count.get(eid_b, 0)
+
+                if count_a > count_b:
+                    target_id, source_id = eid_a, eid_b
+                elif count_b > count_a:
+                    target_id, source_id = eid_b, eid_a
+                else:
+                    # Tie-break: lexicographically smaller id is target (stable).
+                    if eid_a <= eid_b:
+                        target_id, source_id = eid_a, eid_b
+                    else:
+                        target_id, source_id = eid_b, eid_a
+
+                try:
+                    merge_entities(conn, source_id, target_id)
+                    conn.commit()
+                    merged_total += 1
+                    merged_sources.add(source_id)
+                    # Update alias_count so subsequent pairs are accurate.
+                    alias_count[target_id] = alias_count.get(target_id, 0) + alias_count.get(source_id, 0)
+                    alias_count.pop(source_id, None)
+                except Exception as exc:  # noqa: BLE001
+                    conn.rollback()
+                    logger.error("Falha ao mergear %s → %s: %s", source_id, target_id, exc)
+
+    logger.info(
+        "run_dedup: types=%s proposed=%d merged=%d dry_run=%s",
+        types_to_process, proposed_total, merged_total, dry_run,
+    )
+    return {
+        "merged": merged_total,
+        "proposed": proposed_total,
+        "types_processed": types_to_process,
+    }
+
+
+# =============================================================================
 # CLI
 # =============================================================================
 
@@ -837,6 +987,14 @@ def build_arg_parser() -> argparse.ArgumentParser:
         "--workers", type=int, default=1,
         help="Concorrência de chamadas Bedrock (1=sequencial; recomendado: 10).",
     )
+    parser.add_argument(
+        "--dedup", action="store_true", default=False,
+        help="Encontra e merge entidades near-duplicate (mesmo tipo, nome similar).",
+    )
+    parser.add_argument(
+        "--dedup-type", default=None,
+        help="Tipo de entidade para dedup (ex: LAW, ORG). Se omitido, todos os tipos com threshold definido.",
+    )
     return parser
 
 
@@ -848,6 +1006,20 @@ def main(argv: Optional[List[str]] = None) -> int:
     if not database_url:
         logger.error("DATABASE_URL não definido")
         return 1
+
+    if args.dedup:
+        import psycopg2 as _psycopg2
+        conn = _psycopg2.connect(database_url)
+        try:
+            result = run_dedup(
+                conn,
+                entity_type=args.dedup_type,
+                dry_run=args.dry_run,
+            )
+        finally:
+            conn.close()
+        logger.info("Resultado dedup: %s", result)
+        return 0
 
     result = run_canonicalization(
         database_url,
