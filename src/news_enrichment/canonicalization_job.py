@@ -412,6 +412,119 @@ def _persist_decision(conn, form_norm: str, type: str, attempts: int, decision: 
     _update_seen(conn, form_norm, type, "resolved", entity_id, attempts + 1)
 
 
+def _resolve_pending_parallel(
+    conn,
+    limit: int,
+    *,
+    bedrock_client,
+    wikidata_client,
+    model_id: str,
+    dry_run: bool,
+    daily_quota: Optional[int],
+    quota_fraction: float,
+    n_workers: int,
+    database_url: str,
+) -> dict:
+    """Variante paralela de resolve_pending com ThreadedConnectionPool.
+
+    Cada worker-thread recebe conexão própria do pool. O budget é checado entre
+    lotes (chunk_size = max(n_workers, BUDGET_CHECK_EVERY)); usage é gravado no
+    ledger pela thread principal após cada lote para serializar o UPSERT atômico.
+    """
+    from concurrent.futures import ThreadPoolExecutor, as_completed
+
+    from psycopg2.pool import ThreadedConnectionPool
+
+    pending = fetch_pending(conn, limit)
+    stats = {
+        "resolved": 0, "needs_review": 0, "dropped": 0, "errors": 0,
+        "total": len(pending), "budget_exhausted": False,
+    }
+    has_quota = bool(daily_quota and daily_quota > 0)
+    if not has_quota:
+        logger.warning("Sem cota diária para %s — modo sem-teto.", model_id)
+
+    pool = ThreadedConnectionPool(1, n_workers + 1, database_url)
+
+    def _run_item(item):
+        wconn = pool.getconn()
+        try:
+            decision = resolve_form(
+                wconn,
+                item["surface_norm"],
+                item["type"],
+                item.get("sample_unique_id"),
+                item.get("attempts") or 0,
+                bedrock_client=bedrock_client,
+                wikidata_client=wikidata_client,
+                model_id=model_id,
+                dry_run=dry_run,
+            )
+            if not dry_run:
+                wconn.commit()
+            return decision, None
+        except Exception as exc:  # noqa: BLE001
+            try:
+                wconn.rollback()
+                _update_seen(
+                    wconn, item["surface_norm"], item["type"], "pending", None,
+                    (item.get("attempts") or 0) + 1, str(exc)[:500],
+                )
+                wconn.commit()
+            except Exception:  # noqa: BLE001
+                try:
+                    wconn.rollback()
+                except Exception:  # noqa: BLE001
+                    pass
+            return None, exc
+        finally:
+            pool.putconn(wconn)
+
+    try:
+        chunk_size = max(n_workers, BUDGET_CHECK_EVERY)
+        i = 0
+        with ThreadPoolExecutor(max_workers=n_workers) as ex:
+            while i < len(pending):
+                if has_quota and budget_exhausted(conn, model_id, daily_quota, quota_fraction):
+                    logger.info(
+                        "Budget exhausted para %s — parando no lote %d/%d.",
+                        model_id, i, len(pending),
+                    )
+                    stats["budget_exhausted"] = True
+                    break
+
+                batch = pending[i : i + chunk_size]
+                i += len(batch)
+
+                futs = {ex.submit(_run_item, item): item for item in batch}
+                for fut in as_completed(futs):
+                    item = futs[fut]
+                    decision, exc = fut.result()
+                    if exc is not None:
+                        stats["errors"] += 1
+                        logger.error(
+                            "Erro ao resolver (%r, %s): %s",
+                            item["surface_norm"], item["type"], exc,
+                        )
+                        continue
+                    action = decision.get("action")
+                    if action == "drop":
+                        stats["dropped"] += 1
+                    elif decision.get("status") == "needs_review":
+                        stats["needs_review"] += 1
+                    else:
+                        stats["resolved"] += 1
+                    if not dry_run:
+                        usage = decision.get("usage") or _zero_usage()
+                        if usage.get("input_tokens") or usage.get("output_tokens"):
+                            record_usage(conn, model_id, usage["input_tokens"], usage["output_tokens"])
+    finally:
+        pool.closeall()
+
+    logger.info("Step B (parallel n_workers=%d): %s", n_workers, stats)
+    return stats
+
+
 def resolve_pending(
     conn,
     limit: int,
@@ -422,6 +535,8 @@ def resolve_pending(
     dry_run: bool = False,
     daily_quota: Optional[int] = None,
     quota_fraction: float = 0.8,
+    n_workers: int = 1,
+    database_url: Optional[str] = None,
 ) -> dict:
     """Step B: resolve até `limit` formas pending. Commit por forma (resumível).
 
@@ -431,7 +546,21 @@ def resolve_pending(
     forma que consumiu tokens, grava o usage no ledger.
 
     Sem cota definida (daily_quota None/<=0) → modo sem-teto (apenas grava o ledger).
+    Com n_workers > 1 e database_url → executa em paralelo (ThreadedConnectionPool).
     """
+    if n_workers > 1 and database_url:
+        return _resolve_pending_parallel(
+            conn, limit,
+            bedrock_client=bedrock_client,
+            wikidata_client=wikidata_client,
+            model_id=model_id,
+            dry_run=dry_run,
+            daily_quota=daily_quota,
+            quota_fraction=quota_fraction,
+            n_workers=n_workers,
+            database_url=database_url,
+        )
+
     pending = fetch_pending(conn, limit)
     stats = {
         "resolved": 0, "needs_review": 0, "dropped": 0, "errors": 0,
@@ -645,6 +774,7 @@ def run_canonicalization(
     model_id: Optional[str] = None,
     bedrock_client=None,
     wikidata_client=None,
+    n_workers: int = 1,
 ) -> dict:
     """Orquestra Steps A/B/C. bedrock_client/wikidata_client injetáveis (testes)."""
     since_dt, until_dt = _parse_window(since, until)
@@ -672,6 +802,8 @@ def run_canonicalization(
             dry_run=dry_run,
             daily_quota=daily_quota,
             quota_fraction=quota_fraction,
+            n_workers=n_workers,
+            database_url=database_url,
         )
         backfill_stats = backfill_canonical_ids(conn, since_dt, until_dt, dry_run=dry_run)
     finally:
@@ -701,6 +833,10 @@ def build_arg_parser() -> argparse.ArgumentParser:
         help="Não escreve em entity_registry/entity_alias/news_features.",
     )
     parser.add_argument("--region", default="us-east-1", help="Região AWS do Bedrock.")
+    parser.add_argument(
+        "--workers", type=int, default=1,
+        help="Concorrência de chamadas Bedrock (1=sequencial; recomendado: 10).",
+    )
     return parser
 
 
@@ -720,6 +856,7 @@ def main(argv: Optional[List[str]] = None) -> int:
         limit=args.limit,
         dry_run=args.dry_run,
         region=args.region,
+        n_workers=args.workers,
     )
     logger.info("Resultado: %s", result)
     return 0
