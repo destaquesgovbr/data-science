@@ -44,6 +44,7 @@ from .canonicalization import (
     _zero_usage,
     add_alias,
     apply_gates,
+    differs_by_year,
     find_existing_by_wikidata,
     find_existing_entity_by_name,
     find_existing_org_by_name,
@@ -864,6 +865,12 @@ def run_dedup(
                 if eid_b in merged_sources:
                     continue
                 tokens_b = _name_tokens(name_b)
+
+                # Guard de edição: nomes que diferem por ano são edições
+                # distintas ("ENGP" vs "ENGP 2026", "Enem 2025" vs "2026") —
+                # NUNCA fundir, mesmo com Jaccard/sigla altos.
+                if differs_by_year(name_a, name_b):
+                    continue
 
                 score = _jaccard(tokens_a, tokens_b)
                 acronym_match = _is_acronym_variant(name_a, name_b)

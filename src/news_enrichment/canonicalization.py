@@ -722,10 +722,33 @@ def _jaccard(a: set, b: set) -> float:
 # Captura um grupo parentético (p.ex. "(MEC)").
 _PAREN_RE = re.compile(r"\(([^()]*)\)")
 
+# Token de ano (1900–2099) delimitado por fronteira de palavra. Usado para nunca
+# fundir EDIÇÕES distintas de um evento/programa ("Enem 2025" vs "Enem 2026",
+# "ENGP" vs "ENGP 2026"). NÃO casa dígitos internos de um número maior (ex.: o
+# "2024" dentro de "20240" falha o \b final).
+_YEAR_RE = re.compile(r"\b(?:19|20)\d{2}\b")
+
 
 def _strip_parens(name: str) -> str:
     """Remove todos os grupos `(...)` de um nome (sem normalizar)."""
     return _PAREN_RE.sub(" ", name)
+
+
+def _year_tokens(name: str) -> frozenset:
+    """Conjunto de anos (4 dígitos, 1900–2099) presentes no nome."""
+    if not name:
+        return frozenset()
+    return frozenset(_YEAR_RE.findall(name))
+
+
+def differs_by_year(name_a: str, name_b: str) -> bool:
+    """True se os dois nomes têm conjuntos de anos DIFERENTES → edições distintas.
+
+    "Copa do Mundo FIFA de 2026" vs "Copa do Mundo FIFA 2026" → {2026}=={2026} →
+    False (mesma edição, pode fundir). "ENGP" vs "ENGP 2026" → {}≠{2026} → True
+    (edições distintas, NUNCA fundir). "Enem 2025" vs "Enem 2026" → True.
+    """
+    return _year_tokens(name_a) != _year_tokens(name_b)
 
 
 def _paren_contents(name: str) -> List[str]:
@@ -904,6 +927,10 @@ def find_existing_org_by_name(conn, canonical_name: str, threshold: float = ORG_
         for row in rows:
             entity_id = row[0]
             cand_name = row[1]
+            # Guard de edição: nunca reusar entre nomes que diferem por ano
+            # ("Enem 2025" vs "Enem 2026" são edições distintas).
+            if differs_by_year(canonical_name, cand_name):
+                continue
             trgm_sim = row[2] if len(row) > 2 else None
             jac = _jaccard(target_tokens, _name_tokens(cand_name))
             # combina: usa o maior entre trigram (se houver) e Jaccard de tokens.
@@ -969,6 +996,10 @@ def find_existing_entity_by_name(
         for row in rows:
             entity_id = row[0]
             cand_name = row[1]
+            # Guard de edição: nunca reusar entre nomes que diferem por ano
+            # ("Enem 2025" vs "Enem 2026" são edições distintas).
+            if differs_by_year(canonical_name, cand_name):
+                continue
             trgm_sim = row[2] if len(row) > 2 else None
             jac = _jaccard(target_tokens, _name_tokens(cand_name))
             # combina: usa o maior entre trigram (se houver) e Jaccard de tokens.
