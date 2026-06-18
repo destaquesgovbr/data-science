@@ -463,6 +463,61 @@ class TestPersistDecisionLawReuse:
         org_entries = [r for r in db.registry.values() if r.get("type") == "ORG"]
         assert len(org_entries) == 1
 
+    def test_org_acronym_variant_reused_at_mint_time(self):
+        """Mint-time ORG acronym-aware: LLM devolve o nome curto, mas reusa a sigla.
+
+        Seed "Ministério da Educação (MEC)"; o LLM canonicaliza para o nome SEM a
+        sigla ("Ministério da Educação"), Jaccard 0.75 < 0.85 (threshold subiu).
+        Deve reusar a entidade existente via _is_acronym_variant (sem mintar nova).
+        """
+        db = FakeDB()
+        db.seed_registry("dgb_mec", "Ministério da Educação (MEC)", "ORG",
+                         provenance="agencies_seed")
+        conn = db.conn()
+        db.content["uid"] = "O ministério anunciou..."
+        wikidata = FakeWikidata(candidates_by_query={"*": []})
+        bedrock = make_bedrock(
+            canon_json(
+                canonical_name="Ministério da Educação",  # sem a sigla
+                type="ORG",
+                is_br_gov_org=True,
+                confidence=0.95,
+            )
+        )
+        J.resolve_form(
+            conn, "ministerio da educacao", "ORG", "uid", 0,
+            bedrock_client=bedrock, wikidata_client=wikidata, model_id="m",
+        )
+        reused_id = db.alias.get(("ministerio da educacao", "ORG"))
+        assert reused_id == "dgb_mec"
+        org_entries = [r for r in db.registry.values() if r.get("type") == "ORG"]
+        assert len(org_entries) == 1
+
+    def test_org_distinct_bank_mints_new_at_mint_time(self):
+        """Mint-time ORG: 'Banco do Brasil' NÃO reusa 'Banco Central do Brasil' (0.75<0.85)."""
+        db = FakeDB()
+        db.seed_registry("dgb_bcb", "Banco Central do Brasil", "ORG",
+                         provenance="agencies_seed")
+        conn = db.conn()
+        db.content["uid"] = "O banco anunciou..."
+        wikidata = FakeWikidata(candidates_by_query={"*": []})
+        bedrock = make_bedrock(
+            canon_json(
+                canonical_name="Banco do Brasil",
+                type="ORG",
+                is_br_gov_org=True,
+                confidence=0.95,
+            )
+        )
+        J.resolve_form(
+            conn, "banco do brasil", "ORG", "uid", 0,
+            bedrock_client=bedrock, wikidata_client=wikidata, model_id="m",
+        )
+        # Duas ORGs distintas no registry (mintou nova, não reusou o BCB).
+        org_entries = [r for r in db.registry.values() if r.get("type") == "ORG"]
+        assert len(org_entries) == 2
+        assert db.alias.get(("banco do brasil", "ORG")) != "dgb_bcb"
+
 
 # ---------------------------------------------------------------------- #
 # PER short-circuit — skip Bedrock when Wikidata has no candidates        #
@@ -663,3 +718,82 @@ class TestDedup:
         assert "dgb_lei-a" in db.registry
         assert "dgb_lei-b" not in db.registry
         assert result["merged"] >= 1
+
+
+class TestDedupOrgThreshold:
+    """run_dedup ORG: threshold dedicado (0.85) + detector de variante por sigla."""
+
+    def test_org_false_positive_banks_not_merged(self):
+        """'Banco Central do Brasil' vs 'Banco do Brasil' (Jaccard 0.75) NÃO mergeia.
+
+        Com o threshold de dedup ORG (0.85) e por não serem variante de sigla,
+        instituições distintas são preservadas.
+        """
+        db = FakeDB()
+        db.seed_registry("dgb_banco-central-do-brasil", "Banco Central do Brasil", "ORG")
+        db.seed_registry("dgb_banco-do-brasil", "Banco do Brasil", "ORG")
+        conn = db.conn()
+        result = J.run_dedup(conn, entity_type="ORG", dry_run=False)
+        assert result["merged"] == 0
+        assert result["proposed"] == 0
+        assert len(db.registry) == 2
+        assert "dgb_banco-central-do-brasil" in db.registry
+        assert "dgb_banco-do-brasil" in db.registry
+
+    def test_org_police_false_positive_not_merged(self):
+        """'Polícia Federal' vs 'Polícia Rodoviária Federal' NÃO mergeia."""
+        db = FakeDB()
+        db.seed_registry("dgb_policia-federal", "Polícia Federal", "ORG")
+        db.seed_registry(
+            "dgb_policia-rodoviaria-federal", "Polícia Rodoviária Federal", "ORG"
+        )
+        conn = db.conn()
+        result = J.run_dedup(conn, entity_type="ORG", dry_run=False)
+        assert result["merged"] == 0
+        assert result["proposed"] == 0
+        assert len(db.registry) == 2
+
+    def test_org_acronym_variant_merged_below_threshold(self):
+        """'Ministério da Educação' vs 'Ministério da Educação (MEC)' mergeia.
+
+        Jaccard = 3/4 = 0.75 < 0.85 (threshold dedup ORG), mas é variante por
+        sigla → deve mergear assim mesmo. dgb_mec (mais aliases) é o target.
+        """
+        db = FakeDB()
+        db.seed_registry("dgb_min-educacao", "Ministério da Educação", "ORG")
+        db.seed_registry("dgb_mec", "Ministério da Educação (MEC)", "ORG")
+        # dgb_mec tem mais aliases → sobrevive como target.
+        db.seed_alias("ministerio da educacao (mec)", "ORG", "dgb_mec")
+        db.seed_alias("mec", "ORG", "dgb_mec")
+        db.seed_alias("ministerio da educacao", "ORG", "dgb_min-educacao")
+        conn = db.conn()
+        result = J.run_dedup(conn, entity_type="ORG", dry_run=False)
+        assert result["merged"] == 1
+        assert result["proposed"] == 1
+        assert len(db.registry) == 1
+        assert "dgb_mec" in db.registry
+        assert "dgb_min-educacao" not in db.registry
+        # alias do source migrado para o target.
+        assert db.alias[("ministerio da educacao", "ORG")] == "dgb_mec"
+
+    def test_org_explicit_threshold_overrides(self):
+        """O arg threshold= explícito ainda sobrepõe tudo (banks com thr 0.70 → mergeia)."""
+        db = FakeDB()
+        db.seed_registry("dgb_banco-central-do-brasil", "Banco Central do Brasil", "ORG")
+        db.seed_registry("dgb_banco-do-brasil", "Banco do Brasil", "ORG")
+        conn = db.conn()
+        # Jaccard = 3/4 = 0.75 >= 0.70 explícito → mergeia (override do default 0.85).
+        result = J.run_dedup(conn, entity_type="ORG", dry_run=False, threshold=0.70)
+        assert result["merged"] == 1
+        assert len(db.registry) == 1
+
+    def test_org_acronym_variant_dry_run_merges_nothing(self):
+        """dry_run=True: variante por sigla é proposta mas NÃO mergeada."""
+        db = FakeDB()
+        db.seed_registry("dgb_min-educacao", "Ministério da Educação", "ORG")
+        db.seed_registry("dgb_mec", "Ministério da Educação (MEC)", "ORG")
+        conn = db.conn()
+        result = J.run_dedup(conn, entity_type="ORG", dry_run=True)
+        assert result["proposed"] >= 1
+        assert result["merged"] == 0
+        assert len(db.registry) == 2

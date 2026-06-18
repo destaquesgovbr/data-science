@@ -1025,13 +1025,35 @@ class TestFindExistingEntityByName:
         assert result is None
 
     def test_org_still_works(self):
-        """Backward compat: ORG com threshold 0.62 funciona (idêntico a find_existing_org_by_name)."""
+        """Backward compat: ORG com nome idêntico é reusada (Jaccard = 1.0)."""
         db = FakeDB()
         db.seed_registry("dgb_finep", "Finep", "ORG")
         conn = db.conn()
-        # Jaccard de "finep" vs "finep" = 1.0 > 0.62
-        result = C.find_existing_entity_by_name(conn, "Finep", "ORG", threshold=0.62)
+        # Jaccard de "finep" vs "finep" = 1.0 >= 0.85
+        result = C.find_existing_entity_by_name(conn, "Finep", "ORG", threshold=0.85)
         assert result == "dgb_finep"
+
+    def test_org_bank_false_positive_not_reused_at_85(self):
+        """Mint-time: 'Banco do Brasil' NÃO reusa 'Banco Central do Brasil' (Jaccard 0.75 < 0.85)."""
+        db = FakeDB()
+        db.seed_registry("dgb_bcb", "Banco Central do Brasil", "ORG")
+        conn = db.conn()
+        result = C.find_existing_entity_by_name(
+            conn, "Banco do Brasil", "ORG", threshold=0.85
+        )
+        assert result is None
+
+    def test_org_acronym_variant_reused_below_threshold(self):
+        """Mint-time: variante por sigla reusa mesmo com Jaccard < 0.85 (OR clause)."""
+        db = FakeDB()
+        db.seed_registry("dgb_mec", "Ministério da Educação (MEC)", "ORG")
+        conn = db.conn()
+        # Jaccard("ministerio da educacao", "ministerio da educacao (mec)") = 0.75 < 0.85,
+        # mas é variante por sigla → reusa.
+        result = C.find_existing_entity_by_name(
+            conn, "Ministério da Educação", "ORG", threshold=0.85
+        )
+        assert result == "dgb_mec"
 
     def test_unknown_type_empty_registry_returns_none(self):
         """Nenhuma entidade PER no registry → retorna None."""
@@ -1068,3 +1090,64 @@ class TestFindExistingEntityByName:
             conn, "Programa Saúde", "LAW", threshold=0.70
         )
         assert result is None
+
+
+# ---------------------------------------------------------------------- #
+# _is_acronym_variant — detector determinístico de variante por sigla     #
+# ---------------------------------------------------------------------- #
+
+
+class TestIsAcronymVariant:
+    def test_parenthetical_strip_equality_true(self):
+        """Stripping do parêntese de um nome o torna igual ao outro (normalizado)."""
+        assert C._is_acronym_variant(
+            "Ministério da Educação", "Ministério da Educação (MEC)"
+        )
+
+    def test_parenthetical_strip_equality_finep(self):
+        """Caso Finep: nome completo com e sem a sigla parentética."""
+        assert C._is_acronym_variant(
+            "Financiadora de Estudos e Projetos (Finep)",
+            "Financiadora de Estudos e Projetos",
+        )
+
+    def test_acronym_expansion_match_true(self):
+        """A sigla parentética é o acrônimo das palavras significativas do outro nome."""
+        # "(MEC)" = iniciais de "Ministério (da) Educação" + ... — aqui o nome
+        # parceiro NÃO é literalmente igual ao stripped, mas a sigla expande.
+        assert C._is_acronym_variant(
+            "Ministério da Educação e Cultura",
+            "MEC",
+        )
+
+    def test_symmetric(self):
+        """_is_acronym_variant deve ser simétrico nos argumentos."""
+        a = "Ministério da Educação"
+        b = "Ministério da Educação (MEC)"
+        assert C._is_acronym_variant(a, b) == C._is_acronym_variant(b, a)
+        c = "Banco Central do Brasil"
+        d = "Banco do Brasil"
+        assert C._is_acronym_variant(c, d) == C._is_acronym_variant(d, c)
+
+    def test_banco_central_vs_banco_do_brasil_false(self):
+        """Falso positivo clássico: instituições distintas, sem relação de sigla."""
+        assert not C._is_acronym_variant(
+            "Banco Central do Brasil", "Banco do Brasil"
+        )
+
+    def test_policia_federal_vs_rodoviaria_false(self):
+        """Falso positivo clássico: PF vs PRF são órgãos distintos."""
+        assert not C._is_acronym_variant(
+            "Polícia Federal", "Polícia Rodoviária Federal"
+        )
+
+    def test_no_paren_no_acronym_false(self):
+        """Sem parêntese e sem relação de acrônimo → False."""
+        assert not C._is_acronym_variant(
+            "Tribunal de Contas da União", "Tribunal Superior do Trabalho"
+        )
+
+    def test_empty_inputs_false(self):
+        """Entradas vazias → False (nunca levanta)."""
+        assert not C._is_acronym_variant("", "Ministério da Educação")
+        assert not C._is_acronym_variant("Ministério da Educação", "")
