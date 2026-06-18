@@ -1151,3 +1151,38 @@ class TestIsAcronymVariant:
         """Entradas vazias → False (nunca levanta)."""
         assert not C._is_acronym_variant("", "Ministério da Educação")
         assert not C._is_acronym_variant("Ministério da Educação", "")
+
+    # -- Homonym safety: parenthetical = NEW-INFO qualifier, NOT a sigla-of-base --
+
+    def test_homonym_different_countries_false(self):
+        """Mesmo nome-base, parênteses com PAÍS distinto → entidades diferentes."""
+        assert not C._is_acronym_variant(
+            "Ministério da Saúde (Brasil)", "Ministério da Saúde (Líbano)"
+        )
+
+    def test_homonym_different_states_false(self):
+        """Mesmo nome-base, parênteses com ESTADO distinto → diferentes."""
+        assert not C._is_acronym_variant(
+            "Universidade Federal (Bahia)", "Universidade Federal (Ceará)"
+        )
+
+    def test_homonym_different_chambers_false(self):
+        """Mesmo nome-base, parênteses com TURMA distinta → diferentes."""
+        assert not C._is_acronym_variant(
+            "Tribunal (Primeira Turma)", "Tribunal (Segunda Turma)"
+        )
+
+    def test_one_paren_new_info_qualifier_false(self):
+        """Um lado sem parêntese; o parêntese do outro é qualificador novo (país) → False."""
+        assert not C._is_acronym_variant(
+            "Ministério da Saúde", "Ministério da Saúde (Líbano)"
+        )
+
+    def test_homonym_qualifier_symmetric(self):
+        """A discriminação de qualificador-novo permanece simétrica."""
+        a = "Ministério da Saúde (Brasil)"
+        b = "Ministério da Saúde (Líbano)"
+        assert C._is_acronym_variant(a, b) == C._is_acronym_variant(b, a)
+        c = "Ministério da Saúde"
+        d = "Ministério da Saúde (Líbano)"
+        assert C._is_acronym_variant(c, d) == C._is_acronym_variant(d, c)

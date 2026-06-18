@@ -762,6 +762,41 @@ def _paren_acronyms(name: str) -> List[str]:
     return out
 
 
+def _paren_contents(name: str) -> List[str]:
+    """Conteúdos parentéticos de `name`, normalizados a APENAS letras (a-z), em ordem.
+
+    Casing/acentos dobrados via normalize(); não-letras (espaços, pontuação,
+    dígitos) descartados. Ex.: "(Finep)" → "finep"; "(Primeira Turma)" →
+    "primeiraturma"; "(Líbano)" → "libano". Vazios são omitidos.
+    """
+    out: List[str] = []
+    for m in _PAREN_RE.findall(name):
+        letters = "".join(c for c in normalize(m) if c.isalpha())
+        if letters:
+            out.append(letters)
+    return out
+
+
+def _letters_of(s: str) -> str:
+    """Apenas letras (a-z) de `s` após normalize() — espaços/acentos/case removidos."""
+    return "".join(c for c in normalize(s) if c.isalpha())
+
+
+def _is_subsequence(needle: str, haystack: str) -> bool:
+    """True se os caracteres de `needle` aparecem, em ordem, dentro de `haystack`.
+
+    Discriminador casing-agnóstico de "sigla derivada do nome-base": as letras de
+    uma sigla parentética (ex.: "finep") devem formar uma subsequência das letras
+    do nome-base (ex.: "financiadoradeestudoseprojetos"). Qualificadores de
+    nova-informação (país/estado/turma: "libano", "bahia", "primeiraturma") NÃO
+    são subsequência do base e portanto NÃO qualificam. needle vazio → False.
+    """
+    if not needle:
+        return False
+    it = iter(haystack)
+    return all(ch in it for ch in needle)
+
+
 def _is_acronym_variant(name_a: str, name_b: str) -> bool:
     """True se `name_a` e `name_b` são a MESMA entidade diferindo só por sigla.
 
@@ -790,16 +825,40 @@ def _is_acronym_variant(name_a: str, name_b: str) -> bool:
     stripped_a = normalize(_strip_parens(name_a))
     stripped_b = normalize(_strip_parens(name_b))
 
-    # (a) Parenthetical strip equality (em qualquer direção): despir o parêntese
-    #     de um nome o iguala ao outro (ou ao outro despido). Só conta como
-    #     variante por sigla se HÁ um parêntese envolvido (senão é igualdade
-    #     trivial, fora do escopo deste detector).
+    # (a) Parenthetical strip equality, COM discriminador de homonímia: despir o
+    #     parêntese de um nome o iguala ao outro (ou ao outro despido). MAS isso
+    #     só conta como variante por sigla se o parêntese distintivo for uma SIGLA
+    #     DERIVADA do nome-base — i.e. suas letras formam uma subsequência das
+    #     letras do base (case/acento-insensível). Um qualificador de
+    #     nova-informação (país/estado/turma) NÃO é subsequência do base e portanto
+    #     são entidades DIFERENTES ("Ministério da Saúde (Brasil)" vs "(Líbano)").
     has_paren_a = stripped_a != norm_a
     has_paren_b = stripped_b != norm_b
+
+    def _all_parens_are_sigla_of_base(name: str, base_letters: str) -> bool:
+        contents = _paren_contents(name)
+        if not contents:
+            return False
+        return all(_is_subsequence(c, base_letters) for c in contents)
+
+    # Caso 1: exatamente um lado tem parêntese ("X" vs "X (Y)"); os dois reduzem
+    #         ao mesmo base. Merge sse Y é sigla-do-base.
+    # Caso 2: ambos têm parêntese reduzindo ao MESMO base ("X (Y1)" vs "X (Y2)").
+    #         Merge sse AMBOS Y1 e Y2 são sigla-do-base (ambos só soletram a sigla
+    #         da mesma org); se qualquer um for qualificador novo → entidades
+    #         distintas → não merge.
     if has_paren_a and stripped_a and (stripped_a == norm_b or stripped_a == stripped_b):
-        return True
+        base_letters = _letters_of(stripped_a)
+        ok_a = _all_parens_are_sigla_of_base(name_a, base_letters)
+        ok_b = True if not has_paren_b else _all_parens_are_sigla_of_base(name_b, base_letters)
+        if ok_a and ok_b:
+            return True
     if has_paren_b and stripped_b and (stripped_b == norm_a or stripped_b == stripped_a):
-        return True
+        base_letters = _letters_of(stripped_b)
+        ok_b = _all_parens_are_sigla_of_base(name_b, base_letters)
+        ok_a = True if not has_paren_a else _all_parens_are_sigla_of_base(name_a, base_letters)
+        if ok_a and ok_b:
+            return True
 
     # (b) Acronym expansion match. As siglas candidatas vêm do conteúdo
     #     parentético de cada nome OU do nome inteiro quando ele é uma sigla
