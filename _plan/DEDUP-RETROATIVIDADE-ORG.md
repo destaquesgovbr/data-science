@@ -1,8 +1,9 @@
 # Retroatividade do dedup de entidades (ORG + cauda) — plano
 
-> **STATUS: 🟡 PLANEJADO (2026-06-18).** Pré-requisito mergeado: PR #32 (acronym-aware
-> dedup + threshold 0.85) e PR #33 (hotfix remoção do path-b). Falta o fix das 2 lacunas
-> abaixo (1 PR) + aplicar.
+> **STATUS: ✅ CONCLUÍDO (2026-06-18).** PRs: #32 (acronym-aware + threshold 0.85),
+> #33 (hotfix path-b), #34 (rewrite canonical_id + Wikidata-wins), #35 (guard de
+> edição por ano). Aplicado em prod: ORG 35 merges + EVENT 1 (Copa). Downstream
+> (grafo Postgres, Neo4j, Typesense) reconciliado. Detalhes no fim do arquivo.
 
 ## Contexto
 
@@ -95,3 +96,36 @@ tipo de id. Alinha com o Wikidata-wins já existente em `add_alias`.
   fica defasado (aceitável; rebuild é completo).
 - **Nunca** rodar o apply sem o fix da Lacuna 1 (orfanaria 4.606 menções).
 - Python sempre em venv; sem terraform/gcloud infra local.
+
+---
+
+## Execução (2026-06-18) — log
+
+**Aplicado em prod:**
+- **ORG: 35 merges** (`--dedup --dedup-type ORG`). entity_registry ORG 581→546.
+  4.606 menções reescritas (canonical_id source→target), **0 órfãos**. 33/35
+  preservaram o QID como chave canônica (Wikidata-wins); 2 dgb_×dgb_ (Casa Civil,
+  TransfereGov).
+- **EVENT: 1 merge** (Copa do Mundo FIFA "de 2026"↔"2026"). Edições preservadas:
+  ENGP genérico vs ENGP 2026 separados; Copa 2014/2022/2026 separadas.
+- LAW/POLICY/PROGRAM: 0 (sem duplicatas; prevenção no mint mantém assim).
+
+**Downstream reconciliado:**
+- Grafo Postgres (`project_entity_graph`): rebuild — MEC consolidado em Q4294522
+  (1223 menções em news_entities), dgb_mec=0.
+- Typesense (`typesense-maintenance-sync`): facet entity_canonical consolidado
+  (Q4294522=1223, dgb_mec=0; Q9592631=134, dgb_ans=0).
+- Neo4j: `sync_graph_to_neo4j` é **MERGE-only (não deleta nós obsoletos)** → após
+  os merges, os 36 nós source deletados ficaram stale. **Cleanup manual aplicado**
+  via tunnel (DETACH DELETE de :Entity ausentes do Postgres): 36 nós + 676 arestas
+  removidos; Neo4j 1143→1107 (= Postgres).
+
+## Follow-up recomendado (não-bloqueante)
+
+**Gap: `sync_graph_to_neo4j` acumula nós stale.** É MERGE-only — toda vez que um
+merge acontece (este dedup, OU o Wikidata-wins do `add_alias` que roda no canon job
+continuamente), o nó source deletado no Postgres permanece no Neo4j. Fix: adicionar
+um passo de cleanup ao `data-platform/.../jobs/graph/neo4j_sync.py` que, após o MERGE,
+faz `MATCH (e:Entity) WHERE NOT e.entity_id IN $valid_ids DETACH DELETE e` (valid_ids
+= entity_ids correntes do Postgres). Sem isso, o cleanup manual via tunnel precisa
+ser repetido periodicamente.
