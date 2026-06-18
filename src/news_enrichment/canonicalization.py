@@ -72,11 +72,15 @@ NEEDS_REVIEW_CONFIDENCE = 0.70
 
 # Limiar de similaridade (Jaccard de tokens) para reuso de ORG existente
 # (proxy local de trigram quando não há pg_trgm disponível no caminho de teste).
-ORG_REUSE_SIMILARITY = 0.62
+# 0.85: o antigo 0.62 era falso-positivo demais ("Banco do Brasil" reusaria
+# "Banco Central do Brasil", Jaccard 0.75). Variantes legítimas por sigla
+# ("Ministério da Educação" ↔ "Ministério da Educação (MEC)", também 0.75) são
+# preservadas pela cláusula OR _is_acronym_variant nos finders, não pelo limiar.
+ORG_REUSE_SIMILARITY = 0.85
 
 # Limiares de similaridade para reuso por tipo (previne duplicatas dgb_).
 _ENTITY_REUSE_THRESHOLDS: dict[str, float] = {
-    "ORG":     0.62,   # herdado do ORG_REUSE_SIMILARITY
+    "ORG":     0.85,   # herdado do ORG_REUSE_SIMILARITY (subiu de 0.62; ver acima)
     "LAW":     0.75,   # lei 14.967/2024 vs lei nº 14.967, de 9 de setembro de 2024
     "POLICY":  0.70,
     "PROGRAM": 0.70,
@@ -715,6 +719,188 @@ def _jaccard(a: set, b: set) -> float:
     return inter / union if union else 0.0
 
 
+# Stopwords (preposições/artigos/conjunções PT) ignoradas ao construir um
+# acrônimo a partir das palavras significativas de um nome.
+_ACRONYM_STOPWORDS = frozenset(
+    {"de", "da", "do", "das", "dos", "e", "a", "o", "as", "os", "em", "para", "no", "na"}
+)
+
+# Captura um grupo parentético (a última ocorrência, p.ex. "(MEC)").
+_PAREN_RE = re.compile(r"\(([^()]*)\)")
+
+
+def _strip_parens(name: str) -> str:
+    """Remove todos os grupos `(...)` de um nome (sem normalizar)."""
+    return _PAREN_RE.sub(" ", name)
+
+
+def _significant_words(name: str) -> List[str]:
+    """Palavras significativas de um nome (sem parênteses, sem stopwords)."""
+    stripped = _strip_parens(name)
+    words = [w for w in normalize(stripped).split(" ") if w]
+    return [w for w in words if w not in _ACRONYM_STOPWORDS]
+
+
+def _acronym_of(name: str) -> str:
+    """Acrônimo construído pelas iniciais das palavras significativas de `name`."""
+    return "".join(w[0] for w in _significant_words(name) if w)
+
+
+def _paren_acronyms(name: str) -> List[str]:
+    """Conteúdos parentéticos de `name` que parecem siglas (uppercase, len>=2).
+
+    Devolve a sigla normalizada (minúscula) para comparação. Considera apenas
+    grupos cujo conteúdo original é majoritariamente maiúsculo (uma sigla), não
+    uma frase entre parênteses.
+    """
+    out: List[str] = []
+    for m in _PAREN_RE.findall(name):
+        raw = m.strip()
+        letters = [c for c in raw if c.isalpha()]
+        if len(letters) >= 2 and all(c.isupper() for c in letters):
+            out.append("".join(letters).lower())
+    return out
+
+
+def _paren_contents(name: str) -> List[str]:
+    """Conteúdos parentéticos de `name`, normalizados a APENAS letras (a-z), em ordem.
+
+    Casing/acentos dobrados via normalize(); não-letras (espaços, pontuação,
+    dígitos) descartados. Ex.: "(Finep)" → "finep"; "(Primeira Turma)" →
+    "primeiraturma"; "(Líbano)" → "libano". Vazios são omitidos.
+    """
+    out: List[str] = []
+    for m in _PAREN_RE.findall(name):
+        letters = "".join(c for c in normalize(m) if c.isalpha())
+        if letters:
+            out.append(letters)
+    return out
+
+
+def _letters_of(s: str) -> str:
+    """Apenas letras (a-z) de `s` após normalize() — espaços/acentos/case removidos."""
+    return "".join(c for c in normalize(s) if c.isalpha())
+
+
+def _is_subsequence(needle: str, haystack: str) -> bool:
+    """True se os caracteres de `needle` aparecem, em ordem, dentro de `haystack`.
+
+    Discriminador casing-agnóstico de "sigla derivada do nome-base": as letras de
+    uma sigla parentética (ex.: "finep") devem formar uma subsequência das letras
+    do nome-base (ex.: "financiadoradeestudoseprojetos"). Qualificadores de
+    nova-informação (país/estado/turma: "libano", "bahia", "primeiraturma") NÃO
+    são subsequência do base e portanto NÃO qualificam. needle vazio → False.
+    """
+    if not needle:
+        return False
+    it = iter(haystack)
+    return all(ch in it for ch in needle)
+
+
+def _is_acronym_variant(name_a: str, name_b: str) -> bool:
+    """True se `name_a` e `name_b` são a MESMA entidade diferindo só por sigla.
+
+    Casos confiantes (simétrico):
+      (a) Parenthetical strip equality: remover um grupo `(...)` de um dos nomes
+          o torna igual (normalizado) ao outro. Ex.: "Ministério da Educação (MEC)"
+          → "Ministério da Educação" == o outro.
+      (b) Acronym expansion match: o conteúdo parentético (ou o nome inteiro, se
+          for uma sigla solta) é o acrônimo das palavras significativas do outro
+          nome (ou do seu próprio nome despido). Ex.: "(MEC)" = iniciais de
+          "Ministério (da) Educação (e) Cultura".
+
+    Conservador: exige sigla com >=2 letras maiúsculas e match exato das iniciais.
+    Retorna False quando não há parêntese nem relação de acrônimo (ex.: "Banco
+    Central do Brasil" vs "Banco do Brasil", "Polícia Federal" vs "Polícia
+    Rodoviária Federal"). Entradas vazias → False (nunca levanta).
+    """
+    if not name_a or not name_b:
+        return False
+
+    norm_a = normalize(name_a)
+    norm_b = normalize(name_b)
+    if not norm_a or not norm_b:
+        return False
+
+    stripped_a = normalize(_strip_parens(name_a))
+    stripped_b = normalize(_strip_parens(name_b))
+
+    # (a) Parenthetical strip equality, COM discriminador de homonímia: despir o
+    #     parêntese de um nome o iguala ao outro (ou ao outro despido). MAS isso
+    #     só conta como variante por sigla se o parêntese distintivo for uma SIGLA
+    #     DERIVADA do nome-base — i.e. suas letras formam uma subsequência das
+    #     letras do base (case/acento-insensível). Um qualificador de
+    #     nova-informação (país/estado/turma) NÃO é subsequência do base e portanto
+    #     são entidades DIFERENTES ("Ministério da Saúde (Brasil)" vs "(Líbano)").
+    has_paren_a = stripped_a != norm_a
+    has_paren_b = stripped_b != norm_b
+
+    def _all_parens_are_sigla_of_base(name: str, base_letters: str) -> bool:
+        contents = _paren_contents(name)
+        if not contents:
+            return False
+        return all(_is_subsequence(c, base_letters) for c in contents)
+
+    # Caso 1: exatamente um lado tem parêntese ("X" vs "X (Y)"); os dois reduzem
+    #         ao mesmo base. Merge sse Y é sigla-do-base.
+    # Caso 2: ambos têm parêntese reduzindo ao MESMO base ("X (Y1)" vs "X (Y2)").
+    #         Merge sse AMBOS Y1 e Y2 são sigla-do-base (ambos só soletram a sigla
+    #         da mesma org); se qualquer um for qualificador novo → entidades
+    #         distintas → não merge.
+    if has_paren_a and stripped_a and (stripped_a == norm_b or stripped_a == stripped_b):
+        base_letters = _letters_of(stripped_a)
+        ok_a = _all_parens_are_sigla_of_base(name_a, base_letters)
+        ok_b = True if not has_paren_b else _all_parens_are_sigla_of_base(name_b, base_letters)
+        if ok_a and ok_b:
+            return True
+    if has_paren_b and stripped_b and (stripped_b == norm_a or stripped_b == stripped_a):
+        base_letters = _letters_of(stripped_b)
+        ok_b = _all_parens_are_sigla_of_base(name_b, base_letters)
+        ok_a = True if not has_paren_a else _all_parens_are_sigla_of_base(name_a, base_letters)
+        if ok_a and ok_b:
+            return True
+
+    # (b) Acronym expansion match. As siglas candidatas vêm do conteúdo
+    #     parentético de cada nome OU do nome inteiro quando ele é uma sigla
+    #     solta (ex.: "MEC"). Cada sigla é confrontada com o acrônimo das
+    #     palavras significativas do nome PARCEIRO (e do próprio nome despido).
+    def _bare_acronym(name: str, norm: str, stripped: str) -> Optional[str]:
+        # nome solto que é uma sigla (uma só "palavra" toda em maiúsculas).
+        letters = [c for c in name.strip() if c.isalpha()]
+        if (
+            stripped == norm  # sem parêntese
+            and " " not in norm  # token único
+            and len(letters) >= 2
+            and all(c.isupper() for c in name.strip() if c.isalpha())
+        ):
+            return "".join(letters).lower()
+        return None
+
+    candidates_a = list(_paren_acronyms(name_a))
+    bare_a = _bare_acronym(name_a, norm_a, stripped_a)
+    if bare_a:
+        candidates_a.append(bare_a)
+
+    candidates_b = list(_paren_acronyms(name_b))
+    bare_b = _bare_acronym(name_b, norm_b, stripped_b)
+    if bare_b:
+        candidates_b.append(bare_b)
+
+    acr_a = _acronym_of(name_a)  # iniciais das palavras significativas de A
+    acr_b = _acronym_of(name_b)  # iniciais das palavras significativas de B
+
+    # Uma sigla de A deve expandir para as iniciais de B (o nome parceiro) — ou
+    # para as do próprio A (caso "(MEC)" dentro de "Ministério da Educação (MEC)").
+    for sig in candidates_a:
+        if len(sig) >= 2 and sig in {acr_b, acr_a}:
+            return True
+    for sig in candidates_b:
+        if len(sig) >= 2 and sig in {acr_a, acr_b}:
+            return True
+
+    return False
+
+
 def find_existing_by_wikidata(conn, qid: str) -> Optional[str]:
     """Reuso por QID exato: entity_registry.wikidata_id == qid OU entity_id == qid."""
     if not qid:
@@ -774,6 +960,7 @@ def find_existing_org_by_name(conn, canonical_name: str, threshold: float = ORG_
         target_tokens = _name_tokens(canonical_name)
         best_id = None
         best_score = 0.0
+        acronym_id = None
         for row in rows:
             entity_id = row[0]
             cand_name = row[1]
@@ -784,8 +971,14 @@ def find_existing_org_by_name(conn, canonical_name: str, threshold: float = ORG_
             if score > best_score:
                 best_score = score
                 best_id = entity_id
+            # Reuso por variante de sigla (OR): permite subir o threshold sem
+            # perder "Ministério da Educação" ↔ "Ministério da Educação (MEC)".
+            if acronym_id is None and _is_acronym_variant(canonical_name, cand_name):
+                acronym_id = entity_id
         if best_id is not None and best_score >= threshold:
             return best_id
+        if acronym_id is not None:
+            return acronym_id
         return None
     finally:
         cursor.close()
@@ -832,6 +1025,7 @@ def find_existing_entity_by_name(
         target_tokens = _name_tokens(canonical_name)
         best_id = None
         best_score = 0.0
+        acronym_id = None
         for row in rows:
             entity_id = row[0]
             cand_name = row[1]
@@ -842,8 +1036,14 @@ def find_existing_entity_by_name(
             if score > best_score:
                 best_score = score
                 best_id = entity_id
+            # Reuso por variante de sigla (OR): permite subir o threshold (ORG 0.85)
+            # sem perder "Ministério da Educação" ↔ "Ministério da Educação (MEC)".
+            if acronym_id is None and _is_acronym_variant(canonical_name, cand_name):
+                acronym_id = entity_id
         if best_id is not None and best_score >= threshold:
             return best_id
+        if acronym_id is not None:
+            return acronym_id
         return None
     finally:
         cursor.close()

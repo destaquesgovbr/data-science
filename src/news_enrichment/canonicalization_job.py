@@ -37,6 +37,7 @@ from .canonicalization import (
     CANON_PROMPT_VERSION,
     _ENTITY_REUSE_THRESHOLDS,
     _add_usage,
+    _is_acronym_variant,
     _jaccard,
     _name_tokens,
     _zero_usage,
@@ -756,6 +757,19 @@ def json_dumps(obj) -> str:
 # Dedup — near-duplicate entity detection + merge
 # =============================================================================
 
+# Thresholds dedicados ao cleanup retroativo (--dedup), distintos dos de
+# mint-time (_ENTITY_REUSE_THRESHOLDS). O merge retroativo varre TODAS as
+# entidades existentes de um tipo, então um threshold agressivo gera falsos
+# positivos (ex.: ORG 0.62 fundiria "Banco Central do Brasil" com "Banco do
+# Brasil", Jaccard 0.75). ORG sobe para 0.85; variantes legítimas por sigla
+# (ex.: "Ministério da Educação" ↔ "Ministério da Educação (MEC)", também 0.75)
+# são capturadas pelo detector determinístico _is_acronym_variant, não pelo
+# threshold. Demais tipos mantêm o threshold de mint-time.
+_DEDUP_THRESHOLDS: Dict[str, float] = {
+    **_ENTITY_REUSE_THRESHOLDS,
+    "ORG": 0.85,
+}
+
 
 def run_dedup(
     conn,
@@ -766,12 +780,21 @@ def run_dedup(
 ) -> dict:
     """Encontra e merge entidades near-duplicate em entity_registry.
 
-    Para cada tipo em _ENTITY_REUSE_THRESHOLDS (ou só entity_type se fornecido):
+    Para cada tipo em _DEDUP_THRESHOLDS (ou só entity_type se fornecido):
     1. Busca todas as entidades do tipo.
     2. Compara pares por similaridade Jaccard de tokens.
-    3. Se score >= threshold do tipo: no dry_run só loga; no apply executa merge_entities.
+    3. Merge quando: score >= threshold de dedup do tipo OU os nomes são uma
+       variante por sigla (_is_acronym_variant). O OR pelo detector de sigla
+       permite fundir "Ministério da Educação" ↔ "Ministério da Educação (MEC)"
+       (Jaccard 0.75 < 0.85) sem rebaixar o threshold a ponto de fundir bancos/
+       polícias distintos (também 0.75, mas NÃO variantes por sigla).
+       No dry_run só loga; no apply executa merge_entities.
        Ao merging: source = entidade com MENOS aliases em entity_alias (ou menor
        entity_id como desempate). target = entidade com MAIS aliases.
+
+    O threshold de dedup ORG é 0.85 (dedicado), distinto do de mint-time (0.62).
+    O arg `threshold=` explícito, quando fornecido, sobrepõe tudo (inclusive a
+    cláusula de sigla NÃO é necessária — qualquer par >= threshold mergeia).
 
     Returns:
         {"merged": int, "proposed": int, "types_processed": list[str]}
@@ -780,13 +803,13 @@ def run_dedup(
     if entity_type is not None:
         types_to_process = [entity_type]
     else:
-        types_to_process = list(_ENTITY_REUSE_THRESHOLDS.keys())
+        types_to_process = list(_DEDUP_THRESHOLDS.keys())
 
     merged_total = 0
     proposed_total = 0
 
     for etype in types_to_process:
-        thr = threshold if threshold is not None else _ENTITY_REUSE_THRESHOLDS.get(etype, 0.70)
+        thr = threshold if threshold is not None else _DEDUP_THRESHOLDS.get(etype, 0.70)
 
         # Fetch all entities of this type.
         cursor = conn.cursor()
@@ -833,13 +856,21 @@ def run_dedup(
                 tokens_b = _name_tokens(name_b)
 
                 score = _jaccard(tokens_a, tokens_b)
-                if score < thr:
+                acronym_match = _is_acronym_variant(name_a, name_b)
+                if score < thr and not acronym_match:
                     continue
+
+                # Razão do merge (auditoria): threshold de similaridade vs.
+                # detector determinístico de variante por sigla.
+                if score >= thr:
+                    reason = f"Jaccard={score:.3f} >= {thr:.3f}"
+                else:
+                    reason = f"acronym-variant (Jaccard={score:.3f} < {thr:.3f})"
 
                 proposed_total += 1
                 logger.info(
-                    "Dedup %s: '%s' ↔ '%s' (Jaccard=%.3f >= %.3f) %s",
-                    etype, name_a, name_b, score, thr,
+                    "Dedup %s: '%s' ↔ '%s' [%s] %s",
+                    etype, name_a, name_b, reason,
                     "[dry-run]" if dry_run else "[merge]",
                 )
 
