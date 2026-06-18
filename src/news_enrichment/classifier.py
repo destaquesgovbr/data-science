@@ -231,7 +231,10 @@ class NewsClassifier:
             'most_specific_theme_code',
             'most_specific_theme_label',
             'summary',
-            'sentiment'
+            'sentiment',
+            # Metadados internos da chamada combinada (tokens p/ ledger de cota).
+            '_usage',
+            '_model_id',
         ]
 
         # Incluir unique_id se existir (útil para rastreabilidade)

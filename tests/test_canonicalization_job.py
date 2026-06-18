@@ -272,3 +272,97 @@ class TestApplyCanonicalIds:
         assert linked == 0
         assert changed is False
         assert "canonical_id" not in new[0]
+
+
+# ---------------------------------------------------------------------- #
+# Governador de cota wired em resolve_pending                            #
+# ---------------------------------------------------------------------- #
+
+
+def make_bedrock_usage(responses, usages):
+    """Bedrock falso que devolve (texto, usage) por chamada."""
+    client = MagicMock()
+    bedrock = MagicMock()
+    bedrock.client = client
+    state = {"i": 0}
+
+    def _invoke(modelId=None, body=None):
+        idx = min(state["i"], len(responses) - 1)
+        state["i"] += 1
+        body_mock = MagicMock()
+        payload = {"content": [{"text": responses[idx]}]}
+        u = usages[idx] if idx < len(usages) else None
+        if u is not None:
+            payload["usage"] = u
+        body_mock.read.return_value = json.dumps(payload).encode()
+        return {"body": body_mock}
+
+    client.invoke_model.side_effect = _invoke
+    return bedrock
+
+
+class TestResolvePendingGovernor:
+    def _seed_pending(self, db, n):
+        for i in range(n):
+            db.seen[(f"forma{i}", "ORG")] = {
+                "surface_norm": f"forma{i}", "type": "ORG", "status": "pending",
+                "sample_unique_id": f"u{i}", "attempts": 0,
+            }
+
+    def test_records_usage_in_ledger(self):
+        db = FakeDB()
+        self._seed_pending(db, 1)
+        # internal (alta conf, sem candidatos) — uma chamada canon, sem escalada.
+        bedrock = make_bedrock_usage(
+            [canon_json(canonical_name="Forma0", type="ORG", confidence=0.95)],
+            [{"input_tokens": 300, "output_tokens": 60}],
+        )
+        wikidata = FakeWikidata()  # zero candidatos
+        conn = db.conn()
+        stats = J.resolve_pending(
+            conn, 10, bedrock_client=bedrock, wikidata_client=wikidata,
+            model_id="sonnet", daily_quota=None,
+        )
+        assert stats["resolved"] == 1
+        assert db.ledger["sonnet"] == {"input_tokens": 300, "output_tokens": 60}
+
+    def test_stops_when_budget_exhausted(self):
+        db = FakeDB()
+        self._seed_pending(db, 10)
+        # Pré-carrega o ledger acima do teto (0.8 * 1000 = 800).
+        db.ledger["sonnet"] = {"input_tokens": 900, "output_tokens": 0}
+        bedrock = make_bedrock_usage(
+            [canon_json(canonical_name="X", type="ORG", confidence=0.95)],
+            [{"input_tokens": 1, "output_tokens": 1}],
+        )
+        wikidata = FakeWikidata()
+        conn = db.conn()
+        stats = J.resolve_pending(
+            conn, 10, bedrock_client=bedrock, wikidata_client=wikidata,
+            model_id="sonnet", daily_quota=1000, quota_fraction=0.8,
+        )
+        # Parou logo na primeira checagem (i=0) — nada resolvido.
+        assert stats["budget_exhausted"] is True
+        assert stats["resolved"] == 0
+        # Não chamou o Bedrock.
+        bedrock.client.invoke_model.assert_not_called()
+
+    def test_no_quota_runs_uncapped(self):
+        db = FakeDB()
+        self._seed_pending(db, 2)
+        db.ledger["sonnet"] = {"input_tokens": 10_000_000, "output_tokens": 0}
+        bedrock = make_bedrock_usage(
+            [canon_json(canonical_name="A", type="ORG", confidence=0.95),
+             canon_json(canonical_name="B", type="ORG", confidence=0.95)],
+            [{"input_tokens": 1, "output_tokens": 1},
+             {"input_tokens": 1, "output_tokens": 1}],
+        )
+        wikidata = FakeWikidata()
+        conn = db.conn()
+        stats = J.resolve_pending(
+            conn, 10, bedrock_client=bedrock, wikidata_client=wikidata,
+            model_id="sonnet", daily_quota=None,
+        )
+        # Sem cota → não bloqueia, resolve tudo.
+        assert stats["resolved"] == 2
+        assert stats["budget_exhausted"] is False

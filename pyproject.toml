@@ -41,6 +41,10 @@ psycopg2-binary = "^2.9.9"
 
 # HTTP & Networking
 requests = "^2.31.0"
+# httpx: usado por wikidata_client.py (linked-data da canonicalização). Já estava
+# presente no lock como dependência transitiva (0.28.1); declarado explicitamente
+# para que `poetry install` o garanta. Versão alinhada ao poetry.lock atual.
+httpx = "^0.28"
 
 # Progress & UI
 tqdm = "^4.65.0"

@@ -16,6 +16,7 @@ from urllib.parse import parse_qs, unquote, urlparse
 
 import psycopg2
 
+from news_enrichment import quota_governor
 from news_enrichment.classifier import NewsClassifier
 from news_enrichment.enrichment_job import update_news_enrichment
 from news_enrichment.taxonomy import build_theme_code_to_id_map, load_taxonomy_from_postgres
@@ -200,6 +201,7 @@ def enrich_article(unique_id: str) -> dict[str, Any]:
 
     # NER (chamada DEDICADA, modelo Sonnet 4.6 em prod). Resiliente: uma falha
     # no NER não derruba o enriquecimento de tema/sentimento.
+    ner_raw: dict | None = None
     try:
         entities, ner_raw = classifier.llm_client.extract_entities(
             article, return_raw=True
@@ -210,6 +212,11 @@ def enrich_article(unique_id: str) -> dict[str, Any]:
     except Exception as e:
         logger.error(f"NER extraction failed for {unique_id}: {e}")
         result["entities"] = []
+
+    # Ledger de cota: registra os tokens consumidos (chamada combinada + NER).
+    # O worker SÓ ESCREVE no ledger — NUNCA se auto-limita (ele atende o tempo
+    # real; só os jobs de backfill cedem quando o consumo do dia bate o teto).
+    _record_ledger_usage(result, ner_raw)
 
     # Update PostgreSQL
     code_to_id = _get_code_to_id()
@@ -293,6 +300,52 @@ def _upsert_ai_features(unique_id: str, enrichment_result: dict) -> None:
         logger.error(f"Failed to upsert AI features for {unique_id}: {e}")
     finally:
         conn.close()
+
+
+def _record_ledger_usage(combined_result: dict, ner_raw: dict | None) -> None:
+    """Grava no ledger llm_daily_usage os tokens das chamadas Bedrock do worker.
+
+    Escreve duas linhas (uma por modelo): a chamada combinada (tema+resumo+
+    sentimento, modelo `_model_id`) e a chamada NER (modelo do ner_raw). Cada
+    UPSERT acumula sobre o consumo do dia (quota_governor.record_usage).
+
+    RESILIENTE: o worker NUNCA se auto-limita e uma falha aqui jamais derruba o
+    enriquecimento — abre uma conexão própria e ignora qualquer erro.
+    """
+    entries: list[tuple[str, dict]] = []
+
+    combined_usage = (combined_result or {}).get("_usage")
+    combined_model = (combined_result or {}).get("_model_id")
+    if combined_usage and combined_model:
+        entries.append((combined_model, combined_usage))
+
+    if ner_raw:
+        ner_usage = ner_raw.get("usage")
+        ner_model = ner_raw.get("model_id")
+        if ner_usage and ner_model:
+            entries.append((ner_model, ner_usage))
+
+    if not entries:
+        return
+
+    try:
+        conn = psycopg2.connect(_get_database_url())
+    except Exception as e:
+        logger.warning(f"Failed to connect to record ledger usage: {e}")
+        return
+    try:
+        for model_id, usage in entries:
+            quota_governor.record_usage(
+                conn,
+                model_id,
+                usage.get("input_tokens"),
+                usage.get("output_tokens"),
+            )
+    finally:
+        try:
+            conn.close()
+        except Exception:
+            pass
 
 
 def store_raw_llm_response(unique_id: str, task: str, raw: dict | None) -> None:

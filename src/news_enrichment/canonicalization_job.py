@@ -35,6 +35,8 @@ from psycopg2.extras import Json
 
 from .canonicalization import (
     CANON_PROMPT_VERSION,
+    _add_usage,
+    _zero_usage,
     add_alias,
     apply_gates,
     find_existing_by_wikidata,
@@ -47,6 +49,7 @@ from .canonicalization import (
     normalize,
     upsert_entity,
 )
+from .quota_governor import budget_exhausted, parse_daily_quota_env, record_usage
 
 logger = logging.getLogger(__name__)
 
@@ -54,6 +57,8 @@ DEFAULT_WINDOW_DAYS = 30
 DEFAULT_LIMIT = 100
 WIKIDATA_URL_PREFIX = "https://www.wikidata.org/wiki/"
 SOURCE_CANON = "canon"
+# Checa o budget a cada N formas resolvidas (tolera pequena ultrapassagem).
+BUDGET_CHECK_EVERY = 5
 
 
 # =============================================================================
@@ -273,14 +278,19 @@ def resolve_form(
     Returns:
         dict {action, status, entity_id, ...} (decisão final).
     """
-    # 1) Gazetteer short-circuit (zero LLM).
+    # 1) Gazetteer short-circuit (zero LLM, zero tokens).
     hit = gazetteer_lookup(conn, form_norm, type)
     if hit is not None:
         if not dry_run:
             _update_seen(conn, form_norm, type, "resolved", hit, attempts)
-        return {"action": "gazetteer", "status": "resolved", "entity_id": hit}
+        return {
+            "action": "gazetteer",
+            "status": "resolved",
+            "entity_id": hit,
+            "usage": _zero_usage(),
+        }
 
-    # 2) LLM canonicalize (Opus).
+    # 2) LLM canonicalize (Sonnet).
     sample_context = _fetch_sample_context(conn, sample_unique_id)
     canon_result = llm_canonicalize(form_norm, sample_context, model_id, bedrock_client)
 
@@ -288,7 +298,7 @@ def resolve_form(
     if not dry_run:
         _store_canon_raw(conn, sample_unique_id, form_norm, model_id, canon_result)
 
-    # 3) Wikidata candidates.
+    # 3) Wikidata candidates (sem tokens Bedrock — só HTTP Wikidata).
     candidates: List[dict] = []
     if not canon_result.get("not_an_entity"):
         candidates = list_candidates(
@@ -298,7 +308,7 @@ def resolve_form(
             canon_result.get("wikidata_query") or form_norm,
         )
 
-    # 4) Gates.
+    # 4) Gates (pode fazer 1 chamada extra de escalada).
     decision = apply_gates(
         form=form_norm,
         canon=canon_result,
@@ -307,6 +317,12 @@ def resolve_form(
         model_id=model_id,
         bedrock_client=bedrock_client,
     )
+
+    # Total de tokens desta forma = canonicalização + (eventual) escalada.
+    total_usage = _add_usage(
+        dict(canon_result.get("usage") or _zero_usage()), decision.get("usage")
+    )
+    decision["usage"] = total_usage
 
     if dry_run:
         return decision
@@ -404,14 +420,46 @@ def resolve_pending(
     wikidata_client,
     model_id: str,
     dry_run: bool = False,
+    daily_quota: Optional[int] = None,
+    quota_fraction: float = 0.8,
 ) -> dict:
-    """Step B: resolve até `limit` formas pending. Commit por forma (resumível)."""
-    pending = fetch_pending(conn, limit)
-    stats = {"resolved": 0, "needs_review": 0, "dropped": 0, "errors": 0, "total": len(pending)}
+    """Step B: resolve até `limit` formas pending. Commit por forma (resumível).
 
-    for item in pending:
+    Governador de cota: antes de resolver a cada `BUDGET_CHECK_EVERY` formas,
+    checa `budget_exhausted(model_id)` contra o ledger account-wide; se True, para
+    gracioso (break) e devolve stats parciais com budget_exhausted=True. Após cada
+    forma que consumiu tokens, grava o usage no ledger.
+
+    Sem cota definida (daily_quota None/<=0) → modo sem-teto (apenas grava o ledger).
+    """
+    pending = fetch_pending(conn, limit)
+    stats = {
+        "resolved": 0, "needs_review": 0, "dropped": 0, "errors": 0,
+        "total": len(pending), "budget_exhausted": False,
+    }
+
+    has_quota = bool(daily_quota and daily_quota > 0)
+    if not has_quota:
+        logger.warning(
+            "Sem cota diária para %s (BEDROCK_DAILY_TOKEN_QUOTA): modo sem-teto.",
+            model_id,
+        )
+
+    for i, item in enumerate(pending):
         form_norm = item["surface_norm"]
         etype = item["type"]
+
+        # Governador: checa o budget a cada N formas (margem ~fração).
+        if has_quota and i % BUDGET_CHECK_EVERY == 0 and budget_exhausted(
+            conn, model_id, daily_quota, quota_fraction
+        ):
+            logger.info(
+                "Budget exhausted para %s — parando gracioso após %d/%d formas.",
+                model_id, i, len(pending),
+            )
+            stats["budget_exhausted"] = True
+            break
+
         try:
             decision = resolve_form(
                 conn,
@@ -426,6 +474,12 @@ def resolve_pending(
             )
             if not dry_run:
                 conn.commit()
+                # Contabiliza tokens desta forma no ledger (gazetteer = 0, no-op leve).
+                usage = decision.get("usage") or _zero_usage()
+                if usage.get("input_tokens") or usage.get("output_tokens"):
+                    record_usage(
+                        conn, model_id, usage["input_tokens"], usage["output_tokens"]
+                    )
             action = decision.get("action")
             if action == "drop":
                 stats["dropped"] += 1
@@ -596,6 +650,11 @@ def run_canonicalization(
     since_dt, until_dt = _parse_window(since, until)
     model_id = model_id or get_canon_model_id()
 
+    # Governador de cota: quota por modelo (JSON) + fração (default 0.8) via env.
+    quota_cfg = parse_daily_quota_env()
+    daily_quota = quota_cfg["quota"].get(model_id)
+    quota_fraction = quota_cfg["fraction"]
+
     conn = psycopg2.connect(database_url)
     try:
         if bedrock_client is None:
@@ -611,6 +670,8 @@ def run_canonicalization(
             wikidata_client=wikidata_client,
             model_id=model_id,
             dry_run=dry_run,
+            daily_quota=daily_quota,
+            quota_fraction=quota_fraction,
         )
         backfill_stats = backfill_canonical_ids(conn, since_dt, until_dt, dry_run=dry_run)
     finally:

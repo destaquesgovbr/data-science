@@ -475,3 +475,43 @@ class TestCombinedPromptDropsEntities:
         result = client._parse_response(raw)
         assert result["summary"] == "Resumo."
         assert "entities" not in result or result.get("entities") in (None, [])
+
+
+# --- Tests: captura de usage (tokens) do Bedrock no raw_meta ---
+
+
+class TestNerUsageCapture:
+    """A resposta do Bedrock traz usage{input_tokens,output_tokens}; o NER
+    deve capturá-lo em raw_meta['usage'] para o ledger de cota."""
+
+    def _client_with_usage(self, response_text, usage, model_id="ner-model-test"):
+        client = _make_client(model_id=model_id)
+        body = MagicMock()
+        payload = {"content": [{"text": response_text}]}
+        if usage is not None:
+            payload["usage"] = usage
+        body.read.return_value = json.dumps(payload).encode()
+        client.client = MagicMock()
+        client.client.invoke_model.return_value = {"body": body}
+        return client
+
+    def test_usage_captured_in_raw_meta(self):
+        canned = json.dumps({"entities": [{"text": "Finep", "type": "ORG", "count": 1}]})
+        client = self._client_with_usage(
+            canned, {"input_tokens": 1234, "output_tokens": 56}
+        )
+        _, raw = client.extract_entities(SAMPLE_ARTICLE, return_raw=True)
+        assert raw["usage"] == {"input_tokens": 1234, "output_tokens": 56}
+
+    def test_usage_absent_yields_zero_usage(self):
+        """Resposta sem bloco usage → usage zerado (nunca quebra o ledger)."""
+        canned = json.dumps({"entities": []})
+        client = self._client_with_usage(canned, None)
+        _, raw = client.extract_entities(SAMPLE_ARTICLE, return_raw=True)
+        assert raw["usage"] == {"input_tokens": 0, "output_tokens": 0}
+
+    def test_usage_partial_block_defaults_missing_to_zero(self):
+        canned = json.dumps({"entities": []})
+        client = self._client_with_usage(canned, {"input_tokens": 100})
+        _, raw = client.extract_entities(SAMPLE_ARTICLE, return_raw=True)
+        assert raw["usage"] == {"input_tokens": 100, "output_tokens": 0}

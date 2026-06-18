@@ -316,3 +316,49 @@ class TestEnrichArticleNerIntegration:
         # Enriquecimento (tema/sentimento) ainda completa.
         assert result["status"] == "enriched"
         mock_upsert.assert_called_once()
+
+
+# --- ledger de cota: worker grava usage (NUNCA se auto-limita) ---
+
+
+class TestWorkerRecordsUsage:
+    @patch("news_enrichment.worker.handler.quota_governor.record_usage")
+    @patch("news_enrichment.worker.handler.psycopg2.connect")
+    @patch("news_enrichment.worker.handler._get_database_url", return_value="postgresql://test")
+    def test_record_ledger_writes_combined_and_ner(self, mock_url, mock_connect, mock_record):
+        mock_conn = MagicMock()
+        mock_connect.return_value = mock_conn
+
+        combined_result = {
+            "_usage": {"input_tokens": 500, "output_tokens": 80},
+            "_model_id": "haiku-combined",
+        }
+        ner_raw = {
+            "model_id": "sonnet-ner",
+            "usage": {"input_tokens": 1200, "output_tokens": 40},
+        }
+        handler._record_ledger_usage(combined_result, ner_raw)
+
+        # Duas gravações: combinada (haiku) + NER (sonnet).
+        models = {c.args[1] for c in mock_record.call_args_list}
+        assert "haiku-combined" in models
+        assert "sonnet-ner" in models
+        # tokens corretos por modelo.
+        by_model = {c.args[1]: (c.args[2], c.args[3]) for c in mock_record.call_args_list}
+        assert by_model["haiku-combined"] == (500, 80)
+        assert by_model["sonnet-ner"] == (1200, 40)
+
+    @patch("news_enrichment.worker.handler.quota_governor.record_usage")
+    @patch("news_enrichment.worker.handler.psycopg2.connect")
+    @patch("news_enrichment.worker.handler._get_database_url", return_value="postgresql://test")
+    def test_no_usage_no_record(self, mock_url, mock_connect, mock_record):
+        handler._record_ledger_usage({}, None)
+        mock_record.assert_not_called()
+
+    @patch("news_enrichment.worker.handler.psycopg2.connect", side_effect=Exception("db down"))
+    @patch("news_enrichment.worker.handler._get_database_url", return_value="postgresql://test")
+    def test_db_failure_does_not_raise(self, mock_url, mock_connect):
+        # Falha de conexão ao gravar o ledger NUNCA derruba o worker.
+        handler._record_ledger_usage(
+            {"_usage": {"input_tokens": 1, "output_tokens": 1}, "_model_id": "m"}, None
+        )

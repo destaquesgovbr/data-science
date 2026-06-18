@@ -616,3 +616,128 @@ class TestConfig:
 
     def test_canon_prompt_version(self):
         assert C.CANON_PROMPT_VERSION == "canon-v1"
+
+
+# ---------------------------------------------------------------------- #
+# Captura de usage (tokens) nas chamadas Bedrock da canonicalização       #
+# ---------------------------------------------------------------------- #
+
+
+def make_bedrock_with_usage(responses, usages):
+    """Bedrock falso que devolve (texto, usage) por chamada.
+
+    responses: lista de strings; usages: lista de dicts usage (mesmo tamanho).
+    """
+    client = MagicMock()
+    bedrock = MagicMock()
+    bedrock.client = client
+    state = {"i": 0}
+
+    def _invoke(modelId=None, body=None):
+        idx = min(state["i"], len(responses) - 1)
+        state["i"] += 1
+        body_mock = MagicMock()
+        payload = {"content": [{"text": responses[idx]}]}
+        u = usages[idx] if idx < len(usages) else None
+        if u is not None:
+            payload["usage"] = u
+        body_mock.read.return_value = json.dumps(payload).encode()
+        return {"body": body_mock}
+
+    client.invoke_model.side_effect = _invoke
+    return bedrock
+
+
+class TestCanonUsageCapture:
+    def test_llm_canonicalize_returns_usage(self):
+        bedrock = make_bedrock_with_usage(
+            [json.dumps({"canonical_name": "Finep", "type": "ORG", "confidence": 0.95})],
+            [{"input_tokens": 200, "output_tokens": 40}],
+        )
+        text, usage = C._invoke_bedrock_text(bedrock, "m", "prompt")
+        assert usage == {"input_tokens": 200, "output_tokens": 40}
+
+    def test_invoke_usage_absent_yields_zero(self):
+        bedrock = make_bedrock_with_usage([json.dumps({"x": 1})], [None])
+        _text, usage = C._invoke_bedrock_text(bedrock, "m", "prompt")
+        assert usage == {"input_tokens": 0, "output_tokens": 0}
+
+    def test_invoke_failure_yields_none_text_zero_usage(self):
+        bad = MagicMock()
+        bad.client.invoke_model.side_effect = Exception("boom")
+        text, usage = C._invoke_bedrock_text(bad, "m", "prompt")
+        assert text is None
+        assert usage == {"input_tokens": 0, "output_tokens": 0}
+
+    def test_apply_gates_aggregates_escalation_usage(self):
+        """apply_gates que escala (resolve_per_homonym) acumula usage da escalada."""
+        candidates = [
+            {"qid": "Q1", "label": "A", "description": "", "country_is_br": True},
+            {"qid": "Q2", "label": "B", "description": "", "country_is_br": False},
+        ]
+        canon = {
+            "canonical_name": "Ambíguo", "type": "PER", "confidence": 0.6,
+            "not_an_entity": False, "aliases": ["Ambíguo"],
+        }
+        bedrock = make_bedrock_with_usage(
+            [json.dumps({"qid": "Q1", "confidence": 0.9})],
+            [{"input_tokens": 50, "output_tokens": 10}],
+        )
+        decision = C.apply_gates(
+            form="ambiguo", canon=canon, candidates=candidates,
+            sample_context="ctx", model_id="m", bedrock_client=bedrock,
+        )
+        # decision carrega o usage da escalada para o caller gravar.
+        assert decision["usage"]["input_tokens"] == 50
+        assert decision["usage"]["output_tokens"] == 10
+
+    def test_apply_gates_no_escalation_zero_usage(self):
+        """Caminho sem escalada (auto-link) → usage zero (nenhuma chamada extra)."""
+        candidates = [
+            {"qid": "Q9", "label": "Único", "description": "", "country_is_br": True},
+        ]
+        canon = {
+            "canonical_name": "Finep", "type": "ORG", "confidence": 0.95,
+            "not_an_entity": False, "aliases": ["Finep"],
+        }
+        decision = C.apply_gates(
+            form="finep", canon=canon, candidates=candidates,
+            sample_context="ctx", model_id="m", bedrock_client=make_bedrock("unused"),
+        )
+        assert decision["action"] == "link"
+        assert decision["usage"] == {"input_tokens": 0, "output_tokens": 0}
+
+
+# ---------------------------------------------------------------------- #
+# mint_internal_id — bound de 64 chars (entity_registry.entity_id VARCHAR(64))  #
+# ---------------------------------------------------------------------- #
+
+
+class TestMintInternalIdBound:
+    def test_short_name_is_plain_slug(self):
+        """Nome curto: id determinístico dgb_<slug>, sem sufixo de hash."""
+        assert C.mint_internal_id("Finep") == "dgb_finep"
+
+    def test_long_name_fits_64_chars(self):
+        long_name = (
+            "Superintendência Nacional de Coordenação de Políticas Públicas "
+            "de Desenvolvimento Regional Integrado e Sustentável do Brasil"
+        )
+        mid = C.mint_internal_id(long_name)
+        assert len(mid) <= 64
+        assert mid.startswith("dgb_")
+
+    def test_long_name_is_deterministic(self):
+        long_name = "A" * 300
+        assert C.mint_internal_id(long_name) == C.mint_internal_id(long_name)
+
+    def test_distinct_long_names_distinct_ids(self):
+        a = C.mint_internal_id("Ministério " + "X" * 100)
+        b = C.mint_internal_id("Ministério " + "Y" * 100)
+        assert a != b
+        assert len(a) <= 64 and len(b) <= 64
+
+    def test_exactly_64_or_less_for_various_lengths(self):
+        for n in (0, 1, 50, 52, 53, 60, 100, 500):
+            mid = C.mint_internal_id("c" * n)
+            assert len(mid) <= 64, (n, mid, len(mid))

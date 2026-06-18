@@ -1,0 +1,76 @@
+name: Deploy NER Backfill Job
+
+# Cloud Run JOB (não service): build + push da imagem e `gcloud run jobs update`.
+# O Job em si (env vars, SA, secrets, quota) é criado/gerido pelo Terraform (infra/);
+# este workflow só atualiza a imagem do Job já existente.
+#
+# NB: a reusable cloud-run-deploy.yml@v2 faz `gcloud run services update`, que NÃO
+# serve para Jobs — por isso este workflow é self-contained (mesma auth/build/push,
+# mas `jobs update` no deploy). Mantém PROJECT_ID/AR_REGISTRY/WIF iguais à reusable.
+
+on:
+  push:
+    branches: [ "main" ]
+    paths:
+      - 'src/news_enrichment/**'
+      - 'scripts/backfill_ner_corpus.py'
+      - 'docker/ner-backfill-job/**'
+      - 'pyproject.toml'
+      - 'poetry.lock'
+      - '.github/workflows/ner-backfill-job-deploy.yaml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  AR_REGISTRY: southamerica-east1-docker.pkg.dev
+  PROJECT_ID: inspire-7-finep
+  AR_REPOSITORY: destaquesgovbr-ner-backfill
+  IMAGE_NAME: ner-backfill
+  CLOUD_RUN_JOB: destaquesgovbr-ner-backfill
+  CLOUD_RUN_REGION: southamerica-east1
+
+jobs:
+  build-push-deploy:
+    name: Build, Push and Update Job
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: projects/990583792367/locations/global/workloadIdentityPools/github-pool/providers/github-provider
+          service_account: github-actions@inspire-7-finep.iam.gserviceaccount.com
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+        with:
+          project_id: ${{ env.PROJECT_ID }}
+
+      - name: Configure Docker for Artifact Registry
+        run: gcloud auth configure-docker ${{ env.AR_REGISTRY }} --quiet
+
+      - name: Build and push image
+        run: |
+          IMAGE="${{ env.AR_REGISTRY }}/${{ env.PROJECT_ID }}/${{ env.AR_REPOSITORY }}/${{ env.IMAGE_NAME }}"
+          docker build -f docker/ner-backfill-job/Dockerfile \
+            -t ${IMAGE}:latest \
+            -t ${IMAGE}:${{ github.sha }} .
+          docker push ${IMAGE}:latest
+          docker push ${IMAGE}:${{ github.sha }}
+
+      - name: Update Cloud Run Job image
+        run: |
+          IMAGE="${{ env.AR_REGISTRY }}/${{ env.PROJECT_ID }}/${{ env.AR_REPOSITORY }}/${{ env.IMAGE_NAME }}"
+          gcloud run jobs update ${{ env.CLOUD_RUN_JOB }} \
+            --image ${IMAGE}:${{ github.sha }} \
+            --region ${{ env.CLOUD_RUN_REGION }}
+          echo "## ${{ env.CLOUD_RUN_JOB }} image updated" >> $GITHUB_STEP_SUMMARY
+          echo "Image: ${IMAGE}:${{ github.sha }}" >> $GITHUB_STEP_SUMMARY

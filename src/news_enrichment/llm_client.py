@@ -52,6 +52,24 @@ _TYPE_TAIL_NORMALIZATION = {
 }
 
 
+def _extract_usage(response_body: dict) -> Dict[str, int]:
+    """Extrai usage{input_tokens,output_tokens} do corpo Anthropic-on-Bedrock.
+
+    Campos ausentes → 0 (nunca quebra o ledger de cota). Confirmado empiricamente:
+    o corpo da resposta traz `usage.input_tokens` e `usage.output_tokens`.
+    """
+    usage = (response_body or {}).get("usage") or {}
+    try:
+        in_tok = int(usage.get("input_tokens", 0) or 0)
+    except (TypeError, ValueError):
+        in_tok = 0
+    try:
+        out_tok = int(usage.get("output_tokens", 0) or 0)
+    except (TypeError, ValueError):
+        out_tok = 0
+    return {"input_tokens": in_tok, "output_tokens": out_tok}
+
+
 class BedrockLLMClient:
     """Cliente para AWS Bedrock com batch processing."""
 
@@ -169,13 +187,16 @@ class BedrockLLMClient:
                 prompt = self._build_prompt(row)
 
                 # Chamar Bedrock
-                response = self._call_bedrock(prompt)
+                response, usage = self._call_bedrock(prompt)
 
                 # Parse response
                 enriched_data = self._parse_response(response)
 
-                # Combinar com dados originais
-                result = {**row, **enriched_data}
+                # Combinar com dados originais. `_usage` (tokens da chamada
+                # combinada) flui até o worker, que grava no ledger de cota
+                # contra o modelo combinado (model_id). Prefixo `_` para sinalizar
+                # metadado interno (não é um campo de classificação).
+                result = {**row, **enriched_data, "_usage": usage, "_model_id": self.model_id}
                 return result
 
             except ClientError as e:
@@ -316,15 +337,16 @@ FORMATO DE SAÍDA (JSON VÁLIDO — todos os campos são obrigatórios):
         # TODO: Implementar formatação hierárquica da taxonomia
         return json.dumps(self.taxonomy, indent=2, ensure_ascii=False)
 
-    def _call_bedrock(self, prompt: str) -> str:
+    def _call_bedrock(self, prompt: str) -> Tuple[str, Dict[str, int]]:
         """
-        Realiza chamada ao Bedrock.
+        Realiza chamada ao Bedrock (chamada combinada).
 
         Args:
             prompt: Prompt para o modelo
 
         Returns:
-            Resposta do modelo (texto)
+            (texto, usage) onde usage = {input_tokens, output_tokens} extraído do
+            corpo da resposta (para o ledger de cota). Campos ausentes → 0.
         """
         request_body = {
             "anthropic_version": "bedrock-2023-05-31",
@@ -347,7 +369,7 @@ FORMATO DE SAÍDA (JSON VÁLIDO — todos os campos são obrigatórios):
         response_body = json.loads(response['body'].read())
         content = response_body['content'][0]['text']
 
-        return content
+        return content, _extract_usage(response_body)
 
     def _parse_response(self, response: str) -> Dict:
         """
@@ -488,8 +510,13 @@ FORMATO DE SAÍDA (JSON VÁLIDO):
 
         return prompt
 
-    def _call_bedrock_ner(self, prompt: str) -> str:
-        """Realiza a chamada NER ao Bedrock usando o modelo NER configurável."""
+    def _call_bedrock_ner(self, prompt: str) -> Tuple[str, Dict[str, int]]:
+        """Realiza a chamada NER ao Bedrock usando o modelo NER configurável.
+
+        Returns:
+            (texto, usage) onde usage = {input_tokens, output_tokens} extraído do
+            corpo da resposta (para o ledger de cota). Campos ausentes → 0.
+        """
         request_body = {
             "anthropic_version": "bedrock-2023-05-31",
             "max_tokens": 2000,
@@ -508,7 +535,7 @@ FORMATO DE SAÍDA (JSON VÁLIDO):
         )
 
         response_body = json.loads(response['body'].read())
-        return response_body['content'][0]['text']
+        return response_body['content'][0]['text'], _extract_usage(response_body)
 
     def extract_entities(
         self, article: Dict, return_raw: bool = False
@@ -533,10 +560,11 @@ FORMATO DE SAÍDA (JSON VÁLIDO):
         prompt_hash = hashlib.sha256(prompt.encode("utf-8")).hexdigest()
 
         raw_text: Optional[str] = None
+        usage: Dict[str, int] = {"input_tokens": 0, "output_tokens": 0}
         max_retries = getattr(self, "max_retries", 3)
         for attempt in range(max_retries):
             try:
-                raw_text = self._call_bedrock_ner(prompt)
+                raw_text, usage = self._call_bedrock_ner(prompt)
                 break
             except ClientError as e:
                 error_code = e.response.get('Error', {}).get('Code', '')
@@ -579,6 +607,10 @@ FORMATO DE SAÍDA (JSON VÁLIDO):
                 "prompt_version": NER_PROMPT_VERSION,
                 "prompt_hash": prompt_hash,
                 "raw_response": parsed_raw,
+                # usage (tokens) para o ledger de cota; o caller grava em
+                # llm_daily_usage (quota_governor.record_usage). NÃO gravamos
+                # aqui — o llm_client permanece sem dependência de conexão.
+                "usage": usage,
             }
             return entities, raw_meta
         return entities
