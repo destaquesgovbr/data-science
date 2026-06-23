@@ -19,6 +19,7 @@ import psycopg2
 from news_enrichment import quota_governor
 from news_enrichment.classifier import NewsClassifier
 from news_enrichment.enrichment_job import update_news_enrichment
+from news_enrichment.llm_client import check_summary_safety
 from news_enrichment.taxonomy import build_theme_code_to_id_map, load_taxonomy_from_postgres
 
 logger = logging.getLogger(__name__)
@@ -198,6 +199,24 @@ def enrich_article(unique_id: str) -> dict[str, Any]:
 
     # Ensure unique_id is in result for update_news_enrichment
     result["unique_id"] = unique_id
+
+    # Content Safety: Verificar segurança do resumo gerado
+    summary = result.get("summary")
+    if summary:
+        is_safe, blocked_reason = check_summary_safety(
+            summary, classifier.llm_client.bedrock_client, classifier.llm_client.model_id
+        )
+        if not is_safe:
+            logger.warning(f"Summary blocked for {unique_id}: {blocked_reason}")
+            # Remove o resumo do result para não gravar no PostgreSQL
+            result.pop("summary", None)
+            # Adiciona flags de bloqueio para gravar na tabela news
+            result["summary_blocked"] = True
+            result["summary_blocked_reason"] = blocked_reason
+            result["summary_blocked_at"] = datetime.now(timezone.utc)
+        else:
+            logger.info(f"Summary approved for {unique_id}")
+            result["summary_blocked"] = False
 
     # NER (chamada DEDICADA, modelo Sonnet 4.6 em prod). Resiliente: uma falha
     # no NER não derruba o enriquecimento de tema/sentimento.
