@@ -113,7 +113,7 @@ def check_content_safety_regex(text: str) -> Tuple[bool, Optional[str]]:
     if email_match:
         email = email_match.group(0)
         # Permite emails governamentais (@gov.br ou @*.gov.br)
-        if not re.search(r'@[a-z0-9-]*\.?gov\.br$', email, re.IGNORECASE):
+        if not re.search(r'@(.*\.)?gov\.br$', email, re.IGNORECASE):
             return False, "Email não-governamental detectado"
 
     # PII: RG (formato XX.XXX.XXX-X)

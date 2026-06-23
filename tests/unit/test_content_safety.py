@@ -47,12 +47,26 @@ class TestCheckContentSafetyRegex:
         assert is_safe is False
         assert "Telefone" in reason
 
-    def test_email_blocked(self):
-        """Email deve ser bloqueado."""
+    def test_email_non_gov_blocked(self):
+        """Email não-governamental deve ser bloqueado."""
         summary = "Entre em contato: joao.silva@exemplo.com.br"
         is_safe, reason = check_content_safety_regex(summary)
         assert is_safe is False
         assert "Email" in reason
+
+    def test_email_gov_br_allowed(self):
+        """Email gov.br deve ser permitido."""
+        summary = "Para mais informações: contato@saude.gov.br"
+        is_safe, reason = check_content_safety_regex(summary)
+        assert is_safe is True
+        assert reason is None
+
+    def test_email_subdomain_gov_br_allowed(self):
+        """Email com subdomínio gov.br deve ser permitido."""
+        summary = "Envie para: atendimento@aneel.gov.br"
+        is_safe, reason = check_content_safety_regex(summary)
+        assert is_safe is True
+        assert reason is None
 
     def test_rg_pattern_blocked(self):
         """RG deve ser bloqueado."""

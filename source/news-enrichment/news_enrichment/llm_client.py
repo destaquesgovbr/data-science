@@ -25,8 +25,9 @@ NER_PROMPT_VERSION = "ner-v1"
 
 # Modelos Bedrock — IDs SEMPRE configuráveis por env/config (nunca hardcode adivinhado).
 #
-# Chamada combinada (tema + resumo + sentimento): mantém o Haiku legado por ora.
-DEFAULT_ENRICHMENT_MODEL_ID = "anthropic.claude-3-haiku-20240307-v1:0"
+# Chamada combinada (tema + resumo + sentimento): migrado para Amazon Nova 2 Lite V2
+# (Issue #176 - melhor custo/benefício: +3.5% qualidade, -38% latência, -25% custo)
+DEFAULT_ENRICHMENT_MODEL_ID = "us.amazon.nova-2-lite-v1:0"
 # Chamada NER dedicada: em produção é Claude Sonnet 4.6 via inference-profile do
 # Bedrock, definido pela env var NER_MODEL_ID no deploy (Terraform).
 # TODO(NER): definir NER_MODEL_ID em produção com o ID do inference-profile do
@@ -106,9 +107,14 @@ def check_content_safety_regex(text: str) -> Tuple[bool, Optional[str]]:
     if re.search(r'\(\d{2}\)\s?\d{4,5}-?\d{4}', text):
         return False, "Telefone detectado"
 
-    # PII: Email
-    if re.search(r'\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b', text, re.IGNORECASE):
-        return False, "Email detectado"
+    # PII: Email (exceto emails governamentais @*.gov.br)
+    email_pattern = r'\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b'
+    email_match = re.search(email_pattern, text, re.IGNORECASE)
+    if email_match:
+        email = email_match.group(0)
+        # Permite emails governamentais (@gov.br ou @*.gov.br)
+        if not re.search(r'@(.*\.)?gov\.br$', email, re.IGNORECASE):
+            return False, "Email não-governamental detectado"
 
     # PII: RG (formato XX.XXX.XXX-X)
     if re.search(r'\d{2}\.\d{3}\.\d{3}-\d{1}', text):
@@ -117,8 +123,10 @@ def check_content_safety_regex(text: str) -> Tuple[bool, Optional[str]]:
     # Palavras ofensivas (lista básica - expandir conforme necessário)
     # NOTA: Lista conservadora para evitar falsos positivos
     offensive_words = [
-        'idiota', 'imbecil', 'burro', 'estúpido', 'estupido',
-        'cretino', 'débil', 'debil', 'retardado', 'mongolóide', 'mongoloide',
+        'idiota', 'idiotas', 'imbecil', 'imbecis', 'burro', 'burros',
+        'estúpido', 'estupido', 'estúpidos', 'estupidos',
+        'cretino', 'cretinos', 'débil', 'debil', 'débeis', 'debeis',
+        'retardado', 'retardados', 'mongolóide', 'mongoloide', 'mongolóides', 'mongoloides',
         # Adicionar mais conforme identificado em produção
     ]
 
