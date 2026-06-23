@@ -25,8 +25,9 @@ NER_PROMPT_VERSION = "ner-v1"
 
 # Modelos Bedrock — IDs SEMPRE configuráveis por env/config (nunca hardcode adivinhado).
 #
-# Chamada combinada (tema + resumo + sentimento): mantém o Haiku legado por ora.
-DEFAULT_ENRICHMENT_MODEL_ID = "anthropic.claude-3-haiku-20240307-v1:0"
+# Chamada combinada (tema + resumo + sentimento): migrado para Amazon Nova 2 Lite V2
+# (Issue #176 - melhor custo/benefício: +3.5% qualidade, -38% latência, -25% custo)
+DEFAULT_ENRICHMENT_MODEL_ID = "us.amazon.nova-2-lite-v1:0"
 # Chamada NER dedicada: em produção é Claude Sonnet 4.6 via inference-profile do
 # Bedrock, definido pela env var NER_MODEL_ID no deploy (Terraform).
 # TODO(NER): definir NER_MODEL_ID em produção com o ID do inference-profile do
