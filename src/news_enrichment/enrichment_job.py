@@ -12,6 +12,7 @@ import psycopg2
 from psycopg2.extras import execute_batch
 
 from .classifier import NewsClassifier
+from .llm_client import DEFAULT_ENRICHMENT_MODEL_ID
 from .taxonomy import build_theme_code_to_id_map, load_taxonomy_from_postgres
 
 logger = logging.getLogger(__name__)
@@ -201,7 +202,7 @@ def run_enrichment(
     aws_secret_access_key: Optional[str] = None,
     aws_session_token: Optional[str] = None,
     region: str = "us-east-1",
-    model_id: str = "anthropic.claude-3-haiku-20240307-v1:0",
+    model_id: str = DEFAULT_ENRICHMENT_MODEL_ID,
     batch_limit: int = DEFAULT_BATCH_LIMIT,
     batch_size: int = 4,
     sleep_between_batches: float = 0.5,

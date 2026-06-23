@@ -19,7 +19,7 @@ import psycopg2
 from news_enrichment import quota_governor
 from news_enrichment.classifier import NewsClassifier
 from news_enrichment.enrichment_job import update_news_enrichment
-from news_enrichment.llm_client import check_summary_safety
+from news_enrichment.llm_client import check_summary_safety, DEFAULT_ENRICHMENT_MODEL_ID
 from news_enrichment.taxonomy import build_theme_code_to_id_map, load_taxonomy_from_postgres
 
 logger = logging.getLogger(__name__)
@@ -73,10 +73,11 @@ def _get_classifier() -> NewsClassifier:
         # Modelo combinado (tema+resumo+sentimento) — configurável.
         # ENRICHMENT_MODEL_ID é o nome preferido; BEDROCK_MODEL_ID mantido por
         # retrocompatibilidade com o env atual.
+        # Default: Amazon Nova 2 Lite V2 (Issue #176)
         enrichment_model_id = (
             os.environ.get("ENRICHMENT_MODEL_ID")
             or os.environ.get("BEDROCK_MODEL_ID")
-            or "anthropic.claude-3-haiku-20240307-v1:0"
+            or DEFAULT_ENRICHMENT_MODEL_ID
         )
         # Modelo NER dedicado (Sonnet 4.6 em prod) — configurável via NER_MODEL_ID.
         # Em prod o Terraform define o inference-profile id do Sonnet 4.6 (us-east-1).
