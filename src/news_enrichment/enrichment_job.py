@@ -12,6 +12,7 @@ import psycopg2
 from psycopg2.extras import execute_batch
 
 from .classifier import NewsClassifier
+from .llm_client import DEFAULT_ENRICHMENT_MODEL_ID
 from .taxonomy import build_theme_code_to_id_map, load_taxonomy_from_postgres
 
 logger = logging.getLogger(__name__)
@@ -94,6 +95,9 @@ def update_news_enrichment(
             theme_l3_id = %s,
             most_specific_theme_id = %s,
             summary = %s,
+            summary_blocked = COALESCE(%s, FALSE),
+            summary_blocked_reason = %s,
+            summary_blocked_at = %s,
             updated_at = NOW()
         WHERE unique_id = %s
     """
@@ -113,6 +117,11 @@ def update_news_enrichment(
         l3_code = row.get("theme_1_level_3_code")
         summary = row.get("summary")
 
+        # Content moderation fields
+        summary_blocked = row.get("summary_blocked", False)
+        summary_blocked_reason = row.get("summary_blocked_reason")
+        summary_blocked_at = row.get("summary_blocked_at")
+
         l1_id = code_to_id.get(l1_code) if l1_code else None
         l2_id = code_to_id.get(l2_code) if l2_code else None
         l3_id = code_to_id.get(l3_code) if l3_code else None
@@ -126,7 +135,11 @@ def update_news_enrichment(
             logger.warning(f"Sem tema para {unique_id} (codes: {l1_code}/{l2_code}/{l3_code})")
             continue
 
-        update_params.append((l1_id, l2_id, l3_id, most_specific_id, summary, unique_id))
+        update_params.append((
+            l1_id, l2_id, l3_id, most_specific_id, summary,
+            summary_blocked, summary_blocked_reason, summary_blocked_at,
+            unique_id
+        ))
 
     if not update_params:
         logger.info("Nenhuma notícia para atualizar")
@@ -189,7 +202,7 @@ def run_enrichment(
     aws_secret_access_key: Optional[str] = None,
     aws_session_token: Optional[str] = None,
     region: str = "us-east-1",
-    model_id: str = "anthropic.claude-3-haiku-20240307-v1:0",
+    model_id: str = DEFAULT_ENRICHMENT_MODEL_ID,
     batch_limit: int = DEFAULT_BATCH_LIMIT,
     batch_size: int = 4,
     sleep_between_batches: float = 0.5,

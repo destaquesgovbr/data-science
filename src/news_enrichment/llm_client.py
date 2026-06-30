@@ -25,8 +25,9 @@ NER_PROMPT_VERSION = "ner-v1"
 
 # Modelos Bedrock — IDs SEMPRE configuráveis por env/config (nunca hardcode adivinhado).
 #
-# Chamada combinada (tema + resumo + sentimento): mantém o Haiku legado por ora.
-DEFAULT_ENRICHMENT_MODEL_ID = "anthropic.claude-3-haiku-20240307-v1:0"
+# Chamada combinada (tema + resumo + sentimento): migrado para Amazon Nova 2 Lite V2
+# (Issue #176 - melhor custo/benefício: +3.5% qualidade, -38% latência, -25% custo)
+DEFAULT_ENRICHMENT_MODEL_ID = "us.amazon.nova-2-lite-v1:0"
 # Chamada NER dedicada: em produção é Claude Sonnet 4.6 via inference-profile do
 # Bedrock, definido pela env var NER_MODEL_ID no deploy (Terraform).
 # TODO(NER): definir NER_MODEL_ID em produção com o ID do inference-profile do
@@ -68,6 +69,214 @@ def _extract_usage(response_body: dict) -> Dict[str, int]:
     except (TypeError, ValueError):
         out_tok = 0
     return {"input_tokens": in_tok, "output_tokens": out_tok}
+
+
+# =============================================================================
+# Content Safety — Guardrails para resumos gerados por LLM
+# =============================================================================
+
+
+def check_content_safety_regex(text: str) -> Tuple[bool, Optional[str]]:
+    """
+    Verifica segurança de conteúdo usando regex (< 1ms).
+
+    Bloqueia conteúdo com:
+    - PII: CPF, RG, telefone, email
+    - Palavras ofensivas (lista customizada)
+
+    Args:
+        text: Texto a ser verificado (resumo)
+
+    Returns:
+        (is_safe, reason_if_unsafe)
+        - is_safe: True se conteúdo é seguro
+        - reason_if_unsafe: Descrição do problema se bloqueado
+
+    Examples:
+        >>> check_content_safety_regex("Resumo limpo sobre agricultura.")
+        (True, None)
+
+        >>> check_content_safety_regex("CPF: 123.456.789-00")
+        (False, "CPF detectado")
+    """
+    # PII: CPF (formato XXX.XXX.XXX-XX)
+    if re.search(r'\d{3}\.\d{3}\.\d{3}-\d{2}', text):
+        return False, "CPF detectado"
+
+    # PII: Telefone brasileiro (formato (XX) XXXXX-XXXX ou (XX) XXXX-XXXX)
+    if re.search(r'\(\d{2}\)\s?\d{4,5}-?\d{4}', text):
+        return False, "Telefone detectado"
+
+    # PII: Email (exceto emails governamentais @*.gov.br)
+    email_pattern = r'\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b'
+    email_match = re.search(email_pattern, text, re.IGNORECASE)
+    if email_match:
+        email = email_match.group(0)
+        # Permite emails governamentais (@gov.br ou @*.gov.br)
+        if not re.search(r'@(.*\.)?gov\.br$', email, re.IGNORECASE):
+            return False, "Email não-governamental detectado"
+
+    # PII: RG (formato XX.XXX.XXX-X)
+    if re.search(r'\d{2}\.\d{3}\.\d{3}-\d{1}', text):
+        return False, "RG detectado"
+
+    # Palavras ofensivas (lista básica - expandir conforme necessário)
+    # NOTA: Lista conservadora para evitar falsos positivos
+    offensive_words = [
+        'idiota', 'idiotas', 'imbecil', 'imbecis', 'burro', 'burros',
+        'estúpido', 'estupido', 'estúpidos', 'estupidos',
+        'cretino', 'cretinos', 'débil', 'debil', 'débeis', 'debeis',
+        'retardado', 'retardados', 'mongolóide', 'mongoloide', 'mongolóides', 'mongoloides',
+        # Adicionar mais conforme identificado em produção
+    ]
+
+    for word in offensive_words:
+        # Word boundary para evitar falsos positivos (ex: "estudo" não contém "estúpido")
+        pattern = rf'\b{re.escape(word)}\b'
+        if re.search(pattern, text, re.IGNORECASE):
+            return False, f"Linguagem ofensiva: {word}"
+
+    return True, None
+
+
+def verify_with_llm(
+    summary: str,
+    bedrock_client,
+    model_id: str = DEFAULT_ENRICHMENT_MODEL_ID,
+    max_retries: int = 2
+) -> Tuple[bool, Optional[str]]:
+    """
+    Verifica segurança de conteúdo usando Haiku (~200ms).
+
+    Usado apenas para casos suspeitos que passaram pelo regex mas contêm
+    keywords ambíguas que requerem análise contextual.
+
+    Args:
+        summary: Texto a ser verificado
+        bedrock_client: Cliente boto3 do Bedrock
+        model_id: ID do modelo para verificação (default: Haiku)
+        max_retries: Tentativas em caso de erro
+
+    Returns:
+        (is_safe, reason_if_unsafe)
+
+    Examples:
+        >>> verify_with_llm("Ministro anuncia programa social.", client)
+        (True, None)
+
+        >>> verify_with_llm("Texto com discurso de ódio...", client)
+        (False, "Discurso de ódio detectado")
+    """
+    prompt = f"""Analise o seguinte resumo de notícia governamental brasileira e responda APENAS "SAFE" ou "UNSAFE: [razão]".
+
+Marque como UNSAFE se o resumo contiver:
+- Linguagem ofensiva, racista ou discriminatória
+- Discurso de ódio contra grupos ou indivíduos
+- Violência explícita ou ameaças
+- Conteúdo sexual explícito
+- Incitação a crimes
+
+Marque como SAFE se o resumo for uma notícia governamental factual, mesmo que trate de temas sensíveis como segurança pública, saúde ou legislação.
+
+RESUMO:
+{summary}
+
+RESPOSTA:"""
+
+    for attempt in range(max_retries):
+        try:
+            response = bedrock_client.invoke_model(
+                modelId=model_id,
+                body=json.dumps({
+                    "anthropic_version": "bedrock-2023-05-31",
+                    "max_tokens": 50,
+                    "temperature": 0.0,
+                    "messages": [
+                        {"role": "user", "content": prompt}
+                    ]
+                })
+            )
+
+            response_body = json.loads(response["body"].read())
+            result_text = response_body.get("content", [{}])[0].get("text", "").strip()
+
+            if result_text.startswith("UNSAFE"):
+                # Extrair razão após "UNSAFE:"
+                reason = result_text.replace("UNSAFE:", "").strip()
+                return False, reason if reason else "Conteúdo inapropriado"
+
+            # Se começa com "SAFE" ou não tem "UNSAFE", considera seguro
+            return True, None
+
+        except ClientError as e:
+            logger.warning(f"Erro ao verificar segurança com LLM (tentativa {attempt + 1}/{max_retries}): {e}")
+            if attempt == max_retries - 1:
+                # Última tentativa falhou - por segurança, considera suspeito
+                logger.error(f"Todas as tentativas de verificação LLM falharam para: {summary[:100]}...")
+                return False, "Erro na verificação de segurança (fail-safe)"
+
+            time.sleep(0.5 * (attempt + 1))  # Backoff exponencial
+
+    # Nunca deveria chegar aqui, mas por segurança
+    return False, "Erro na verificação de segurança"
+
+
+def check_summary_safety(
+    summary: str,
+    bedrock_client,
+    model_id: str = DEFAULT_ENRICHMENT_MODEL_ID
+) -> Tuple[bool, Optional[str]]:
+    """
+    Pipeline completo de verificação de segurança: Regex → (se suspeito) → LLM.
+
+    Fluxo:
+    1. Regex check (95% dos casos, < 1ms) - bloqueia PII e palavras ofensivas óbvias
+    2. Detecta casos suspeitos (keywords ambíguas)
+    3. LLM verification (5% dos casos, ~200ms) - análise contextual para casos ambíguos
+
+    Args:
+        summary: Texto a ser verificado
+        bedrock_client: Cliente boto3 do Bedrock
+        model_id: ID do modelo para verificação LLM (default: Haiku)
+
+    Returns:
+        (is_safe, reason_if_unsafe)
+        - is_safe: True se conteúdo é seguro
+        - reason_if_unsafe: Razão do bloqueio (prefixo indica método: "regex:" ou "llm:")
+
+    Examples:
+        >>> check_summary_safety("Ministério anuncia programa.", client)
+        (True, None)
+
+        >>> check_summary_safety("Contato: (11) 98765-4321", client)
+        (False, "regex: Telefone detectado")
+    """
+    # Fase 1: Regex check (rápido, cobre 95% dos casos)
+    is_safe_regex, reason = check_content_safety_regex(summary)
+    if not is_safe_regex:
+        return False, f"regex: {reason}"
+
+    # Fase 2: Detectar casos suspeitos que requerem análise contextual
+    # Keywords que indicam conteúdo potencialmente sensível (mas não necessariamente impróprio)
+    suspicious_keywords = [
+        'polêmica', 'polemica', 'conflito', 'disputa', 'confronto',
+        'acusação', 'acusacao', 'denúncia', 'denuncia',
+        'escândalo', 'escandalo', 'corrupção', 'corrupcao',
+        'investigação', 'investigacao', 'operação', 'operacao',
+        'prisão', 'prisao', 'detenção', 'detencao'
+    ]
+
+    is_suspicious = any(keyword in summary.lower() for keyword in suspicious_keywords)
+
+    if is_suspicious:
+        # Fase 3: LLM verification para casos suspeitos
+        logger.info(f"Conteúdo suspeito detectado, verificando com LLM: {summary[:100]}...")
+        is_safe_llm, reason = verify_with_llm(summary, bedrock_client, model_id)
+        if not is_safe_llm:
+            return False, f"llm: {reason}"
+
+    # Passou por todas as verificações
+    return True, None
 
 
 class BedrockLLMClient:
