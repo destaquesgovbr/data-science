@@ -56,6 +56,14 @@ SANCTIONED_ENTITY_TYPES = frozenset(
     {"ORG", "PER", "LOC", "EVENT", "POLICY", "LAW", "WORK", "PRODUCT"}
 )
 
+# Ontologia POLICY: domínios temáticos e fases de ciclo de vida.
+POLICY_DOMAINS = frozenset(
+    {"SOCIAL", "ECONOMIC", "HEALTH", "EDUCATION", "SECURITY", "ENVIRONMENT", "GOVERNANCE"}
+)
+POLICY_PHASES = frozenset(
+    {"ANNOUNCED", "REGULATION", "IMPLEMENTATION", "EVALUATION", "ROUTINE"}
+)
+
 _TYPE_TAIL_NORMALIZATION = {
     "PROGRAM": "POLICY",
     "PROGRAMA": "POLICY",
@@ -195,6 +203,8 @@ REGRAS:
 - "is_br_gov_org": true SOMENTE se for um órgão/entidade do GOVERNO BRASILEIRO (ministério, autarquia, empresa pública, agência federal/estadual/municipal). false para empresas privadas, pessoas, lugares, ou órgãos estrangeiros.
 - "confidence": número entre 0.0 e 1.0 indicando o quão seguro você está da identificação canônica.
 - "not_an_entity": true se a forma recebida NÃO é uma entidade nomeada (tópico genérico como "inteligência artificial"; grupo demográfico como "mulheres"; cargo genérico; número/data solta). Quando true, os demais campos podem ser vazios.
+- "policy_domain": SOMENTE quando type == "POLICY", classifique o domínio temático da política: um de SOCIAL | ECONOMIC | HEALTH | EDUCATION | SECURITY | ENVIRONMENT | GOVERNANCE. Para outros tipos, use null.
+- "policy_lifecycle_phase": SOMENTE quando type == "POLICY", classifique a fase atual do ciclo de vida da política a partir do contexto: um de ANNOUNCED | REGULATION | IMPLEMENTATION | EVALUATION | ROUTINE. Para outros tipos, use null.
 
 IMPORTANTE — HOMÔNIMOS: NÃO funda entidades distintas que compartilham nome. "Ministério da Saúde" (Brasil) e "Ministério da Saúde do Líbano" são entidades DIFERENTES (países diferentes). Reflita o país no canonical_name quando necessário para distinguir.
 
@@ -211,7 +221,9 @@ FORMATO DE SAÍDA (JSON VÁLIDO):
   "wikidata_query": "Financiadora de Estudos e Projetos",
   "is_br_gov_org": true,
   "confidence": 0.96,
-  "not_an_entity": false
+  "not_an_entity": false,
+  "policy_domain": null,
+  "policy_lifecycle_phase": null
 }}"""
     return prompt
 
@@ -226,6 +238,8 @@ def _canon_safe_default(form: str) -> dict:
         "is_br_gov_org": False,
         "confidence": 0.0,
         "not_an_entity": False,
+        "policy_domain": None,
+        "policy_lifecycle_phase": None,
     }
 
 
@@ -265,6 +279,16 @@ def parse_canon_response(response: str, form: str) -> dict:
 
     conf = parsed.get("confidence")
     out["confidence"] = _clamp_confidence(conf)
+
+    raw_domain = parsed.get("policy_domain")
+    out["policy_domain"] = (
+        raw_domain if isinstance(raw_domain, str) and raw_domain.upper() in POLICY_DOMAINS else None
+    )
+
+    raw_phase = parsed.get("policy_lifecycle_phase")
+    out["policy_lifecycle_phase"] = (
+        raw_phase if isinstance(raw_phase, str) and raw_phase.upper() in POLICY_PHASES else None
+    )
 
     return out
 

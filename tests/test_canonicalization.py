@@ -1278,3 +1278,61 @@ class TestIsAcronymVariant:
         c = "Ministério da Saúde"
         d = "Ministério da Saúde (Líbano)"
         assert C._is_acronym_variant(c, d) == C._is_acronym_variant(d, c)
+
+
+# ---------------------------------------------------------------------- #
+# POLICY ontology enrichment                                              #
+# ---------------------------------------------------------------------- #
+
+
+class TestPolicyOntologyClassification:
+    def test_parse_retorna_domain_valido(self):
+        """parse_canon_response extrai policy_domain quando válido."""
+        resp = json.dumps({
+            "canonical_name": "Bolsa Família", "type": "POLICY", "aliases": [],
+            "wikidata_query": "Bolsa Família", "is_br_gov_org": True,
+            "confidence": 0.95, "not_an_entity": False,
+            "policy_domain": "SOCIAL", "policy_lifecycle_phase": "ROUTINE",
+        })
+        result = C.parse_canon_response(resp, "Bolsa Família")
+        assert result["policy_domain"] == "SOCIAL"
+        assert result["policy_lifecycle_phase"] == "ROUTINE"
+
+    def test_parse_domain_invalido_retorna_none(self):
+        """policy_domain com valor fora do enum → None (tolerante)."""
+        resp = json.dumps({
+            "canonical_name": "X", "type": "POLICY", "aliases": [],
+            "wikidata_query": "X", "is_br_gov_org": False,
+            "confidence": 0.8, "not_an_entity": False,
+            "policy_domain": "INVALID", "policy_lifecycle_phase": None,
+        })
+        result = C.parse_canon_response(resp, "X")
+        assert result["policy_domain"] is None
+
+    def test_parse_domain_none_quando_tipo_nao_policy(self):
+        """Para tipos não-POLICY, policy_domain ausente no JSON → None."""
+        resp = json.dumps({
+            "canonical_name": "Ministério da Saúde", "type": "ORG", "aliases": [],
+            "wikidata_query": "Ministério da Saúde", "is_br_gov_org": True,
+            "confidence": 0.97, "not_an_entity": False,
+        })
+        result = C.parse_canon_response(resp, "Ministério da Saúde")
+        assert result.get("policy_domain") is None
+        assert result.get("policy_lifecycle_phase") is None
+
+    def test_build_prompt_menciona_policy_domain(self):
+        """O prompt inclui policy_domain e policy_lifecycle_phase na spec de output."""
+        prompt = C.build_canon_prompt("Pé-de-Meia", "contexto de bolsa do estudante")
+        assert "policy_domain" in prompt
+        assert "policy_lifecycle_phase" in prompt
+
+    def test_parse_phase_invalida_retorna_none(self):
+        """policy_lifecycle_phase com valor fora do enum → None."""
+        resp = json.dumps({
+            "canonical_name": "X", "type": "POLICY", "aliases": [],
+            "wikidata_query": "X", "is_br_gov_org": False,
+            "confidence": 0.8, "not_an_entity": False,
+            "policy_domain": "SOCIAL", "policy_lifecycle_phase": "UNKNOWN_PHASE",
+        })
+        result = C.parse_canon_response(resp, "X")
+        assert result["policy_lifecycle_phase"] is None

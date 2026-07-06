@@ -406,6 +406,13 @@ def _persist_decision(conn, form_norm: str, type: str, attempts: int, decision: 
         if entity_id is None:
             entity_id = mint_internal_id(canonical_name)
 
+    # Enriquecimento ontológico de POLICY (domain + lifecycle_phase do LLM).
+    if resolved_type == "POLICY":
+        if domain := canon_result.get("policy_domain"):
+            extra["domain"] = domain
+        if phase := canon_result.get("policy_lifecycle_phase"):
+            extra["lifecycle_phase"] = phase
+
     # upsert da entidade (idempotente; não re-chaveia linha existente).
     upsert_entity(
         conn,
@@ -418,7 +425,7 @@ def _persist_decision(conn, form_norm: str, type: str, attempts: int, decision: 
         description=description,
         confidence=confidence,
         provenance=provenance,
-        extra=extra,
+        extra=extra or None,
     )
 
     # alias para a forma resolvida (skip+record em ambiguidade cross-entity).
