@@ -1,0 +1,45 @@
+{
+  "total": 2463,
+  "blocked": 4,
+  "approved": 2459,
+  "blocked_items": [
+    {
+      "unique_id": "9f0b431ac5b687a0713aa7c2dca8bb99",
+      "title": "ANEEL consulta sociedade sobre critérios para reduzir tarifas de energia no Norte e Nordeste",
+      "summary": "A ANEEL abriu consulta pública para definir critérios de rateio dos recursos da Conta de Desenvolvimento Energético (CDE), visando reduzir tarifas de energia para consumidores do Norte e Nordeste em 2",
+      "reason": "Email detectado",
+      "agency": "aneel"
+    },
+    {
+      "unique_id": "7f6d13347cfef97be81b98c82a660b21",
+      "title": "Agência abre Consulta Pública sobre Regras de Comercialização, versão 2026",
+      "summary": "A Agência Nacional de Energia Elétrica (ANEEL) abrirá a Consulta Pública (CP 031/2025) sobre as Regras de Comercialização de Energia Elétrica, versão 2026, de 16 de outubro a 17 de novembro de 2025. A",
+      "reason": "Email detectado",
+      "agency": "aneel"
+    },
+    {
+      "unique_id": "b8a06adcee9958c0f30a320f44f8cdf8",
+      "title": "Consulta Pública discutirá prorrogação do prazo para padronização do número das unidades consumidoras",
+      "summary": "A ANEEL abriu consulta pública para discutir a prorrogação do prazo de padronização do número das unidades consumidoras, de 31 de dezembro de 2025 para 30 de junho de 2026. A mudança foi solicitada pe",
+      "reason": "Email detectado",
+      "agency": "aneel"
+    },
+    {
+      "unique_id": "48fd14496ed7b05007c912031b088b54",
+      "title": "Prorrogadas as inscrições para mapear experiências exitosas em proteção social às pessoas com tuberculose",
+      "summary": "O Ministério da Saúde prorrogou até 12 de dezembro de 2025 as inscrições para o mapeamento de experiências exitosas em proteção social para pessoas com tuberculose. A iniciativa busca fortalecer a art",
+      "reason": "Email detectado",
+      "agency": "aids"
+    }
+  ],
+  "blocked_reasons": {
+    "Email detectado": 4
+  },
+  "processing_time_ms": 409.5137119293213,
+  "avg_time_per_summary_ms": 0.16626622490025225,
+  "test_metadata": {
+    "timestamp": "2026-06-23T11:21:36.387545",
+    "test_mode": "regex_only",
+    "note": "LLM verification not tested (requires AWS credentials)"
+  }
+}

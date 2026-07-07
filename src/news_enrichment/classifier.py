@@ -6,7 +6,7 @@ Recebe notícias via parâmetro e retorna classificações em JSON
 import json
 import logging
 from typing import Dict, List, Union, Optional
-from .llm_client import BedrockLLMClient
+from .llm_client import BedrockLLMClient, DEFAULT_ENRICHMENT_MODEL_ID
 
 logger = logging.getLogger(__name__)
 
@@ -20,7 +20,6 @@ class NewsClassifier:
 
     Exemplo de uso:
         classifier = NewsClassifier(
-            model_id="anthropic.claude-3-haiku-20240307-v1:0",
             taxonomy=taxonomy_dict
         )
 
@@ -39,7 +38,7 @@ class NewsClassifier:
 
     def __init__(
         self,
-        model_id: str = "anthropic.claude-3-haiku-20240307-v1:0",
+        model_id: str = DEFAULT_ENRICHMENT_MODEL_ID,
         region: str = "us-east-1",
         taxonomy: Optional[Dict] = None,
         batch_size: int = 4, # recomendo manter pequeno para evitar timeouts e erros de rate limit
@@ -54,7 +53,7 @@ class NewsClassifier:
         Inicializa o classificador.
 
         Args:
-            model_id: ID do modelo Bedrock (padrão: Claude Haiku)
+            model_id: ID do modelo Bedrock (padrão: Amazon Nova 2 Lite V2)
             region: Região AWS (padrão: us-east-1)
             taxonomy: Taxonomia predefinida (opcional)
             batch_size: Tamanho do batch para processamento paralelo

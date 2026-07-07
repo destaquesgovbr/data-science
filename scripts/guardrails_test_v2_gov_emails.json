@@ -1,0 +1,14 @@
+{
+  "total": 2463,
+  "blocked": 0,
+  "approved": 2463,
+  "blocked_items": [],
+  "blocked_reasons": {},
+  "processing_time_ms": 359.29012298583984,
+  "avg_time_per_summary_ms": 0.14587499918223298,
+  "test_metadata": {
+    "timestamp": "2026-06-23T11:27:39.528071",
+    "test_mode": "regex_only",
+    "note": "LLM verification not tested (requires AWS credentials)"
+  }
+}
