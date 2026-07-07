@@ -95,7 +95,7 @@ def update_news_enrichment(
             theme_l3_id = %s,
             most_specific_theme_id = %s,
             summary = %s,
-            summary_blocked = COALESCE(%s, FALSE),
+            summary_blocked = %s,
             summary_blocked_reason = %s,
             summary_blocked_at = %s,
             updated_at = NOW()

@@ -200,13 +200,17 @@ RESPOSTA:"""
             response_body = json.loads(response["body"].read())
             result_text = response_body.get("content", [{}])[0].get("text", "").strip()
 
-            if result_text.startswith("UNSAFE"):
-                # Extrair razão após "UNSAFE:"
-                reason = result_text.replace("UNSAFE:", "").strip()
+            # Fail-safe: só aprovar se resposta começar explicitamente com "SAFE"
+            if result_text.upper().startswith("SAFE"):
+                return True, None
+
+            # Qualquer outra resposta (incluindo "UNSAFE" ou ambígua) → bloquear
+            if result_text.upper().startswith("UNSAFE"):
+                reason = result_text.replace("UNSAFE:", "").replace("UNSAFE", "").strip()
                 return False, reason if reason else "Conteúdo inapropriado"
 
-            # Se começa com "SAFE" ou não tem "UNSAFE", considera seguro
-            return True, None
+            # Resposta ambígua/malformada → fail-safe
+            return False, f"Resposta LLM inconclusiva: {result_text[:100]}"
 
         except ClientError as e:
             logger.warning(f"Erro ao verificar segurança com LLM (tentativa {attempt + 1}/{max_retries}): {e}")

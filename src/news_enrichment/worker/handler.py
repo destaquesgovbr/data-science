@@ -205,7 +205,7 @@ def enrich_article(unique_id: str) -> dict[str, Any]:
     summary = result.get("summary")
     if summary:
         is_safe, blocked_reason = check_summary_safety(
-            summary, classifier.llm_client.bedrock_client, classifier.llm_client.model_id
+            summary, classifier.llm_client.client, classifier.llm_client.model_id
         )
         if not is_safe:
             logger.warning(f"Summary blocked for {unique_id}: {blocked_reason}")
