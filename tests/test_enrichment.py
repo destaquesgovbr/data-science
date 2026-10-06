@@ -3,6 +3,7 @@ Testes unitários para o pipeline de enriquecimento LLM.
 """
 
 import json
+import re
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -466,3 +467,192 @@ class TestClassifierPropagaErro:
         assert result["_error"] == "ThrottlingException: Rate exceeded"
         assert result["_model_id"] == "m"
         assert "title" not in result
+
+
+# --- Tests: caminho só-resumo com prompt enxuto (Fase 2.5, DS-2) ---
+
+HAIKU45 = "us.anthropic.claude-haiku-4-5-20251001-v1:0"
+SUMMARY_USAGE = {"input_tokens": 900, "output_tokens": 60}
+_ZERO = {"input_tokens": 0, "output_tokens": 0}
+_ARTIGO = {
+    "unique_id": "abc123",
+    "title": "Governo lança programa de crédito rural",
+    "subtitle": "Linha atende pequenos produtores",
+    "editorial_lead": "Anúncio foi feito nesta terça",
+    "content": "O Ministério anunciou hoje uma nova linha de crédito...",
+}
+
+
+def _taxonomia_realista() -> dict:
+    """25 temas L1 x 4 L2 x 4 L3, no shape de load_taxonomy_from_postgres."""
+    taxonomy = {}
+    for i in range(1, 26):
+        l1 = f"{i:02d}"
+        subcategories = {}
+        for j in range(1, 5):
+            l2 = f"{l1}.{j:02d}"
+            subcategories[l2] = {
+                "label": f"Subtema {l2}",
+                "subcategories": {
+                    f"{l2}.{k:02d}": {"label": f"Tema específico {l2}.{k:02d}"}
+                    for k in range(1, 5)
+                },
+            }
+        taxonomy[l1] = {"label": f"Tema macro {l1}", "subcategories": subcategories}
+    return taxonomy
+
+
+def _summary_client() -> BedrockLLMClient:
+    client = _bare_client(HAIKU45)
+    client.taxonomy = _taxonomia_realista()
+    return client
+
+
+class TestPromptSoResumo:
+    """Prompt enxuto do backfill de resumos: sem taxonomia, mesmas regras de resumo."""
+
+    def test_sem_taxonomia_nem_codigos_de_tema(self):
+        prompt = _summary_client()._build_summary_prompt(dict(_ARTIGO))
+
+        assert "TAXONOMIA" not in prompt.upper()
+        assert re.search(r"\b\d{2}\.\d{2}\b", prompt) is None  # nenhum código L2/L3
+        assert "Subtema" not in prompt
+        assert "Tema macro" not in prompt
+        assert "Tema específico" not in prompt
+        assert "theme_" not in prompt
+        assert "most_specific" not in prompt
+        assert "sentiment" not in prompt
+
+    def test_tamanho_enxuto(self):
+        client = _summary_client()
+        artigo = dict(_ARTIGO, content="x" * 5000)
+
+        prompt = client._build_summary_prompt(artigo)
+        combinado = client._build_prompt(artigo)
+
+        # Teto: 2.000 caracteres de conteúdo + título/subtítulo/lead + instruções.
+        assert len(prompt) < 3000
+        assert len(prompt) * 10 < len(combinado)
+
+    def test_reusa_as_instrucoes_de_resumo_do_combinado(self):
+        client = _summary_client()
+
+        prompt = client._build_summary_prompt(dict(_ARTIGO))
+        combinado = client._build_prompt(dict(_ARTIGO))
+
+        instrucao = llm_client_mod.SUMMARY_TASK_INSTRUCTION
+        exemplo = llm_client_mod.SUMMARY_EXAMPLE
+        assert "1-2 frases" in instrucao
+        assert instrucao in prompt and instrucao in combinado
+        assert exemplo in prompt and exemplo in combinado
+
+    def test_mesmo_recorte_de_conteudo_do_combinado(self):
+        client = _summary_client()
+        limite = llm_client_mod.CONTENT_PREVIEW_CHARS
+        artigo = dict(_ARTIGO, content="a" * (limite - 10) + "b" * 20)
+
+        prompt = client._build_summary_prompt(artigo)
+
+        assert limite == 2000
+        assert "a" * (limite - 10) + "b" * 10 in prompt
+        assert "b" * 11 not in prompt
+        assert artigo["title"] in prompt
+        assert artigo["subtitle"] in prompt
+        assert artigo["editorial_lead"] in prompt
+
+    def test_pede_so_o_summary_em_json(self):
+        prompt = _summary_client()._build_summary_prompt(dict(_ARTIGO))
+
+        assert "APENAS um JSON válido" in prompt
+        assert '"summary"' in prompt
+
+
+class TestSummarizeSingle:
+    """summarize_single: chamada só-resumo com retry, usage e `_error`."""
+
+    def test_sucesso_tolera_cercas_json(self):
+        client = _summary_client()
+        resposta = '```json\n{"summary": "  Governo lança programa. Medida amplia o crédito.  "}\n```'
+        client._call_bedrock = MagicMock(return_value=(resposta, dict(SUMMARY_USAGE)))
+
+        result = client.summarize_single(dict(_ARTIGO))
+
+        assert result == {
+            "summary": "Governo lança programa. Medida amplia o crédito.",
+            "_usage": SUMMARY_USAGE,
+            "_model_id": HAIKU45,
+            "_error": None,
+        }
+        prompt_enviado = client._call_bedrock.call_args[0][0]
+        assert "TAXONOMIA" not in prompt_enviado.upper()
+        assert client._call_bedrock.call_count == 1
+
+    @pytest.mark.parametrize(
+        "resposta",
+        [
+            '{"summary": ""}',
+            '{"summary": "   "}',
+            '{"summary": null}',
+            '{"summary": 123}',
+            '{"resumo": "campo errado"}',
+            '```json\n{"summary": \n```',
+            "Não consigo resumir esta notícia.",
+        ],
+    )
+    @patch("news_enrichment.llm_client.time.sleep")
+    def test_resumo_vazio_ou_invalido_e_falha_e_soma_usage(self, mock_sleep, resposta):
+        client = _summary_client()
+        client._call_bedrock = MagicMock(return_value=(resposta, dict(SUMMARY_USAGE)))
+
+        result = client.summarize_single(dict(_ARTIGO))
+
+        assert result["summary"] is None
+        assert result["_error"].startswith("ValueError: ")
+        assert result["_model_id"] == HAIKU45
+        assert client._call_bedrock.call_count == client.max_retries
+        # Tokens de todas as tentativas vão para o ledger (a cota é consumida).
+        assert result["_usage"] == {
+            "input_tokens": client.max_retries * SUMMARY_USAGE["input_tokens"],
+            "output_tokens": client.max_retries * SUMMARY_USAGE["output_tokens"],
+        }
+
+    @patch("news_enrichment.llm_client.time.sleep")
+    def test_throttling_e_retentado(self, mock_sleep):
+        client = _summary_client()
+        client._call_bedrock = MagicMock(
+            side_effect=[
+                _client_error("ThrottlingException", "Rate exceeded"),
+                ('{"summary": "Resumo."}', dict(SUMMARY_USAGE)),
+            ]
+        )
+
+        result = client.summarize_single(dict(_ARTIGO))
+
+        assert result["summary"] == "Resumo."
+        assert result["_error"] is None
+        assert result["_usage"] == SUMMARY_USAGE
+        assert client._call_bedrock.call_count == 2
+
+    @patch("news_enrichment.llm_client.time.sleep")
+    def test_modelo_indisponivel_traz_codigo_do_erro(self, mock_sleep):
+        client = _summary_client()
+        client._call_bedrock = MagicMock(
+            side_effect=_client_error("ResourceNotFoundException", _EOL_MSG)
+        )
+
+        result = client.summarize_single(dict(_ARTIGO))
+
+        assert result["summary"] is None
+        assert result["_error"] == f"ResourceNotFoundException: {_EOL_MSG}"
+        assert llm_client_mod.is_model_unavailable_error(result["_error"]) is True
+        assert result["_usage"] == _ZERO
+
+    def test_parse_combinado_continua_igual(self):
+        # A extração de JSON compartilhada não muda o _parse_response da combinada.
+        client = _bare_client()
+
+        result = client._parse_response(f"```json\n{SAMPLE_LLM_RESPONSE}\n```")
+
+        assert result["most_specific_theme_code"] == "01.02.03"
+        with pytest.raises(ValueError, match="JSON não encontrado"):
+            client._parse_response("sem json")
