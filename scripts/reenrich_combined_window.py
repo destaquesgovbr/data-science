@@ -53,6 +53,11 @@ tokens de entrada). Por artigo:
     resumo).
   - Sentimento ausente em news_features NÃO é gerado aqui (fora do escopo): só
     é contado e reportado (sem_sentimento=N) na seleção e no resumo final.
+  - Selecionados que JÁ têm content_embedding (feito sem o resumo, a partir do
+    content) são contados e reportados (com_embedding=N) na seleção e no resumo
+    final. O embedding deles não é tocado aqui, e o B3 (só content_embedding IS
+    NULL) não o refaz: exigem um passo separado, aprovado, depois do DS-2 (ver o
+    README do worker).
   - Resumo vazio/inválido não grava e conta `summary_failed`: o artigo segue
     selecionável no próximo run. Resumo gravado por outro processo no meio do
     run não é sobrescrito (guarda IS NULL → `summary_present`).
@@ -126,6 +131,16 @@ MISSING_SENTIMENT_SQL = """
     LEFT JOIN news_features nf ON nf.unique_id = n.unique_id
     WHERE n.unique_id = ANY(%s)
       AND (nf.features -> 'sentiment' ->> 'label') IS NULL
+"""
+
+# null-summary: quantos dos uids JÁ têm content_embedding (feito sem o resumo, a
+# partir do content). Só reportado: o embedding não é tocado aqui e o B3 só pega
+# content_embedding IS NULL, então esses artigos exigem um passo separado.
+WITH_EMBEDDING_SQL = """
+    SELECT COUNT(*)
+    FROM news n
+    WHERE n.unique_id = ANY(%s)
+      AND n.content_embedding IS NOT NULL
 """
 
 
@@ -228,16 +243,26 @@ def process_one(uid: str):
     return uid, "ok", usage
 
 
-def count_missing_sentiment(uids: list) -> int:
-    """Quantos dos uids não têm sentimento em news_features (null-summary só reporta)."""
+def _count_uids(sql: str, uids: list) -> int:
+    """Executa um COUNT(*) parametrizado pela lista de uids (só leitura)."""
     conn = _get_conn()
     try:
         cur = conn.cursor()
-        cur.execute(MISSING_SENTIMENT_SQL, (list(uids),))
+        cur.execute(sql, (list(uids),))
         row = cur.fetchone()
         return int(row[0]) if row and row[0] is not None else 0
     finally:
         conn.close()
+
+
+def count_missing_sentiment(uids: list) -> int:
+    """Quantos dos uids não têm sentimento em news_features (null-summary só reporta)."""
+    return _count_uids(MISSING_SENTIMENT_SQL, uids)
+
+
+def count_with_embedding(uids: list) -> int:
+    """Quantos dos uids já têm content_embedding (null-summary só reporta)."""
+    return _count_uids(WITH_EMBEDDING_SQL, uids)
 
 
 def update_summary_only(uid: str, summary: str) -> bool:
@@ -397,6 +422,19 @@ def _missing_sentiment_line(missing: int, selected: int) -> str:
     )
 
 
+def _with_embedding_line(with_embedding: int, selected: int) -> str:
+    return (
+        f"com_embedding={with_embedding} dos {selected} selecionados (embedding feito "
+        "sem o resumo; não é tocado aqui e o B3 só pega content_embedding IS NULL: "
+        "exigem passo separado, ver o README do worker)"
+    )
+
+
+def _summary_only_gaps(missing_sentiment: int, with_embedding: int, selected: int) -> None:
+    print(_missing_sentiment_line(missing_sentiment, selected))
+    print(_with_embedding_line(with_embedding, selected))
+
+
 def _today_brt() -> datetime.date:
     """Data de hoje no fuso BRT (America/Sao_Paulo)."""
     return datetime.datetime.now(BRT).date()
@@ -495,9 +533,10 @@ def main(argv=None) -> int:
         print("nada pendente — concluido.")
         return 0
 
-    missing_sentiment = count_missing_sentiment(uids) if summary_only else None
     if summary_only:
-        print(_missing_sentiment_line(missing_sentiment, len(uids)))
+        missing_sentiment = count_missing_sentiment(uids)
+        with_embedding = count_with_embedding(uids)
+        _summary_only_gaps(missing_sentiment, with_embedding, len(uids))
 
     if args.dry_run:
         for uid in uids[:DRY_RUN_SAMPLE]:
@@ -527,7 +566,7 @@ def main(argv=None) -> int:
         process=process_one_summary if summary_only else process_one,
     )
     if summary_only:
-        print(_missing_sentiment_line(missing_sentiment, len(uids)))
+        _summary_only_gaps(missing_sentiment, with_embedding, len(uids))
     return 1 if stats["model_unavailable"] else 0
 
 
