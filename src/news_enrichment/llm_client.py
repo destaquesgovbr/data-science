@@ -52,6 +52,74 @@ _TYPE_TAIL_NORMALIZATION = {
 }
 
 
+# Erros do Bedrock que indicam MODELO INDISPONÍVEL (fim de vida, id inexistente,
+# perfil de inferência exigido, sem acesso). Não são transitórios: exigem trocar
+# ENRICHMENT_MODEL_ID. O worker loga CRITICAL "enrichment_model_unavailable".
+_MODEL_UNAVAILABLE_CODES = frozenset({"ResourceNotFoundException"})
+_MODEL_UNAVAILABLE_CODES_WITH_MARKER = frozenset({"ValidationException", "AccessDeniedException"})
+_MODEL_UNAVAILABLE_MARKERS = (
+    "end of its life",
+    "end of life",
+    "model identifier",
+    "model id",
+    "model version",
+    "inference profile",
+    "on-demand throughput",
+    "access to the model",
+)
+# Só para AccessDeniedException: o deny de IAM/SCP no InvokeModel cita a ação e
+# o ARN do modelo com hífen ("...:foundation-model/<id>", "...:inference-profile/
+# <id>"). É o erro de uma troca de modelo sem IAM para o perfil `us.` ou para os
+# ARNs regionais. Não valem para ValidationException (erro de entrada pode citar
+# o ARN).
+_ACCESS_DENIED_MODEL_MARKERS = (
+    "bedrock:invokemodel",
+    "foundation-model",
+    "inference-profile",
+)
+
+
+def format_bedrock_error(exc: BaseException) -> str:
+    """Formata uma exceção como "<ErrorCode>: <msg>" (gravado em `_error`).
+
+    ClientError do botocore → código e mensagem do corpo de erro da AWS
+    (ex.: "ResourceNotFoundException: This model version has reached the end of
+    its life..."). Demais exceções → "<NomeDaClasse>: <str(exc)>".
+    """
+    if isinstance(exc, ClientError):
+        err = (getattr(exc, "response", None) or {}).get("Error", {}) or {}
+        code = err.get("Code") or "ClientError"
+        message = err.get("Message") or str(exc)
+        return f"{code}: {message}"
+    return f"{type(exc).__name__}: {exc}"
+
+
+def is_model_unavailable_error(error: Optional[str]) -> bool:
+    """True se `_error` indica modelo indisponível (EOL / inexistente / sem acesso).
+
+    - ResourceNotFoundException → sempre (no InvokeModel, só o modelo é recurso).
+    - ValidationException / AccessDeniedException → só quando a mensagem fala do
+      modelo (id inválido, fim de vida, perfil de inferência, sem acesso). Erros de
+      entrada ("Input is too long for requested model") NÃO contam.
+    - AccessDeniedException também quando é o deny de IAM/SCP no InvokeModel
+      (mensagem com `bedrock:InvokeModel` ou o ARN `foundation-model/…` /
+      `inference-profile/…`).
+    """
+    if not error:
+        return False
+    code, _, message = error.partition(":")
+    code = code.strip()
+    if code in _MODEL_UNAVAILABLE_CODES:
+        return True
+    if code in _MODEL_UNAVAILABLE_CODES_WITH_MARKER:
+        low = message.lower()
+        markers = _MODEL_UNAVAILABLE_MARKERS
+        if code == "AccessDeniedException":
+            markers = markers + _ACCESS_DENIED_MODEL_MARKERS
+        return any(marker in low for marker in markers)
+    return False
+
+
 def _extract_usage(response_body: dict) -> Dict[str, int]:
     """Extrai usage{input_tokens,output_tokens} do corpo Anthropic-on-Bedrock.
 
@@ -162,8 +230,10 @@ class BedrockLLMClient:
                         results.append(enriched)
                     except Exception as e:
                         logger.error(f"Erro ao processar notícia {row.get('unique_id', 'unknown')}: {e}")
-                        # Fallback: adicionar campos null
-                        results.append(self._create_fallback_result(row))
+                        # Fallback: adicionar campos null (com o erro em `_error`)
+                        results.append(
+                            self._create_fallback_result(row, error=format_bedrock_error(e))
+                        )
 
             # Rate limiting entre batches
             if i + self.batch_size < len(rows):
@@ -179,8 +249,11 @@ class BedrockLLMClient:
             row: Dicionário com dados da notícia
 
         Returns:
-            Dicionário com campos enriquecidos
+            Dicionário com campos enriquecidos. Em falha após todas as
+            tentativas, o fallback (campos null) traz `_error` =
+            "<ErrorCode>: <msg>" do último erro.
         """
+        last_error: Optional[str] = None
         for attempt in range(self.max_retries):
             try:
                 # Construir prompt
@@ -202,6 +275,7 @@ class BedrockLLMClient:
             except ClientError as e:
                 error_code = e.response.get('Error', {}).get('Code', '')
                 is_throttling = error_code == 'ThrottlingException'
+                last_error = format_bedrock_error(e)
 
                 logger.warning(
                     f"Tentativa {attempt + 1}/{self.max_retries} falhou "
@@ -224,10 +298,11 @@ class BedrockLLMClient:
                 else:
                     # Última tentativa falhou
                     logger.error(f"Todas as tentativas falharam para notícia {row.get('unique_id', 'unknown')}")
-                    return self._create_fallback_result(row)
+                    return self._create_fallback_result(row, error=last_error)
 
             except Exception as e:
                 # Outros erros não-AWS
+                last_error = format_bedrock_error(e)
                 logger.warning(
                     f"Tentativa {attempt + 1}/{self.max_retries} falhou "
                     f"para notícia {row.get('unique_id', 'unknown')}: {e}"
@@ -240,9 +315,11 @@ class BedrockLLMClient:
                 else:
                     # Última tentativa falhou
                     logger.error(f"Todas as tentativas falharam para notícia {row.get('unique_id', 'unknown')}")
-                    return self._create_fallback_result(row)
+                    return self._create_fallback_result(row, error=last_error)
 
-        return self._create_fallback_result(row)
+        return self._create_fallback_result(
+            row, error=last_error or f"NoAttempts: max_retries={self.max_retries}"
+        )
 
     def _build_prompt(self, row: Dict) -> str:
         """
@@ -415,15 +492,19 @@ FORMATO DE SAÍDA (JSON VÁLIDO — todos os campos são obrigatórios):
         except json.JSONDecodeError as e:
             raise ValueError(f"Erro ao parsear JSON: {e}")
 
-    def _create_fallback_result(self, row: Dict) -> Dict:
+    def _create_fallback_result(self, row: Dict, error: Optional[str] = None) -> Dict:
         """
         Cria resultado com campos null para notícias que falharam.
 
         Args:
             row: Dados originais da notícia
+            error: "<ErrorCode>: <msg>" da falha (ex.: "ResourceNotFoundException:
+                This model version has reached the end of its life..."). Gravado
+                em `_error` para o worker tornar a falha visível.
 
         Returns:
-            Dicionário com campos originais + campos enriquecidos null
+            Dicionário com campos originais + campos enriquecidos null, mais
+            `_model_id` (modelo combinado) e, se houver, `_error`.
         """
         fallback_fields = {
             'theme_1_level_1': None,
@@ -439,7 +520,10 @@ FORMATO DE SAÍDA (JSON VÁLIDO — todos os campos são obrigatórios):
             'sentiment': None
         }
 
-        return {**row, **fallback_fields}
+        result = {**row, **fallback_fields, "_model_id": getattr(self, "model_id", None)}
+        if error:
+            result["_error"] = error
+        return result
 
     # =========================================================================
     # NER — chamada Bedrock dedicada (Fase 2)

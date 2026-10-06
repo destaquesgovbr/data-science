@@ -4,6 +4,17 @@ Enrichment Worker — business logic.
 Fetches a single news article from PostgreSQL, classifies it
 via Bedrock (themes + summary), updates PostgreSQL, and publishes
 a dgb.news.enriched event to Pub/Sub.
+
+Linhas de log estáveis (para métricas/alertas baseados em log; ver README.md):
+  - ERROR    enrichment_combined_failed uid=<uid> model=<id> error=<ErrorCode>: <msg>
+  - CRITICAL enrichment_model_unavailable model=<id> error_code=<ErrorCode>
+  - ERROR    enrichment_update_failed uid=<uid> model=<id> stats=<stats>
+  - ERROR    enrichment_model_env_missing default=<id> ...
+  - INFO     enrichment_ner uid=<uid> status=<ran|failed|skipped_already_done> model=<id>
+             [entities=<n>]
+  - WARNING  enrichment_ner uid=<uid> status=skipped_check_failed model=<id> error=<Exceção>
+             (consulta de guarda do NER falhou; NER pulado, recuperar com
+             scripts/backfill_ner_corpus.py)
 """
 
 import json
@@ -19,6 +30,7 @@ import psycopg2
 from news_enrichment import quota_governor
 from news_enrichment.classifier import NewsClassifier
 from news_enrichment.enrichment_job import update_news_enrichment
+from news_enrichment.llm_client import DEFAULT_ENRICHMENT_MODEL_ID, is_model_unavailable_error
 from news_enrichment.taxonomy import build_theme_code_to_id_map, load_taxonomy_from_postgres
 
 logger = logging.getLogger(__name__)
@@ -26,6 +38,27 @@ logger = logging.getLogger(__name__)
 # Cached objects (initialized once, reused across requests)
 _classifier: NewsClassifier | None = None
 _code_to_id: dict[str, int] | None = None
+
+# Campos de tema da chamada combinada: todos nulos = a classificação falhou.
+_THEME_CODE_FIELDS = (
+    "theme_1_level_1_code",
+    "theme_1_level_2_code",
+    "theme_1_level_3_code",
+    "most_specific_theme_code",
+)
+
+# "NER já feito" para o uid: entidades gravadas em news_features OU resposta crua
+# de NER em news_llm_raw (cobre NER que respondeu sem entidades). Índice
+# idx_news_llm_raw_unique_id_task (migração 019 do data-platform).
+_NER_ALREADY_DONE_SQL = """
+    SELECT EXISTS (
+        SELECT 1 FROM news_features nf
+        WHERE nf.unique_id = %s AND nf.features ? 'entities'
+    ) OR EXISTS (
+        SELECT 1 FROM news_llm_raw r
+        WHERE r.unique_id = %s AND r.task = 'ner'
+    )
+"""
 
 
 def _get_database_url() -> str:
@@ -62,6 +95,26 @@ def _parse_aws_credentials() -> tuple[str | None, str | None, str | None]:
     return access_key, secret_key, region
 
 
+def _resolve_enrichment_model_id() -> str:
+    """Modelo da chamada combinada (tema+resumo+sentimento).
+
+    ENRICHMENT_MODEL_ID é o nome preferido (Terraform, infra#215); BEDROCK_MODEL_ID
+    é mantido por retrocompatibilidade. Sem nenhuma das duas, cai no default
+    legado (DEFAULT_ENRICHMENT_MODEL_ID, inalterado) e loga em ERROR: o Haiku 3
+    teve EOL no Bedrock e o default silencioso zerou o enriquecimento de 25/09 a
+    06/10/2026.
+    """
+    model_id = os.environ.get("ENRICHMENT_MODEL_ID") or os.environ.get("BEDROCK_MODEL_ID")
+    if model_id:
+        return model_id
+    logger.error(
+        "enrichment_model_env_missing default=%s "
+        "(ENRICHMENT_MODEL_ID/BEDROCK_MODEL_ID ausentes; usando o default legado)",
+        DEFAULT_ENRICHMENT_MODEL_ID,
+    )
+    return DEFAULT_ENRICHMENT_MODEL_ID
+
+
 def _get_classifier() -> NewsClassifier:
     """Lazy-init classifier with taxonomy from PG."""
     global _classifier
@@ -69,14 +122,8 @@ def _get_classifier() -> NewsClassifier:
         database_url = _get_database_url()
         taxonomy = load_taxonomy_from_postgres(database_url)
         aws_access_key, aws_secret_key, aws_region = _parse_aws_credentials()
-        # Modelo combinado (tema+resumo+sentimento) — configurável.
-        # ENRICHMENT_MODEL_ID é o nome preferido; BEDROCK_MODEL_ID mantido por
-        # retrocompatibilidade com o env atual.
-        enrichment_model_id = (
-            os.environ.get("ENRICHMENT_MODEL_ID")
-            or os.environ.get("BEDROCK_MODEL_ID")
-            or "anthropic.claude-3-haiku-20240307-v1:0"
-        )
+        # Modelo combinado (tema+resumo+sentimento) — configurável por env.
+        enrichment_model_id = _resolve_enrichment_model_id()
         # Modelo NER dedicado (Sonnet 4.6 em prod) — configurável via NER_MODEL_ID.
         # Em prod o Terraform define o inference-profile id do Sonnet 4.6 (us-east-1).
         ner_model_id = os.environ.get("NER_MODEL_ID") or enrichment_model_id
@@ -142,6 +189,49 @@ def is_already_enriched(unique_id: str) -> bool:
         conn.close()
 
 
+def ner_already_done(unique_id: str) -> bool:
+    """True se o NER já rodou para o uid (anti-amplificação: no máximo 1x por uid).
+
+    O scraper republica `dgb.news.scraped` a cada re-scrape (~13x/dia por artigo).
+    Sem tema gravado (falha da chamada combinada), cada republicação chegava ao
+    NER (Sonnet) de novo. Também protege entidades já canonicalizadas, que o merge
+    `features || {"entities": ...}` sobrescreveria.
+
+    Falha de DB (conexão ou consulta) → LEVANTA a exceção: "não deu para checar"
+    não é "já feito". Quem chama decide; o _run_ner_once pula o NER (fail-closed)
+    com o status próprio `skipped_check_failed`. Um NER pulado é recuperável pelo
+    scripts/backfill_ner_corpus.py; amplificação de custo não é.
+    """
+    conn = psycopg2.connect(_get_database_url())
+    try:
+        cursor = conn.cursor()
+        cursor.execute(_NER_ALREADY_DONE_SQL, (unique_id, unique_id))
+        row = cursor.fetchone()
+        cursor.close()
+        return bool(row and row[0])
+    finally:
+        try:
+            conn.close()
+        except Exception:
+            pass
+
+
+def is_combined_failure(result: dict | None) -> bool:
+    """A chamada combinada falhou? (`_error` presente ou todos os campos de tema nulos)."""
+    if not result:
+        return True
+    if result.get("_error"):
+        return True
+    return all(not result.get(field) for field in _THEME_CODE_FIELDS)
+
+
+def combined_failure_error(result: dict | None) -> str:
+    """Erro da chamada combinada para log/status ("<ErrorCode>: <msg>")."""
+    if not result:
+        return "EmptyResult: classify_single devolveu vazio"
+    return result.get("_error") or "AllThemeFieldsNull: resposta sem nenhum código de tema"
+
+
 def publish_enriched_event(unique_id: str, most_specific_theme_code: str | None, has_summary: bool) -> None:
     """Publish dgb.news.enriched event to Pub/Sub."""
     topic = os.environ.get("PUBSUB_TOPIC_NEWS_ENRICHED")
@@ -192,26 +282,16 @@ def enrich_article(unique_id: str) -> dict[str, Any]:
     classifier = _get_classifier()
     result = classifier.classify_single(article, return_format="dict")
 
-    if not result:
-        logger.warning(f"Classification failed for {unique_id}")
-        return {"status": "classification_failed"}
+    if is_combined_failure(result):
+        return _handle_combined_failure(unique_id, article, classifier, result)
 
     # Ensure unique_id is in result for update_news_enrichment
     result["unique_id"] = unique_id
 
-    # NER (chamada DEDICADA, modelo Sonnet 4.6 em prod). Resiliente: uma falha
-    # no NER não derruba o enriquecimento de tema/sentimento.
-    ner_raw: dict | None = None
-    try:
-        entities, ner_raw = classifier.llm_client.extract_entities(
-            article, return_raw=True
-        )
-        result["entities"] = entities
-        # Grava a resposta crua em news_llm_raw (não fatal se falhar).
-        store_raw_llm_response(unique_id, "ner", ner_raw)
-    except Exception as e:
-        logger.error(f"NER extraction failed for {unique_id}: {e}")
-        result["entities"] = []
+    # NER (chamada DEDICADA, modelo Sonnet 4.6 em prod), no máximo 1x por uid.
+    # Resiliente: uma falha no NER não derruba o enriquecimento de tema/sentimento.
+    entities, ner_raw, _ = _run_ner_once(classifier, article, unique_id)
+    result["entities"] = entities
 
     # Ledger de cota: registra os tokens consumidos (chamada combinada + NER).
     # O worker SÓ ESCREVE no ledger — NUNCA se auto-limita (ele atende o tempo
@@ -226,7 +306,12 @@ def enrich_article(unique_id: str) -> dict[str, Any]:
     _upsert_ai_features(unique_id, result)
 
     if stats["updated"] == 0:
-        logger.warning(f"No update for {unique_id}: {stats}")
+        logger.error(
+            "enrichment_update_failed uid=%s model=%s stats=%s",
+            unique_id,
+            result.get("_model_id"),
+            stats,
+        )
         return {"status": "update_failed", "stats": stats}
 
     # Publish event
@@ -237,6 +322,88 @@ def enrich_article(unique_id: str) -> dict[str, Any]:
     )
 
     return {"status": "enriched", "stats": stats}
+
+
+def _handle_combined_failure(
+    unique_id: str, article: dict, classifier: NewsClassifier, result: dict | None
+) -> dict[str, Any]:
+    """Falha da chamada combinada: torna visível e evita amplificar o NER.
+
+    - ERROR estável "enrichment_combined_failed uid= model= error=";
+    - CRITICAL estável "enrichment_model_unavailable model=" se o erro for de fim
+      de vida / modelo inexistente (alerta);
+    - NER só se ainda não rodou para o uid; entidades novas são gravadas;
+    - NÃO atualiza tema/resumo e NÃO publica dgb.news.enriched;
+    - devolve status "classification_failed" (o app continua respondendo 200/ACK).
+    """
+    error = combined_failure_error(result)
+    model_id = (result or {}).get("_model_id") or getattr(classifier.llm_client, "model_id", None)
+    logger.error(
+        "enrichment_combined_failed uid=%s model=%s error=%s", unique_id, model_id, error
+    )
+    if is_model_unavailable_error(error):
+        logger.critical(
+            "enrichment_model_unavailable model=%s error_code=%s",
+            model_id,
+            error.partition(":")[0].strip(),
+        )
+
+    entities, ner_raw, ner_status = _run_ner_once(classifier, article, unique_id)
+    # Ledger: tokens do NER e, se a resposta combinada veio (temas nulos), dela.
+    _record_ledger_usage(result or {}, ner_raw)
+    if entities:
+        _upsert_ai_features(unique_id, {"entities": entities})
+
+    return {"status": "classification_failed", "error": error, "ner": ner_status}
+
+
+def _run_ner_once(
+    classifier: NewsClassifier, article: dict, unique_id: str
+) -> tuple[list, dict | None, str]:
+    """Roda o NER se ainda não rodou para o uid. Devolve (entities, ner_raw, status).
+
+    status: "ran" | "failed" | "skipped_already_done" | "skipped_check_failed".
+    `skipped_check_failed` = a consulta de guarda falhou (erro de DB): o NER é
+    pulado (fail-closed, sem amplificar custo) e a linha estável sai em WARNING,
+    separada de `skipped_already_done` para a métrica de NER por uid. Nunca levanta.
+    """
+    ner_model_id = getattr(classifier.llm_client, "ner_model_id", None)
+    try:
+        already_done = ner_already_done(unique_id)
+    except Exception as e:
+        logger.warning(f"ner_already_done: falha na consulta de guarda para {unique_id}: {e}")
+        logger.warning(
+            "enrichment_ner uid=%s status=skipped_check_failed model=%s error=%s",
+            unique_id,
+            ner_model_id,
+            type(e).__name__,
+        )
+        return [], None, "skipped_check_failed"
+
+    if already_done:
+        logger.info(
+            "enrichment_ner uid=%s status=skipped_already_done model=%s", unique_id, ner_model_id
+        )
+        return [], None, "skipped_already_done"
+
+    try:
+        entities, ner_raw = classifier.llm_client.extract_entities(article, return_raw=True)
+    except Exception as e:
+        logger.error(f"NER extraction failed for {unique_id}: {e}")
+        logger.info("enrichment_ner uid=%s status=failed model=%s", unique_id, ner_model_id)
+        return [], None, "failed"
+
+    # Grava a resposta crua em news_llm_raw (não fatal se falhar; None é no-op).
+    store_raw_llm_response(unique_id, "ner", ner_raw)
+    status = "ran" if ner_raw is not None else "failed"
+    logger.info(
+        "enrichment_ner uid=%s status=%s model=%s entities=%d",
+        unique_id,
+        status,
+        ner_model_id,
+        len(entities or []),
+    )
+    return entities or [], ner_raw, status
 
 
 def _normalize_mention(raw: dict) -> dict:

@@ -6,7 +6,10 @@ import json
 from unittest.mock import MagicMock, patch
 
 import pytest
+from botocore.exceptions import ClientError
 
+import news_enrichment.llm_client as llm_client_mod
+from news_enrichment.classifier import NewsClassifier
 from news_enrichment.enrichment_job import (
     update_news_enrichment,
 )
@@ -308,3 +311,158 @@ class TestUpdateNewsEnrichment:
 
         assert stats["updated"] == 0
         assert stats["skipped"] == 0
+
+
+# --- Tests: observabilidade da falha da chamada combinada (Fase 2.5, DS-1) ---
+
+_EOL_MSG = (
+    "This model version has reached the end of its life. "
+    "Please refer to the AWS documentation for more details."
+)
+
+
+def _client_error(code: str, message: str) -> ClientError:
+    return ClientError({"Error": {"Code": code, "Message": message}}, "InvokeModel")
+
+
+def _bare_client(model_id: str = "anthropic.claude-3-haiku-20240307-v1:0") -> BedrockLLMClient:
+    client = BedrockLLMClient.__new__(BedrockLLMClient)
+    client.taxonomy = None
+    client.model_id = model_id
+    client.max_retries = 3
+    return client
+
+
+class TestFallbackComErro:
+    """O fallback da chamada combinada carrega `_error` = "<ErrorCode>: <msg>"."""
+
+    @patch("news_enrichment.llm_client.time.sleep")
+    def test_fallback_inclui_codigo_do_erro(self, mock_sleep):
+        client = _bare_client()
+        client._call_bedrock = MagicMock(
+            side_effect=_client_error("ResourceNotFoundException", _EOL_MSG)
+        )
+
+        result = client._enrich_single_news({"unique_id": "abc123", "title": "T"})
+
+        assert result["_error"] == f"ResourceNotFoundException: {_EOL_MSG}"
+        assert result["theme_1_level_1_code"] is None
+        assert result["_model_id"] == "anthropic.claude-3-haiku-20240307-v1:0"
+        assert client._call_bedrock.call_count == 3
+
+    @patch("news_enrichment.llm_client.time.sleep")
+    def test_fallback_erro_generico_usa_nome_da_excecao(self, mock_sleep):
+        client = _bare_client()
+        client._call_bedrock = MagicMock(
+            return_value=("resposta sem json", {"input_tokens": 1, "output_tokens": 1})
+        )
+
+        result = client._enrich_single_news({"unique_id": "abc123"})
+
+        assert result["_error"].startswith("ValueError: ")
+        assert "JSON não encontrado" in result["_error"]
+
+    def test_fallback_do_batch_inclui_erro(self):
+        client = _bare_client()
+        client.batch_size = 1
+        client.sleep_between_batches = 0
+        client._enrich_single_news = MagicMock(side_effect=RuntimeError("boom"))
+
+        results = client.enrich_news_batch([{"unique_id": "abc123"}])
+
+        assert results[0]["_error"] == "RuntimeError: boom"
+
+    def test_sucesso_nao_tem_error(self):
+        client = _bare_client()
+        client._call_bedrock = MagicMock(
+            return_value=(SAMPLE_LLM_RESPONSE, {"input_tokens": 10, "output_tokens": 2})
+        )
+
+        result = client._enrich_single_news({"unique_id": "abc123"})
+
+        assert not result.get("_error")
+        assert result["theme_1_level_1_code"] == "01"
+
+
+class TestIsModelUnavailableError:
+    """Erro de fim de vida / modelo inexistente → alerta CRITICAL estável."""
+
+    @pytest.mark.parametrize(
+        "error",
+        [
+            f"ResourceNotFoundException: {_EOL_MSG}",
+            "ResourceNotFoundException: Could not resolve the foundation model "
+            "from the provided model identifier.",
+            "ValidationException: The provided model identifier is invalid.",
+            "ValidationException: Invocation of model ID anthropic.claude-haiku-4-5 with "
+            "on-demand throughput isn't supported. Retry your request with the ID or ARN "
+            "of an inference profile that contains this model.",
+            "AccessDeniedException: You don't have access to the model with the "
+            "specified model ID.",
+            # IAM sem permissão de InvokeModel no ARN do modelo (troca de modelo sem
+            # IAM para o perfil `us.` ou para os ARNs regionais): a mensagem cita o
+            # ARN com hífen ("foundation-model/", "inference-profile/").
+            "AccessDeniedException: User: arn:aws:iam::123456789012:user/dgb is not "
+            "authorized to perform: bedrock:InvokeModel on resource: "
+            "arn:aws:bedrock:us-east-1::foundation-model/anthropic.claude-3-haiku-20240307-v1:0",
+            "AccessDeniedException: User: arn:aws:sts::123456789012:assumed-role/r/s is not "
+            "authorized to perform: bedrock:InvokeModel on resource: "
+            "arn:aws:bedrock:us-east-1:123456789012:inference-profile/"
+            "us.anthropic.claude-haiku-4-5-20251001-v1:0 because no identity-based policy "
+            "allows the bedrock:InvokeModel action",
+            "AccessDeniedException: User: arn:aws:iam::123456789012:user/dgb is not "
+            "authorized to perform: bedrock:InvokeModel on resource: "
+            "arn:aws:bedrock:us-east-2::foundation-model/anthropic.claude-haiku-4-5-20251001-v1:0 "
+            "with an explicit deny in a service control policy",
+        ],
+    )
+    def test_detecta_modelo_indisponivel(self, error):
+        assert llm_client_mod.is_model_unavailable_error(error) is True
+
+    @pytest.mark.parametrize(
+        "error",
+        [
+            None,
+            "",
+            "ThrottlingException: Rate exceeded",
+            "ValidationException: Input is too long for requested model.",
+            "ValueError: JSON não encontrado na resposta",
+            "ServiceUnavailableException: Bedrock is unable to process your request.",
+            # AccessDenied que não é do modelo (outra ação/recurso) não alerta.
+            "AccessDeniedException: User: arn:aws:iam::123456789012:user/dgb is not "
+            "authorized to perform: sts:AssumeRole on resource: "
+            "arn:aws:iam::123456789012:role/outro",
+            # Os marcadores de ARN valem só para AccessDenied: uma ValidationException
+            # de entrada que cite o ARN do modelo não é modelo indisponível.
+            "ValidationException: Malformed input request for "
+            "arn:aws:bedrock:us-east-1::foundation-model/anthropic.claude-haiku-4-5, "
+            "please reformat your input and try again.",
+        ],
+    )
+    def test_ignora_erros_transitorios_ou_de_entrada(self, error):
+        assert llm_client_mod.is_model_unavailable_error(error) is False
+
+
+class TestClassifierPropagaErro:
+    def test_classify_single_propaga_error(self):
+        classifier = NewsClassifier.__new__(NewsClassifier)
+        classifier.verbose = False
+        classifier.llm_client = MagicMock()
+        classifier.llm_client.enrich_news_batch.return_value = [
+            {
+                "unique_id": "abc123",
+                "title": "T",
+                "content": "C",
+                "theme_1_level_1_code": None,
+                "_model_id": "m",
+                "_error": "ThrottlingException: Rate exceeded",
+            }
+        ]
+
+        result = classifier.classify_single(
+            {"unique_id": "abc123", "title": "T", "content": "C"}, return_format="dict"
+        )
+
+        assert result["_error"] == "ThrottlingException: Rate exceeded"
+        assert result["_model_id"] == "m"
+        assert "title" not in result
