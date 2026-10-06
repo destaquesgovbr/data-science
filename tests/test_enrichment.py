@@ -399,6 +399,21 @@ class TestIsModelUnavailableError:
             "of an inference profile that contains this model.",
             "AccessDeniedException: You don't have access to the model with the "
             "specified model ID.",
+            # IAM sem permissão de InvokeModel no ARN do modelo (troca de modelo sem
+            # IAM para o perfil `us.` ou para os ARNs regionais): a mensagem cita o
+            # ARN com hífen ("foundation-model/", "inference-profile/").
+            "AccessDeniedException: User: arn:aws:iam::123456789012:user/dgb is not "
+            "authorized to perform: bedrock:InvokeModel on resource: "
+            "arn:aws:bedrock:us-east-1::foundation-model/anthropic.claude-3-haiku-20240307-v1:0",
+            "AccessDeniedException: User: arn:aws:sts::123456789012:assumed-role/r/s is not "
+            "authorized to perform: bedrock:InvokeModel on resource: "
+            "arn:aws:bedrock:us-east-1:123456789012:inference-profile/"
+            "us.anthropic.claude-haiku-4-5-20251001-v1:0 because no identity-based policy "
+            "allows the bedrock:InvokeModel action",
+            "AccessDeniedException: User: arn:aws:iam::123456789012:user/dgb is not "
+            "authorized to perform: bedrock:InvokeModel on resource: "
+            "arn:aws:bedrock:us-east-2::foundation-model/anthropic.claude-haiku-4-5-20251001-v1:0 "
+            "with an explicit deny in a service control policy",
         ],
     )
     def test_detecta_modelo_indisponivel(self, error):
@@ -413,6 +428,15 @@ class TestIsModelUnavailableError:
             "ValidationException: Input is too long for requested model.",
             "ValueError: JSON não encontrado na resposta",
             "ServiceUnavailableException: Bedrock is unable to process your request.",
+            # AccessDenied que não é do modelo (outra ação/recurso) não alerta.
+            "AccessDeniedException: User: arn:aws:iam::123456789012:user/dgb is not "
+            "authorized to perform: sts:AssumeRole on resource: "
+            "arn:aws:iam::123456789012:role/outro",
+            # Os marcadores de ARN valem só para AccessDenied: uma ValidationException
+            # de entrada que cite o ARN do modelo não é modelo indisponível.
+            "ValidationException: Malformed input request for "
+            "arn:aws:bedrock:us-east-1::foundation-model/anthropic.claude-haiku-4-5, "
+            "please reformat your input and try again.",
         ],
     )
     def test_ignora_erros_transitorios_ou_de_entrada(self, error):
