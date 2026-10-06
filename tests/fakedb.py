@@ -149,12 +149,19 @@ class FakeCursor:
             self.db.features_upserts.append((uid, dict(new)))
             return
 
-        # reenrich_combined_window: SELECT da janela (null-theme | mock), params dict.
+        # reenrich_combined_window: SELECT da janela (null-theme | mock | null-summary),
+        # params dict.
         if low.startswith("select n.unique_id from news n") and isinstance(params, dict):
             rows = []
             for uid, n in self.db.news.items():
                 theme_null_only = "most_specific_theme_id is null" in low
                 if theme_null_only and n.get("most_specific_theme_id") is not None:
+                    continue
+                if "most_specific_theme_id is not null" in low and (
+                    n.get("most_specific_theme_id") is None
+                ):
+                    continue
+                if "summary is null" in low and n.get("summary") is not None:
                     continue
                 if "summary like" in low:
                     prefix = params["mock_pattern"].rstrip("%")
@@ -168,6 +175,32 @@ class FakeCursor:
                 rows.append((day, uid))
             rows.sort(reverse=True)  # ORDER BY published_at DESC
             self._result = [(uid,) for _, uid in rows[: params["limit"]]]
+            return
+
+        # reenrich_combined_window --select null-summary: UPDATE só do resumo, com a
+        # guarda `AND summary IS NULL` (não sobrescreve resumo gravado no meio do run).
+        if low.startswith("update news set summary = %s"):
+            summary, uid = params[0], params[1]
+            n = self.db.news.get(uid)
+            guarded = "and summary is null" in low
+            if n is None or (guarded and n.get("summary") is not None):
+                self.rowcount = 0
+            else:
+                n["summary"] = summary
+                self.rowcount = 1
+            return
+
+        # reenrich_combined_window --select null-summary: quantos dos uids não têm
+        # sentimento em news_features (LEFT JOIN; só reportado, nunca gerado).
+        if low.startswith("select count(*) from news n left join news_features nf"):
+            missing = 0
+            for uid in params[0]:
+                if uid not in self.db.news:
+                    continue
+                sentiment = (self.db.news_features.get(uid) or {}).get("sentiment") or {}
+                if not sentiment.get("label"):
+                    missing += 1
+            self._result = [(missing,)]
             return
 
         # news.content
