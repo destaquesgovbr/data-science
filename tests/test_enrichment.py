@@ -494,8 +494,7 @@ def _taxonomia_realista() -> dict:
             subcategories[l2] = {
                 "label": f"Subtema {l2}",
                 "subcategories": {
-                    f"{l2}.{k:02d}": {"label": f"Tema específico {l2}.{k:02d}"}
-                    for k in range(1, 5)
+                    f"{l2}.{k:02d}": {"label": f"Tema específico {l2}.{k:02d}"} for k in range(1, 5)
                 },
             }
         taxonomy[l1] = {"label": f"Tema macro {l1}", "subcategories": subcategories}
@@ -572,7 +571,9 @@ class TestSummarizeSingle:
 
     def test_sucesso_tolera_cercas_json(self):
         client = _summary_client()
-        resposta = '```json\n{"summary": "  Governo lança programa. Medida amplia o crédito.  "}\n```'
+        resposta = (
+            '```json\n{"summary": "  Governo lança programa. Medida amplia o crédito.  "}\n```'
+        )
         client._call_bedrock = MagicMock(return_value=(resposta, dict(SUMMARY_USAGE)))
 
         result = client.summarize_single(dict(_ARTIGO))
