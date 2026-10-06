@@ -13,7 +13,9 @@ Backfills:
     os ~6.935 artigos com tema e summary NULL. O re-scrape do scraper
     (`_update_existing_articles`, desde o d406fee de 01/06) grava summary = NULL
     e content_embedding = NULL. Só depois do deploy do SC-1 (senão o re-scrape
-    apaga de novo). Ver "Modo null-summary" abaixo.
+    apaga de novo). Ver "Modo null-summary" abaixo. Antes do B3 (embeddings):
+    uma última passada a partir do dia seguinte ao deploy do SC-1 e um --dry-run
+    com selecionados=0 (trava na "Ordem operacional" do README do worker).
 
 Fluxo por artigo (espelha o caminho de sucesso de handler.enrich_article, menos
 o NER e o evento):
