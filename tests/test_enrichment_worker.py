@@ -180,6 +180,12 @@ class TestIsAlreadyEnriched:
 
 class TestEnrichArticle:
 
+    # Guarda "NER no máximo 1x por uid" consulta o DB: aqui o NER ainda não rodou.
+    @pytest.fixture(autouse=True)
+    def _ner_not_done(self):
+        with patch("news_enrichment.worker.handler.ner_already_done", return_value=False):
+            yield
+
     @patch("news_enrichment.worker.handler.publish_enriched_event")
     @patch("news_enrichment.worker.handler.update_news_enrichment")
     @patch("news_enrichment.worker.handler._get_code_to_id")

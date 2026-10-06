@@ -235,6 +235,9 @@ class NewsClassifier:
             # Metadados internos da chamada combinada (tokens p/ ledger de cota).
             '_usage',
             '_model_id',
+            # "<ErrorCode>: <msg>" quando a chamada combinada falhou (fallback);
+            # None em sucesso. O worker usa para tornar a falha visível.
+            '_error',
         ]
 
         # Incluir unique_id se existir (útil para rastreabilidade)

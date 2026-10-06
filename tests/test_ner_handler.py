@@ -219,6 +219,12 @@ class TestStoreRawLlmResponse:
 
 
 class TestEnrichArticleNerIntegration:
+    # Artigo novo: NER ainda não rodou (guarda "no máximo 1x por uid" consulta o DB).
+    @pytest.fixture(autouse=True)
+    def _ner_not_done(self):
+        with patch("news_enrichment.worker.handler.ner_already_done", return_value=False):
+            yield
+
     @patch("news_enrichment.worker.handler.store_raw_llm_response")
     @patch("news_enrichment.worker.handler._upsert_ai_features")
     @patch("news_enrichment.worker.handler.publish_enriched_event")
