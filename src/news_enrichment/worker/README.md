@@ -103,7 +103,8 @@ sem NER.
 
 ## Re-enriquecimento sem NER (`scripts/reenrich_combined_window.py`)
 
-Refaz só a chamada combinada numa janela de dias BRT (`--date-to` exclusivo).
+Refaz só a chamada combinada numa janela de dias BRT (`--date-to` exclusivo); com
+`--select null-summary`, refaz só o resumo, com um prompt enxuto (ver abaixo).
 Nunca chama o NER e nunca publica evento. Respeita o governador de cota por modelo.
 
 ```bash
@@ -128,10 +129,111 @@ PYTHONPATH=src .venv/bin/python scripts/reenrich_combined_window.py \
   (`BACKFILL_QUOTA_FRACTION`, default 0.8) é aplicada uma única vez.
 - Depois do backfill, o Typesense só reflete os temas após o `incremental-sync`.
 - Não recupera artigo com tema e sem sentimento (upsert falho ou sentimento `None`
-  depois do UPDATE de tema): a seleção é por tema `NULL` ou resumo `[MOCK]`.
+  depois do UPDATE de tema): a seleção é por tema `NULL` ou resumo `[MOCK]`. O
+  `null-summary` (abaixo) também não gera sentimento; só conta os artigos sem ele.
+
+### Só o resumo: `--select null-summary` (DS-2)
+
+Desde 02/06/2026, o re-scrape do scraper (`_update_existing_articles`, que casa por
+agência + URL) grava `summary = NULL` e `content_embedding = NULL` em artigos já
+enriquecidos. Ficaram ~6.935 artigos com tema e sem resumo, que por isso também
+estão sem embedding e fora da busca semântica. A idempotência do worker olha só o
+tema, então ele nunca refaz esses resumos. A chamada combinada não serve para o
+backfill: ela manda a taxonomia inteira (~18,9k tokens de entrada por artigo) para
+refazer um tema que já existe.
+
+```bash
+ENRICHMENT_MODEL_ID=us.anthropic.claude-haiku-4-5-20251001-v1:0 \
+BEDROCK_DAILY_TOKEN_QUOTA='{"us.anthropic.claude-haiku-4-5-20251001-v1:0": <cota AWS real>}' \
+PYTHONPATH=src .venv/bin/python scripts/reenrich_combined_window.py \
+    --select null-summary --date-from 2026-06-01 --date-to <hoje BRT> \
+    --dry-run   # depois --limit 10, depois completo
+```
+
+- **Seleção:** `most_specific_theme_id IS NOT NULL AND summary IS NULL` na janela
+  BRT, mais recentes primeiro. `--date-to` é obrigatório e no máximo hoje (BRT),
+  como no `null-theme`.
+- **Prompt enxuto** (`BedrockLLMClient.summarize_single`): as mesmas regras de
+  resumo da chamada combinada (`SUMMARY_TASK_INSTRUCTION`, `SUMMARY_EXAMPLE` e
+  2.000 caracteres de conteúdo), sem a taxonomia, os códigos de tema e o
+  sentimento. O prompt tem no máximo ~3 mil caracteres. A resposta é
+  `{"summary": "..."}`, e as cercas `` ```json `` são toleradas.
+- **Escrita:** `UPDATE news SET summary = %s, updated_at = NOW() WHERE unique_id = %s
+  AND summary IS NULL`. Não regrava tema, não roda o NER, não grava `news_features`,
+  não publica `dgb.news.enriched` e não toca `content_embedding`.
+- **Falhas:** resumo vazio ou inválido não é gravado e conta como `summary_failed`.
+  O artigo continua selecionável no próximo run. Se outro processo gravar o resumo
+  no meio do run, a guarda `IS NULL` preserva o resumo dele (`summary_present`).
+- **Sentimento:** não é gerado. O script reporta `sem_sentimento=N dos M
+  selecionados` na seleção (inclusive no `--dry-run`) e no fim do run.
+- **Selecionados que já têm embedding:** a seleção não olha `content_embedding`, e o
+  script reporta `com_embedding=N dos M selecionados` nos mesmos pontos, sem tocar
+  no embedding. O embedding desses artigos foi gerado sem o resumo, a partir do
+  `content`: a combinada pode devolver tema sem `summary` (não conta como falha), o
+  worker publica `enriched` com `has_summary=False` e o worker de embeddings gera o
+  vetor assim mesmo. O B3 só pega `content_embedding IS NULL`, então não os refaz.
+  Ver o passo 4 da ordem operacional.
+- **Recorrência:** o caminho ao vivo ainda pode criar tema com `summary` NULL (a
+  combinada sem `summary` não é falha em `is_combined_failure`, e
+  `update_news_enrichment` grava NULL). O DS-2 é pontual: nada recorrente detecta
+  ou refaz esses resumos.
+- Mesmo modelo (`ENRICHMENT_MODEL_ID`, obrigatório), mesmo ledger e mesmo
+  governador de cota do `null-theme`. Os tokens de respostas descartadas também
+  entram no ledger.
+
+**Ordem operacional** (cada etapa com OK):
+
+1. **Deploy do SC-1 (scraper).** Anote o dia BRT do deploy (D). Sem ele, o
+   re-scrape apaga de novo o resumo e o embedding dos artigos ainda na janela de
+   re-scrape (~16 h) e continua apagando os novos.
+2. **Backfill dos resumos (este modo):** `--dry-run`, depois `--limit 10`, depois
+   completo. É resumível: para em `budget_exhausted` e retoma no dia UTC seguinte.
+   - Antes, confirme o início da janela: `--dry-run --date-from 2026-05-25
+     --date-to 2026-06-01` deve dar `selecionados=0` (o `d406fee` foi mergeado em
+     02/06). Se não der, investigue antes de seguir.
+   - Em toda passada (inclusive a do passo 3), se o `--dry-run` mostrar
+     `com_embedding` > 0, salve a lista desses uids **antes** da passada com
+     escrita: depois dela o resumo deixa de ser NULL e não há como achá-los.
+     Consulta só de leitura, com a mesma janela:
+
+     ```sql
+     SELECT n.unique_id FROM news n
+     WHERE n.most_specific_theme_id IS NOT NULL AND n.summary IS NULL
+       AND n.content_embedding IS NOT NULL
+       AND n.published_at >= ('<date-from>'::date::timestamp AT TIME ZONE 'America/Sao_Paulo')
+       AND n.published_at <  ('<date-to>'::date::timestamp AT TIME ZONE 'America/Sao_Paulo');
+     ```
+3. **Trava antes do B3.** O `--date-to` é exclusivo e no máximo hoje (BRT), então
+   uma passada feita no dia D deixa de fora os artigos de D que o re-scrape apagou
+   antes do deploy do SC-1. A partir de D+1, rode uma última passada com
+   `--date-to` de pelo menos D+1. Depois, `--select null-summary --dry-run` na
+   mesma janela tem de dar `selecionados=0`, ou só falhas persistentes conhecidas
+   (`summary_failed` já vistos, com os uids anotados). Sem isso, o B3 grava para
+   esses artigos um embedding feito com o `content` e não volta mais a eles.
+4. **Re-embedding dos `com_embedding` (passo separado, com OK próprio):** só se
+   alguma lista salva nos passos 2 e 3 não estiver vazia. O B3 não tem modo por
+   uid, então o caminho é zerar o `content_embedding` desses uids (UPDATE em
+   produção, restrito à lista e a `summary IS NOT NULL`) logo antes do B3, que os
+   refaz com o resumo. Até o B3 terminar, eles ficam fora da busca semântica.
+5. **Backfill dos embeddings (B3):** `embeddings/scripts/backfill_embeddings.py
+   --end-date <o --date-to da última passada do passo 3>`. O texto do embedding é
+   `title + summary` (o `content` só entra sem resumo), e o script pega toda linha
+   com `content_embedding IS NULL`, sem olhar o resumo. O `--end-date` (exclusivo)
+   mantém o B3 dentro da janela verificada no passo 3: sem ele, o B3 também
+   pegaria artigos de hoje que o worker ao vivo ainda vai enriquecer. O B3 compara
+   `published_at < '<data>'` no fuso da sessão: em UTC (padrão do Cloud SQL), o
+   corte fica 3 h antes da meia-noite BRT; em BRT, coincide com ela. Nos dois
+   casos, repetir a data do `--date-to` é seguro.
+6. **`incremental-sync` do Typesense (B4):** workflow `typesense-maintenance-sync`
+   do `data-platform`, cobrindo a janela.
 
 ## Pendências fora deste código
 
+- **B3 não versionado:** `embeddings/scripts/backfill_embeddings.py` existe só no
+  checkout local do `embeddings` (untracked). Versionar antes de rodar o B3.
+- **Embedding zerado pelo SC-1:** quando o conteúdo muda no re-scrape, o SC-1 zera o
+  `content_embedding` e republica `scraped`, mas o worker devolve `skipped` (já tem
+  tema) e não publica `enriched`. Nada regenera o embedding fora de um novo B3.
 - **Alertas:** este serviço só emite as linhas estáveis. A log-based metric e a
   alert policy (`enrichment_model_unavailable`, `enrichment_update_failed`) ficam
   no `infra/` (Terraform). O worker loga texto puro (`logging.basicConfig`), então

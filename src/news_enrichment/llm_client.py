@@ -138,6 +138,47 @@ def _extract_usage(response_body: dict) -> Dict[str, int]:
     return {"input_tokens": in_tok, "output_tokens": out_tok}
 
 
+# =============================================================================
+# Regras do RESUMO: compartilhadas pela chamada combinada e pelo caminho
+# só-resumo (summarize_single, backfill DS-2 da Fase 2.5). Mesmo texto, mesmo
+# exemplo e mesmo recorte de conteúdo nos dois prompts.
+# =============================================================================
+
+# Caracteres de `content` enviados ao modelo (o resto é cortado).
+CONTENT_PREVIEW_CHARS = 2000
+SUMMARY_TASK_INSTRUCTION = (
+    'Gere um campo "summary" com um resumo conciso da notícia em 1-2 frases. '
+    "O summary é OBRIGATÓRIO."
+)
+SUMMARY_EXAMPLE = (
+    "Governo federal anuncia proposta de reforma tributária. "
+    "Medida visa simplificar sistema e reduzir carga sobre empresas."
+)
+_JSON_ONLY_INSTRUCTION = (
+    "Analise a notícia abaixo e retorne APENAS um JSON válido (sem markdown, sem explicações)."
+)
+
+
+def _find_json_object(response: str) -> str:
+    """Recorta o objeto JSON da resposta (do primeiro `{` ao último `}`).
+
+    Tolera texto e cercas markdown (```json ... ```) ao redor, como o Haiku 4.5
+    responde. Levanta ValueError se não houver objeto.
+    """
+    start_idx = response.find("{")
+    end_idx = response.rfind("}") + 1
+    if start_idx == -1 or end_idx <= start_idx:
+        raise ValueError("JSON não encontrado na resposta")
+    return response[start_idx:end_idx]
+
+
+def _retry_backoff_seconds(attempt: int, is_throttling: bool) -> float:
+    """Espera antes da próxima tentativa (mesmo backoff da chamada combinada)."""
+    if is_throttling:
+        return 1.0 * (2**attempt) + random.uniform(0, 0.5)  # 1s, 2s, 4s + jitter
+    return 0.2 * (2**attempt)  # 0.2s, 0.4s, 0.8s
+
+
 class BedrockLLMClient:
     """Cliente para AWS Bedrock com batch processing."""
 
@@ -331,15 +372,6 @@ class BedrockLLMClient:
         Returns:
             String com o prompt
         """
-        # Concatenar conteúdo relevante
-        title = row.get('title', '')
-        subtitle = row.get('subtitle', '')
-        editorial_lead = row.get('editorial_lead', '')
-        content = row.get('content', '')
-
-        # Limitar conteúdo para não exceder contexto
-        content_preview = content[:2000] if content else ''
-
         # Construir instruções de taxonomia
         taxonomy_instructions = ""
         if self.taxonomy:
@@ -371,20 +403,16 @@ INSTRUÇÕES:
 
         prompt = f"""Você é um especialista em classificação temática de notícias governamentais brasileiras.
 
-Analise a notícia abaixo e retorne APENAS um JSON válido (sem markdown, sem explicações).
+{_JSON_ONLY_INSTRUCTION}
 
 {taxonomy_instructions}
 
 TAREFAS OBRIGATÓRIAS:
 1. Classifique a notícia em 3 níveis hierárquicos (theme_1_level_1/2/3).
-2. Gere um campo "summary" com um resumo conciso da notícia em 1-2 frases. O summary é OBRIGATÓRIO.
+2. {SUMMARY_TASK_INSTRUCTION}
 3. Analise o sentimento da notícia (positive, neutral ou negative) e atribua um score entre -1.0 e 1.0.
 
-NOTÍCIA:
-Título: {title}
-Subtítulo: {subtitle}
-Lead: {editorial_lead}
-Conteúdo: {content_preview}
+{self._format_news_block(row)}
 
 FORMATO DE SAÍDA (JSON VÁLIDO — todos os campos são obrigatórios):
 {{
@@ -397,7 +425,7 @@ FORMATO DE SAÍDA (JSON VÁLIDO — todos os campos são obrigatórios):
   "theme_1_level_3_label": "Reforma Tributária",
   "most_specific_theme_code": "01.02.03",
   "most_specific_theme_label": "Reforma Tributária",
-  "summary": "Governo federal anuncia proposta de reforma tributária. Medida visa simplificar sistema e reduzir carga sobre empresas.",
+  "summary": "{SUMMARY_EXAMPLE}",
   "sentiment": {{
     "label": "positive" | "neutral" | "negative",
     "score": <float entre -1.0 e 1.0>
@@ -413,6 +441,115 @@ FORMATO DE SAÍDA (JSON VÁLIDO — todos os campos são obrigatórios):
 
         # TODO: Implementar formatação hierárquica da taxonomia
         return json.dumps(self.taxonomy, indent=2, ensure_ascii=False)
+
+    @staticmethod
+    def _format_news_block(row: Dict) -> str:
+        """Bloco "NOTÍCIA:" dos prompts (combinado e só-resumo).
+
+        O conteúdo é cortado em CONTENT_PREVIEW_CHARS para não exceder o contexto.
+        """
+        title = row.get("title", "")
+        subtitle = row.get("subtitle", "")
+        editorial_lead = row.get("editorial_lead", "")
+        content = row.get("content", "")
+        content_preview = content[:CONTENT_PREVIEW_CHARS] if content else ""
+        return (
+            "NOTÍCIA:\n"
+            f"Título: {title}\n"
+            f"Subtítulo: {subtitle}\n"
+            f"Lead: {editorial_lead}\n"
+            f"Conteúdo: {content_preview}"
+        )
+
+    # =========================================================================
+    # Só resumo — prompt enxuto, sem taxonomia (backfill DS-2, Fase 2.5)
+    # =========================================================================
+
+    def _build_summary_prompt(self, row: Dict) -> str:
+        """Prompt só-resumo: as regras de resumo do combinado, sem taxonomia.
+
+        Pede apenas {"summary": "..."}. Sem taxonomia, sem códigos de tema e sem
+        sentimento: ~1/20 dos tokens de entrada da chamada combinada.
+        """
+        return f"""Você é um especialista em notícias governamentais brasileiras.
+
+{_JSON_ONLY_INSTRUCTION}
+
+TAREFA OBRIGATÓRIA:
+{SUMMARY_TASK_INSTRUCTION}
+
+{self._format_news_block(row)}
+
+FORMATO DE SAÍDA (JSON VÁLIDO — o campo é obrigatório):
+{{
+  "summary": "{SUMMARY_EXAMPLE}"
+}}"""
+
+    def _parse_summary_response(self, response: str) -> str:
+        """Extrai o resumo de {"summary": "..."} (tolera cercas ```json).
+
+        Raises:
+            ValueError: sem JSON, JSON inválido, ou summary ausente, vazio ou
+                que não é string.
+        """
+        json_str = _find_json_object(response)
+        try:
+            result = json.loads(json_str)
+        except json.JSONDecodeError as e:
+            raise ValueError(f"Erro ao parsear JSON: {e}")
+        summary = result.get("summary") if isinstance(result, dict) else None
+        if not isinstance(summary, str) or not summary.strip():
+            raise ValueError("summary ausente ou vazio na resposta")
+        return summary.strip()
+
+    def summarize_single(self, row: Dict) -> Dict:
+        """Gera SÓ o resumo de uma notícia (modelo combinado `model_id`).
+
+        Para artigos que já têm tema e perderam o resumo: não classifica, não
+        gera sentimento e não roda NER. Mesmo retry/backoff da combinada; resumo
+        vazio ou inválido conta como falha (e é retentado).
+
+        Returns:
+            {"summary": str | None, "_usage": {input_tokens, output_tokens},
+             "_model_id": model_id, "_error": "<ErrorCode>: <msg>" | None}.
+            `_usage` soma TODAS as tentativas que chegaram ao modelo (o ledger
+            de cota precisa contar os tokens das respostas descartadas).
+        """
+        prompt = self._build_summary_prompt(row)
+        usage_total = {"input_tokens": 0, "output_tokens": 0}
+        last_error: Optional[str] = None
+
+        for attempt in range(self.max_retries):
+            is_throttling = False
+            try:
+                response, usage = self._call_bedrock(prompt)
+                for key in usage_total:
+                    usage_total[key] += int((usage or {}).get(key) or 0)
+                return {
+                    "summary": self._parse_summary_response(response),
+                    "_usage": usage_total,
+                    "_model_id": self.model_id,
+                    "_error": None,
+                }
+            except ClientError as e:
+                is_throttling = e.response.get("Error", {}).get("Code") == "ThrottlingException"
+                last_error = format_bedrock_error(e)
+            except Exception as e:  # noqa: BLE001 — resposta inválida também é retentada
+                last_error = format_bedrock_error(e)
+
+            logger.warning(
+                f"Resumo: tentativa {attempt + 1}/{self.max_retries} falhou "
+                f"para notícia {row.get('unique_id', 'unknown')}: {last_error}"
+            )
+            if attempt < self.max_retries - 1:
+                time.sleep(_retry_backoff_seconds(attempt, is_throttling))
+
+        return {
+            "summary": None,
+            "_usage": usage_total,
+            "_model_id": self.model_id,
+            "_error": last_error or f"NoAttempts: max_retries={self.max_retries}",
+        }
 
     def _call_bedrock(self, prompt: str) -> Tuple[str, Dict[str, int]]:
         """
@@ -461,14 +598,8 @@ FORMATO DE SAÍDA (JSON VÁLIDO — todos os campos são obrigatórios):
         Raises:
             ValueError: Se JSON inválido ou malformado
         """
-        # Tentar extrair JSON
-        start_idx = response.find('{')
-        end_idx = response.rfind('}') + 1
-
-        if start_idx == -1 or end_idx <= start_idx:
-            raise ValueError("JSON não encontrado na resposta")
-
-        json_str = response[start_idx:end_idx]
+        # Tentar extrair JSON (tolera cercas ```json)
+        json_str = _find_json_object(response)
 
         try:
             result = json.loads(json_str)

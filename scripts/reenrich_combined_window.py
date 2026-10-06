@@ -9,6 +9,13 @@ Backfills:
     (25/09 até o INF-1/infra#215, aplicado em 06/10 00:19Z = 05/10 21:19 BRT).
   - B5 (decisão D3): `--select mock`: os ~4.600 artigos com summary '[MOCK]…'
     (tema também falso; ver issue #3).
+  - DS-2: `--select null-summary --date-from 2026-06-01 --date-to <hoje BRT>`:
+    os ~6.935 artigos com tema e summary NULL. O re-scrape do scraper
+    (`_update_existing_articles`, desde o d406fee de 01/06) grava summary = NULL
+    e content_embedding = NULL. Só depois do deploy do SC-1 (senão o re-scrape
+    apaga de novo). Ver "Modo null-summary" abaixo. Antes do B3 (embeddings):
+    uma última passada a partir do dia seguinte ao deploy do SC-1 e um --dry-run
+    com selecionados=0 (trava na "Ordem operacional" do README do worker).
 
 Fluxo por artigo (espelha o caminho de sucesso de handler.enrich_article, menos
 o NER e o evento):
@@ -35,6 +42,29 @@ Garantias:
     faria o worker devolver `skipped` e o artigo ficaria sem dgb.news.enriched.
   - --dry-run só seleciona e lista: não chama o Bedrock nem escreve nada.
 
+Modo null-summary (DS-2): só o resumo, com o prompt ENXUTO do
+BedrockLLMClient.summarize_single (as regras de resumo da combinada, sem a
+taxonomia: prompt de no máximo ~3 mil caracteres; a combinada manda ~18,9k
+tokens de entrada). Por artigo:
+    result = llm_client.summarize_single(article)       # modelo = ENRICHMENT_MODEL_ID
+    UPDATE news SET summary = %s, updated_at = NOW()
+     WHERE unique_id = %s AND summary IS NULL           # UPDATE_SUMMARY_SQL
+    quota_governor.record_usage(...)                    # ledger por modelo
+  - NUNCA regrava tema, NUNCA chama o NER, NUNCA publica, NUNCA grava
+    news_features e NÃO toca content_embedding (o B3 gera depois, a partir do
+    resumo).
+  - Sentimento ausente em news_features NÃO é gerado aqui (fora do escopo): só
+    é contado e reportado (sem_sentimento=N) na seleção e no resumo final.
+  - Selecionados que JÁ têm content_embedding (feito sem o resumo, a partir do
+    content) são contados e reportados (com_embedding=N) na seleção e no resumo
+    final. O embedding deles não é tocado aqui, e o B3 (só content_embedding IS
+    NULL) não o refaz: exigem um passo separado, aprovado, depois do DS-2 (ver o
+    README do worker).
+  - Resumo vazio/inválido não grava e conta `summary_failed`: o artigo segue
+    selecionável no próximo run. Resumo gravado por outro processo no meio do
+    run não é sobrescrito (guarda IS NULL → `summary_present`).
+  - Mesma regra do null-theme para a janela: --date-to obrigatório, ≤ hoje BRT.
+
 Env obrigatórias: DATABASE_URL, ENRICHMENT_MODEL_ID (sem fallback para o default
 legado nem para BEDROCK_MODEL_ID), creds AWS (AWS_BEDROCK_CONNECTION_URI ou
 AWS_ACCESS_KEY_ID/SECRET). Opcionais: BEDROCK_DAILY_TOKEN_QUOTA (JSON
@@ -45,6 +75,8 @@ Uso (sempre --dry-run → --limit 10 → completo, cada etapa com OK):
     PYTHONPATH=src .venv/bin/python scripts/reenrich_combined_window.py \\
         --select null-theme --date-from 2026-09-25 --date-to 2026-10-06 \\
         [--limit 500] [--workers 1] [--dry-run]
+    # DS-2 (depois do deploy do SC-1):
+    ... --select null-summary --date-from 2026-06-01 --date-to <hoje BRT> [...]
 """
 import argparse
 import datetime
@@ -67,9 +99,14 @@ from news_enrichment.quota_governor import (  # noqa: E402
 )
 from news_enrichment.worker import handler  # noqa: E402
 
-SELECT_CHOICES = ("null-theme", "mock")
+SELECT_CHOICES = ("null-theme", "mock", "null-summary")
 # Seleções que disputam artigos com o worker ao vivo: exigem --date-to <= hoje BRT.
-SELECTS_REQUIRING_DATE_TO = frozenset({"null-theme"})
+SELECTS_REQUIRING_DATE_TO = frozenset({"null-theme", "null-summary"})
+# Janela de exemplo por seleção (mensagem de erro sem --date-to).
+_EXAMPLE_WINDOW = {
+    "null-theme": "no B2: --date-from 2026-09-25 --date-to 2026-10-06",
+    "null-summary": "no DS-2: --date-from 2026-06-01 --date-to <hoje BRT>",
+}
 BRT = ZoneInfo("America/Sao_Paulo")
 MOCK_SUMMARY_PATTERN = "[MOCK]%"
 # Checa o budget a cada N artigos (tolera pequena ultrapassagem; margem ~fração).
@@ -80,12 +117,42 @@ _ZERO_USAGE = {"input_tokens": 0, "output_tokens": 0}
 # Limites da janela: meia-noite do dia em BRT, convertida para timestamptz.
 _BRT_DAY_START = "(%({param})s::date::timestamp AT TIME ZONE 'America/Sao_Paulo')"
 
+# null-summary: grava SÓ o resumo, e só se ainda estiver NULL (não sobrescreve um
+# resumo gravado no meio do run). Tema e content_embedding ficam intactos.
+UPDATE_SUMMARY_SQL = """
+    UPDATE news
+    SET summary = %s, updated_at = NOW()
+    WHERE unique_id = %s AND summary IS NULL
+"""
+
+# null-summary: quantos dos uids não têm sentimento em news_features (só reportado;
+# este modo não gera sentimento).
+MISSING_SENTIMENT_SQL = """
+    SELECT COUNT(*)
+    FROM news n
+    LEFT JOIN news_features nf ON nf.unique_id = n.unique_id
+    WHERE n.unique_id = ANY(%s)
+      AND (nf.features -> 'sentiment' ->> 'label') IS NULL
+"""
+
+# null-summary: quantos dos uids JÁ têm content_embedding (feito sem o resumo, a
+# partir do content). Só reportado: o embedding não é tocado aqui e o B3 só pega
+# content_embedding IS NULL, então esses artigos exigem um passo separado.
+WITH_EMBEDDING_SQL = """
+    SELECT COUNT(*)
+    FROM news n
+    WHERE n.unique_id = ANY(%s)
+      AND n.content_embedding IS NOT NULL
+"""
+
 
 def build_select_sql(select: str, with_date_to: bool) -> str:
-    """SELECT da janela: `null-theme` (tema NULL) ou `mock` (summary '[MOCK]%').
+    """SELECT da janela: `null-theme` (tema NULL), `mock` (summary '[MOCK]%') ou
+    `null-summary` (tema gravado e summary NULL).
 
     Parâmetros nomeados (ver build_select_params). Ordem: mais recentes primeiro.
-    `null-theme` sem teto (with_date_to=False) é recusado: ver o docstring do módulo.
+    `null-theme`/`null-summary` sem teto (with_date_to=False) são recusados: ver o
+    docstring do módulo.
     """
     if select in SELECTS_REQUIRING_DATE_TO and not with_date_to:
         raise ValueError(f"--select {select} exige --date-to (teto da janela)")
@@ -93,6 +160,8 @@ def build_select_sql(select: str, with_date_to: bool) -> str:
         predicate = "n.most_specific_theme_id IS NULL"
     elif select == "mock":
         predicate = "n.summary LIKE %(mock_pattern)s"
+    elif select == "null-summary":
+        predicate = "n.most_specific_theme_id IS NOT NULL AND n.summary IS NULL"
     else:
         raise ValueError(f"seleção inválida: {select!r} (use {', '.join(SELECT_CHOICES)})")
 
@@ -176,6 +245,79 @@ def process_one(uid: str):
     return uid, "ok", usage
 
 
+def _count_uids(sql: str, uids: list) -> int:
+    """Executa um COUNT(*) parametrizado pela lista de uids (só leitura)."""
+    conn = _get_conn()
+    try:
+        cur = conn.cursor()
+        cur.execute(sql, (list(uids),))
+        row = cur.fetchone()
+        return int(row[0]) if row and row[0] is not None else 0
+    finally:
+        conn.close()
+
+
+def count_missing_sentiment(uids: list) -> int:
+    """Quantos dos uids não têm sentimento em news_features (null-summary só reporta)."""
+    return _count_uids(MISSING_SENTIMENT_SQL, uids)
+
+
+def count_with_embedding(uids: list) -> int:
+    """Quantos dos uids já têm content_embedding (null-summary só reporta)."""
+    return _count_uids(WITH_EMBEDDING_SQL, uids)
+
+
+def update_summary_only(uid: str, summary: str) -> bool:
+    """Grava SÓ o resumo (UPDATE_SUMMARY_SQL). True se gravou; False se o artigo
+    já tinha resumo (guarda IS NULL) ou não existe."""
+    conn = _get_conn()
+    try:
+        cur = conn.cursor()
+        cur.execute(UPDATE_SUMMARY_SQL, (summary, uid))
+        written = cur.rowcount == 1
+        conn.commit()
+        return written
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        conn.close()
+
+
+def process_one_summary(uid: str):
+    """Gera e grava SÓ o resumo (--select null-summary). Retorna (uid, status, usage).
+
+    status: ok | missing | summary_failed | model_unavailable | summary_present |
+    error:<Exceção>. usage = tokens da chamada só-resumo (todas as tentativas).
+    NUNCA chama a combinada nem o NER, NUNCA grava news_features (nem sentimento),
+    NUNCA publica evento.
+    """
+    article = handler.fetch_article(uid)
+    if not article:
+        return uid, "missing", dict(_ZERO_USAGE)
+
+    try:
+        result = handler._get_classifier().llm_client.summarize_single(article)
+    except Exception as e:  # noqa: BLE001 — um artigo ruim não derruba o run
+        return uid, f"error:{type(e).__name__}", dict(_ZERO_USAGE)
+
+    result = result or {}
+    usage = result.get("_usage") or dict(_ZERO_USAGE)
+    error = result.get("_error")
+    summary = result.get("summary")
+    if error or not isinstance(summary, str) or not summary.strip():
+        # Não grava: o artigo segue com summary NULL e selecionável no próximo run.
+        status = "model_unavailable" if is_model_unavailable_error(error) else "summary_failed"
+        print(f"  {uid}: {status} ({error or 'resumo vazio ou inválido'})")
+        return uid, status, usage
+
+    try:
+        written = update_summary_only(uid, summary.strip())
+    except Exception as e:  # noqa: BLE001 — tokens já gastos: devolve o usage
+        return uid, f"error:{type(e).__name__}", usage
+    return uid, ("ok" if written else "summary_present"), usage
+
+
 def _record_usage_for(conn, model_id: str, usage: dict) -> None:
     """Grava o usage de uma chamada no ledger (se não-zero)."""
     if not usage:
@@ -193,11 +335,14 @@ def run_reenrich(
     daily_quota,
     quota_fraction: float,
     workers: int,
+    process=process_one,
 ) -> dict:
     """Processa uids com governador de cota. Resumível e capado.
 
-    Para em budget_exhausted (parada graciosa) ou no primeiro modelo
-    indisponível. Sem cota (None/<=0) → modo sem-teto (apenas grava o ledger).
+    `process(uid) -> (uid, status, usage)`: process_one (chamada combinada) ou
+    process_one_summary (null-summary). Para em budget_exhausted (parada graciosa)
+    ou no primeiro modelo indisponível. Sem cota (None/<=0) → modo sem-teto
+    (apenas grava o ledger).
     """
     stats: dict = {"budget_exhausted": False, "model_unavailable": False}
     has_quota = bool(daily_quota and daily_quota > 0)
@@ -230,7 +375,7 @@ def run_reenrich(
                     print(f"budget exhausted — parando gracioso em {i}/{len(uids)}.")
                     stats["budget_exhausted"] = True
                     break
-                _, status, usage = process_one(uid)
+                _, status, usage = process(uid)
                 _consume(status, usage)
                 if stats["model_unavailable"]:
                     print("modelo indisponível (EOL/inexistente) — abortando.")
@@ -249,7 +394,7 @@ def run_reenrich(
                         break
                     chunk_end = chunk_start + chunk_size
                     chunk = uids[chunk_start:chunk_end]
-                    futs = [ex.submit(process_one, uid) for uid in chunk]
+                    futs = [ex.submit(process, uid) for uid in chunk]
                     for fut in as_completed(futs):
                         _, status, usage = fut.result()
                         _consume(status, usage)
@@ -272,6 +417,26 @@ def _pretty(stats: dict) -> dict:
     }
 
 
+def _missing_sentiment_line(missing: int, selected: int) -> str:
+    return (
+        f"sem_sentimento={missing} dos {selected} selecionados (fora do escopo do "
+        "null-summary: o sentimento não é gerado aqui)"
+    )
+
+
+def _with_embedding_line(with_embedding: int, selected: int) -> str:
+    return (
+        f"com_embedding={with_embedding} dos {selected} selecionados (embedding feito "
+        "sem o resumo; não é tocado aqui e o B3 só pega content_embedding IS NULL: "
+        "exigem passo separado, ver o README do worker)"
+    )
+
+
+def _summary_only_gaps(missing_sentiment: int, with_embedding: int, selected: int) -> None:
+    print(_missing_sentiment_line(missing_sentiment, selected))
+    print(_with_embedding_line(with_embedding, selected))
+
+
 def _today_brt() -> datetime.date:
     """Data de hoje no fuso BRT (America/Sao_Paulo)."""
     return datetime.datetime.now(BRT).date()
@@ -292,7 +457,8 @@ def build_arg_parser() -> argparse.ArgumentParser:
         "--select",
         choices=SELECT_CHOICES,
         required=True,
-        help="null-theme: tema NULL na janela; mock: summary LIKE '[MOCK]%%' na janela",
+        help="null-theme: tema NULL na janela; mock: summary LIKE '[MOCK]%%' na janela; "
+        "null-summary: tema gravado e summary NULL na janela (só o resumo, prompt enxuto)",
     )
     ap.add_argument(
         "--date-from", type=_iso_date, required=True, help="dia BRT inicial (inclusivo)"
@@ -301,8 +467,8 @@ def build_arg_parser() -> argparse.ArgumentParser:
         "--date-to",
         type=_iso_date,
         default=None,
-        help="dia BRT final (EXCLUSIVO). Obrigatório com --select null-theme e no "
-        "máximo hoje (BRT); opcional com --select mock",
+        help="dia BRT final (EXCLUSIVO). Obrigatório com --select null-theme e "
+        "null-summary, e no máximo hoje (BRT); opcional com --select mock",
     )
     ap.add_argument("--limit", type=int, default=500, help="teto de artigos neste run")
     ap.add_argument("--workers", type=int, default=1, help="concorrência de chamadas Bedrock")
@@ -340,7 +506,7 @@ def main(argv=None) -> int:
         if not args.date_to:
             print(
                 f"ERRO: --select {args.select} exige --date-to (exclusivo, no máximo hoje "
-                f"BRT = {today}); no B2: --date-from 2026-09-25 --date-to 2026-10-06",
+                f"BRT = {today}); {_EXAMPLE_WINDOW[args.select]}",
                 file=sys.stderr,
             )
             return 1
@@ -362,11 +528,17 @@ def main(argv=None) -> int:
         f"cota={daily_quota}  fração={quota_fraction}"
     )
 
+    summary_only = args.select == "null-summary"
     uids = get_window_uids(args.select, args.date_from, args.date_to, args.limit)
     print(f"selecionados={len(uids)} (limit={args.limit})")
     if not uids:
         print("nada pendente — concluido.")
         return 0
+
+    if summary_only:
+        missing_sentiment = count_missing_sentiment(uids)
+        with_embedding = count_with_embedding(uids)
+        _summary_only_gaps(missing_sentiment, with_embedding, len(uids))
 
     if args.dry_run:
         for uid in uids[:DRY_RUN_SAMPLE]:
@@ -384,7 +556,8 @@ def main(argv=None) -> int:
             file=sys.stderr,
         )
         return 1
-    handler._get_code_to_id()
+    if not summary_only:
+        handler._get_code_to_id()  # null-summary não grava tema
 
     stats = run_reenrich(
         uids,
@@ -392,7 +565,10 @@ def main(argv=None) -> int:
         daily_quota=daily_quota,
         quota_fraction=quota_fraction,
         workers=args.workers,
+        process=process_one_summary if summary_only else process_one,
     )
+    if summary_only:
+        _summary_only_gaps(missing_sentiment, with_embedding, len(uids))
     return 1 if stats["model_unavailable"] else 0
 
 

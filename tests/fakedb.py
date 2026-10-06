@@ -149,12 +149,19 @@ class FakeCursor:
             self.db.features_upserts.append((uid, dict(new)))
             return
 
-        # reenrich_combined_window: SELECT da janela (null-theme | mock), params dict.
+        # reenrich_combined_window: SELECT da janela (null-theme | mock | null-summary),
+        # params dict.
         if low.startswith("select n.unique_id from news n") and isinstance(params, dict):
             rows = []
             for uid, n in self.db.news.items():
                 theme_null_only = "most_specific_theme_id is null" in low
                 if theme_null_only and n.get("most_specific_theme_id") is not None:
+                    continue
+                if "most_specific_theme_id is not null" in low and (
+                    n.get("most_specific_theme_id") is None
+                ):
+                    continue
+                if "summary is null" in low and n.get("summary") is not None:
                     continue
                 if "summary like" in low:
                     prefix = params["mock_pattern"].rstrip("%")
@@ -168,6 +175,45 @@ class FakeCursor:
                 rows.append((day, uid))
             rows.sort(reverse=True)  # ORDER BY published_at DESC
             self._result = [(uid,) for _, uid in rows[: params["limit"]]]
+            return
+
+        # reenrich_combined_window --select null-summary: UPDATE só do resumo, com a
+        # guarda `AND summary IS NULL` (não sobrescreve resumo gravado no meio do run).
+        if low.startswith("update news set summary = %s"):
+            summary, uid = params[0], params[1]
+            n = self.db.news.get(uid)
+            guarded = "and summary is null" in low
+            if n is None or (guarded and n.get("summary") is not None):
+                self.rowcount = 0
+            else:
+                n["summary"] = summary
+                self.rowcount = 1
+            return
+
+        # reenrich_combined_window --select null-summary: quantos dos uids não têm
+        # sentimento em news_features (LEFT JOIN; só reportado, nunca gerado).
+        if low.startswith("select count(*) from news n left join news_features nf"):
+            missing = 0
+            for uid in params[0]:
+                if uid not in self.db.news:
+                    continue
+                sentiment = (self.db.news_features.get(uid) or {}).get("sentiment") or {}
+                if not sentiment.get("label"):
+                    missing += 1
+            self._result = [(missing,)]
+            return
+
+        # reenrich_combined_window --select null-summary: quantos dos uids JÁ têm
+        # content_embedding (feito sem o resumo; o B3 só pega IS NULL). Só reportado.
+        if low.startswith("select count(*) from news n where") and (
+            "content_embedding is not null" in low
+        ):
+            with_embedding = sum(
+                1
+                for uid in params[0]
+                if (self.db.news.get(uid) or {}).get("content_embedding") is not None
+            )
+            self._result = [(with_embedding,)]
             return
 
         # news.content
@@ -377,18 +423,27 @@ class FakeDB:
         self.news_features = {}  # unique_id -> features dict (mutável; menções)
         self.ledger = {}       # model_id -> {input_tokens, output_tokens}
         self.features_upserts = []  # (unique_id, features dict) por INSERT em news_features
-        self.news = {}         # unique_id -> {published_date, most_specific_theme_id, summary}
+        # unique_id -> {published_date, most_specific_theme_id, summary, content_embedding}
+        self.news = {}
         self.log = []          # (sql, params)
 
     def conn(self):
         return FakeConn(self)
 
-    def seed_news(self, unique_id, published_date, most_specific_theme_id=None, summary=None):
+    def seed_news(
+        self,
+        unique_id,
+        published_date,
+        most_specific_theme_id=None,
+        summary=None,
+        content_embedding=None,
+    ):
         """Semeia uma linha de news (published_date = dia BRT 'YYYY-MM-DD')."""
         self.news[unique_id] = {
             "published_date": published_date,
             "most_specific_theme_id": most_specific_theme_id,
             "summary": summary,
+            "content_embedding": content_embedding,
         }
 
     def seed_alias(self, alias_norm, type, entity_id):
