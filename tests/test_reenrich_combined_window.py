@@ -2,12 +2,14 @@
 Testes do re-enriquecimento da chamada combinada (scripts/reenrich_combined_window.py).
 
 Fase 2.5 (DS-1), backfills B2 (null-theme) e B5 (mock). Cobre: SQL das duas
-seleções (janela BRT, date-to exclusivo), nunca chama NER, upsert de features só
+seleções (janela BRT, date-to exclusivo e obrigatório no null-theme, nunca além de
+hoje BRT), nunca chama NER, upsert de features só
 com `sentiment`, nunca publica evento, governador de cota (record_usage +
 budget_exhausted por modelo), --dry-run sem escrita e abort sem
 ENRICHMENT_MODEL_ID. Bedrock mockado; Postgres via tests/fakedb.py.
 """
 
+import datetime
 import importlib.util
 import os
 from types import SimpleNamespace
@@ -25,6 +27,10 @@ HAIKU45 = "us.anthropic.claude-haiku-4-5-20251001-v1:0"
 CODE_TO_ID = {"01": 1, "01.02": 5, "01.02.03": 15}
 USAGE = {"input_tokens": 18900, "output_tokens": 301}
 TOKENS_PER_ARTICLE = USAGE["input_tokens"] + USAGE["output_tokens"]
+TODAY_BRT = datetime.date(2026, 10, 8)
+# Janela do B2: do EOL do Haiku 3 até o corte do INF-1 (06/10 00:19Z = 05/10 21:19
+# BRT); --date-to é exclusivo.
+B2_WINDOW = ["--date-from", "2026-09-25", "--date-to", "2026-10-06"]
 EOL_ERROR = (
     "ResourceNotFoundException: This model version has reached the end of its life. "
     "Please refer to the AWS documentation for more details."
@@ -74,6 +80,8 @@ def env(monkeypatch, rec):
     monkeypatch.delenv("BEDROCK_DAILY_TOKEN_QUOTA", raising=False)
     monkeypatch.delenv("BACKFILL_QUOTA_FRACTION", raising=False)
     monkeypatch.setattr(psycopg2, "connect", lambda *a, **k: db.conn())
+    # Relógio fixo: "hoje" (BRT) = 08/10/2026, para os testes não dependerem da data.
+    monkeypatch.setattr(rec, "_today_brt", lambda: TODAY_BRT, raising=False)
 
     clf = MagicMock()
     clf.llm_client.model_id = HAIKU45
@@ -138,10 +146,16 @@ class TestSelectSql:
             "mock_pattern": "[MOCK]%",
         }
 
-    def test_sem_date_to_nao_tem_limite_superior(self, rec):
-        sql = rec.build_select_sql("null-theme", with_date_to=False).lower()
+    def test_mock_sem_date_to_nao_tem_limite_superior(self, rec):
+        sql = rec.build_select_sql("mock", with_date_to=False).lower()
         assert "date_to" not in sql
-        assert "date_to" not in rec.build_select_params("null-theme", "2026-09-25", None, 10)
+        assert "date_to" not in rec.build_select_params("mock", "2025-09-24", None, 10)
+
+    def test_null_theme_sem_date_to_e_invalido(self, rec):
+        # Sem teto, o ORDER BY published_at DESC pegaria primeiro os artigos novos
+        # que o worker ao vivo ainda vai processar (e publicar).
+        with pytest.raises(ValueError, match="date"):
+            rec.build_select_sql("null-theme", with_date_to=False)
 
     def test_selecao_invalida(self, rec):
         with pytest.raises(ValueError):
@@ -170,7 +184,7 @@ class TestSelectSql:
     def test_limit(self, rec, env):
         for day in range(1, 6):
             env.db.seed_news(f"u{day}", f"2026-10-0{day}")
-        assert len(rec.get_window_uids("null-theme", "2026-09-25", None, 3)) == 3
+        assert len(rec.get_window_uids("null-theme", "2026-09-25", "2026-10-07", 3)) == 3
 
 
 # ---------------------------------------------------------------------- #
@@ -321,7 +335,7 @@ class TestMain:
     def test_dry_run_nao_escreve_nem_chama_bedrock(self, rec, env):
         self._seed(env.db)
 
-        code = rec.main(["--select", "null-theme", "--date-from", "2026-09-25", "--dry-run"])
+        code = rec.main(["--select", "null-theme", *B2_WINDOW, "--dry-run"])
 
         assert code == 0
         env.clf.classify_single.assert_not_called()
@@ -333,9 +347,7 @@ class TestMain:
     def test_execucao_completa(self, rec, env):
         self._seed(env.db)
 
-        code = rec.main(
-            ["--select", "null-theme", "--date-from", "2026-09-25", "--date-to", "2026-10-08"]
-        )
+        code = rec.main(["--select", "null-theme", *B2_WINDOW])
 
         assert code == 0
         assert sorted(u["unique_id"] for u in env.updates) == ["u1", "u2"]
@@ -347,7 +359,7 @@ class TestMain:
         monkeypatch.delenv("ENRICHMENT_MODEL_ID")
         monkeypatch.setenv("BEDROCK_MODEL_ID", HAIKU45)  # o legado NÃO serve
 
-        code = rec.main(["--select", "null-theme", "--date-from", "2026-09-25"])
+        code = rec.main(["--select", "null-theme", *B2_WINDOW])
 
         assert code != 0
         assert env.db.log == []  # nem consultou o banco
@@ -356,7 +368,7 @@ class TestMain:
     def test_aborta_sem_database_url(self, rec, env, monkeypatch):
         monkeypatch.delenv("DATABASE_URL")
 
-        code = rec.main(["--select", "null-theme", "--date-from", "2026-09-25"])
+        code = rec.main(["--select", "null-theme", *B2_WINDOW])
 
         assert code != 0
         assert env.db.log == []
@@ -365,7 +377,7 @@ class TestMain:
         self._seed(env.db)
         env.clf.llm_client.model_id = "anthropic.claude-3-haiku-20240307-v1:0"
 
-        code = rec.main(["--select", "null-theme", "--date-from", "2026-09-25"])
+        code = rec.main(["--select", "null-theme", *B2_WINDOW])
 
         assert code != 0
         env.clf.classify_single.assert_not_called()
@@ -376,7 +388,7 @@ class TestMain:
             _failed_result(article["unique_id"], EOL_ERROR)
         )
 
-        code = rec.main(["--select", "null-theme", "--date-from", "2026-09-25"])
+        code = rec.main(["--select", "null-theme", *B2_WINDOW])
 
         assert code != 0
 
@@ -387,6 +399,46 @@ class TestMain:
 
         assert code != 0
         assert env.db.log == []
+
+    def test_null_theme_exige_date_to(self, rec, env):
+        self._seed(env.db)
+
+        code = rec.main(["--select", "null-theme", "--date-from", "2026-09-25"])
+
+        assert code != 0
+        assert env.db.log == []  # nem consultou o banco
+        env.clf.classify_single.assert_not_called()
+
+    def test_null_theme_date_to_nao_passa_de_hoje_brt(self, rec, env):
+        # date-to exclusivo > hoje incluiria artigos de hoje, que são do worker ao vivo.
+        self._seed(env.db)
+
+        code = rec.main(
+            ["--select", "null-theme", "--date-from", "2026-09-25", "--date-to", "2026-10-09"]
+        )
+
+        assert code != 0
+        assert env.db.log == []
+        env.clf.classify_single.assert_not_called()
+
+    def test_null_theme_date_to_igual_a_hoje_brt_e_aceito(self, rec, env):
+        # date-to = hoje (exclusivo) cobre até ontem 23:59 BRT.
+        self._seed(env.db)
+
+        code = rec.main(
+            ["--select", "null-theme", "--date-from", "2026-09-25", "--date-to", "2026-10-08"]
+        )
+
+        assert code == 0
+        assert sorted(u["unique_id"] for u in env.updates) == ["u1", "u2"]
+
+    def test_mock_sem_date_to_continua_valido(self, rec, env):
+        env.db.seed_news("m1", "2025-10-01", most_specific_theme_id=1, summary="[MOCK] Resumo")
+
+        code = rec.main(["--select", "mock", "--date-from", "2025-09-24", "--dry-run"])
+
+        assert code == 0
+        env.clf.classify_single.assert_not_called()
 
     def test_select_e_date_from_obrigatorios(self, rec):
         with pytest.raises(SystemExit):
@@ -405,7 +457,7 @@ class TestMain:
         monkeypatch.setenv("BEDROCK_DAILY_TOKEN_QUOTA", f'{{"{HAIKU45}": 1000}}')
         env.db.ledger[HAIKU45] = {"input_tokens": 900, "output_tokens": 0}
 
-        code = rec.main(["--select", "null-theme", "--date-from", "2026-09-25"])
+        code = rec.main(["--select", "null-theme", *B2_WINDOW])
 
         assert code == 0  # budget esgotado é parada graciosa (resumível)
         env.clf.classify_single.assert_not_called()
