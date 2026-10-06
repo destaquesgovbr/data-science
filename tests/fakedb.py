@@ -149,6 +149,27 @@ class FakeCursor:
             self.db.features_upserts.append((uid, dict(new)))
             return
 
+        # reenrich_combined_window: SELECT da janela (null-theme | mock), params dict.
+        if low.startswith("select n.unique_id from news n") and isinstance(params, dict):
+            rows = []
+            for uid, n in self.db.news.items():
+                theme_null_only = "most_specific_theme_id is null" in low
+                if theme_null_only and n.get("most_specific_theme_id") is not None:
+                    continue
+                if "summary like" in low:
+                    prefix = params["mock_pattern"].rstrip("%")
+                    if not (n.get("summary") or "").startswith(prefix):
+                        continue
+                day = n["published_date"]  # 'YYYY-MM-DD' (dia BRT)
+                if day < params["date_from"]:
+                    continue
+                if params.get("date_to") and day >= params["date_to"]:
+                    continue
+                rows.append((day, uid))
+            rows.sort(reverse=True)  # ORDER BY published_at DESC
+            self._result = [(uid,) for _, uid in rows[: params["limit"]]]
+            return
+
         # news.content
         if "select content from news where unique_id" in low:
             uid = params[0]
@@ -356,10 +377,19 @@ class FakeDB:
         self.news_features = {}  # unique_id -> features dict (mutável; menções)
         self.ledger = {}       # model_id -> {input_tokens, output_tokens}
         self.features_upserts = []  # (unique_id, features dict) por INSERT em news_features
+        self.news = {}         # unique_id -> {published_date, most_specific_theme_id, summary}
         self.log = []          # (sql, params)
 
     def conn(self):
         return FakeConn(self)
+
+    def seed_news(self, unique_id, published_date, most_specific_theme_id=None, summary=None):
+        """Semeia uma linha de news (published_date = dia BRT 'YYYY-MM-DD')."""
+        self.news[unique_id] = {
+            "published_date": published_date,
+            "most_specific_theme_id": most_specific_theme_id,
+            "summary": summary,
+        }
 
     def seed_alias(self, alias_norm, type, entity_id):
         self.alias[(alias_norm, type)] = entity_id
