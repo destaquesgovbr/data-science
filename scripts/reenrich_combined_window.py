@@ -4,8 +4,9 @@ Re-enriquecimento da chamada COMBINADA (tema + resumo + sentimento) numa janela
 de datas, SEM NER e SEM publicar evento. Fase 2.5 (DS-1).
 
 Backfills:
-  - B2: `--select null-theme --date-from 2026-09-25`: artigos que ficaram sem
-    tema quando o Claude 3 Haiku teve EOL no Bedrock (26/09 até o infra#215).
+  - B2: `--select null-theme --date-from 2026-09-25 --date-to 2026-10-06`:
+    artigos que ficaram sem tema quando o Claude 3 Haiku teve EOL no Bedrock
+    (25/09 até o INF-1/infra#215, aplicado em 06/10 00:19Z = 05/10 21:19 BRT).
   - B5 (decisão D3): `--select mock`: os ~4.600 artigos com summary '[MOCK]…'
     (tema também falso; ver issue #3).
 
@@ -28,6 +29,10 @@ Garantias:
     (BACKFILL_QUOTA_FRACTION, default 0.8) é aplicada aqui, uma única vez.
   - Modelo indisponível (EOL / id inexistente) aborta o run (código de saída 1).
   - Janela por dia BRT (America/Sao_Paulo); --date-to é EXCLUSIVO.
+  - `null-theme` EXIGE --date-to, e ele não pode passar de hoje (BRT): sem teto,
+    o ORDER BY published_at DESC pegaria primeiro artigos novos que o worker ao
+    vivo ainda vai processar. Gravar o tema deles aqui (sem NER e sem publicar)
+    faria o worker devolver `skipped` e o artigo ficaria sem dgb.news.enriched.
   - --dry-run só seleciona e lista: não chama o Bedrock nem escreve nada.
 
 Env obrigatórias: DATABASE_URL, ENRICHMENT_MODEL_ID (sem fallback para o default
@@ -38,7 +43,7 @@ AWS_ACCESS_KEY_ID/SECRET). Opcionais: BEDROCK_DAILY_TOKEN_QUOTA (JSON
 Uso (sempre --dry-run → --limit 10 → completo, cada etapa com OK):
     ENRICHMENT_MODEL_ID=us.anthropic.claude-haiku-4-5-20251001-v1:0 \\
     PYTHONPATH=src .venv/bin/python scripts/reenrich_combined_window.py \\
-        --select null-theme --date-from 2026-09-25 [--date-to 2026-10-08] \\
+        --select null-theme --date-from 2026-09-25 --date-to 2026-10-06 \\
         [--limit 500] [--workers 1] [--dry-run]
 """
 import argparse
@@ -47,6 +52,7 @@ import os
 import sys
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from zoneinfo import ZoneInfo
 
 import psycopg2
 
@@ -62,6 +68,9 @@ from news_enrichment.quota_governor import (  # noqa: E402
 from news_enrichment.worker import handler  # noqa: E402
 
 SELECT_CHOICES = ("null-theme", "mock")
+# Seleções que disputam artigos com o worker ao vivo: exigem --date-to <= hoje BRT.
+SELECTS_REQUIRING_DATE_TO = frozenset({"null-theme"})
+BRT = ZoneInfo("America/Sao_Paulo")
 MOCK_SUMMARY_PATTERN = "[MOCK]%"
 # Checa o budget a cada N artigos (tolera pequena ultrapassagem; margem ~fração).
 BUDGET_CHECK_EVERY = 5
@@ -76,7 +85,10 @@ def build_select_sql(select: str, with_date_to: bool) -> str:
     """SELECT da janela: `null-theme` (tema NULL) ou `mock` (summary '[MOCK]%').
 
     Parâmetros nomeados (ver build_select_params). Ordem: mais recentes primeiro.
+    `null-theme` sem teto (with_date_to=False) é recusado: ver o docstring do módulo.
     """
+    if select in SELECTS_REQUIRING_DATE_TO and not with_date_to:
+        raise ValueError(f"--select {select} exige --date-to (teto da janela)")
     if select == "null-theme":
         predicate = "n.most_specific_theme_id IS NULL"
     elif select == "mock":
@@ -260,6 +272,11 @@ def _pretty(stats: dict) -> dict:
     }
 
 
+def _today_brt() -> datetime.date:
+    """Data de hoje no fuso BRT (America/Sao_Paulo)."""
+    return datetime.datetime.now(BRT).date()
+
+
 def _iso_date(value: str) -> str:
     try:
         return datetime.date.fromisoformat(value).isoformat()
@@ -281,7 +298,11 @@ def build_arg_parser() -> argparse.ArgumentParser:
         "--date-from", type=_iso_date, required=True, help="dia BRT inicial (inclusivo)"
     )
     ap.add_argument(
-        "--date-to", type=_iso_date, default=None, help="dia BRT final (EXCLUSIVO; opcional)"
+        "--date-to",
+        type=_iso_date,
+        default=None,
+        help="dia BRT final (EXCLUSIVO). Obrigatório com --select null-theme e no "
+        "máximo hoje (BRT); opcional com --select mock",
     )
     ap.add_argument("--limit", type=int, default=500, help="teto de artigos neste run")
     ap.add_argument("--workers", type=int, default=1, help="concorrência de chamadas Bedrock")
@@ -312,6 +333,24 @@ def main(argv=None) -> int:
     if args.date_to and args.date_to <= args.date_from:
         print("ERRO: --date-to (exclusivo) deve ser posterior a --date-from", file=sys.stderr)
         return 1
+
+    if args.select in SELECTS_REQUIRING_DATE_TO:
+        # Artigos novos sem tema são do worker ao vivo (que roda o NER e publica).
+        today = _today_brt().isoformat()
+        if not args.date_to:
+            print(
+                f"ERRO: --select {args.select} exige --date-to (exclusivo, no máximo hoje "
+                f"BRT = {today}); no B2: --date-from 2026-09-25 --date-to 2026-10-06",
+                file=sys.stderr,
+            )
+            return 1
+        if args.date_to > today:
+            print(
+                f"ERRO: --date-to {args.date_to} passa de hoje BRT ({today}): a janela "
+                "incluiria artigos que o worker ao vivo ainda vai processar",
+                file=sys.stderr,
+            )
+            return 1
 
     quota_cfg = parse_daily_quota_env()
     daily_quota = quota_cfg["quota"].get(model_id)
