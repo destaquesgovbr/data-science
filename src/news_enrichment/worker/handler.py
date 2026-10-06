@@ -11,6 +11,7 @@ Linhas de log estáveis (para métricas/alertas baseados em log; ver README.md):
   - ERROR    enrichment_update_failed uid=<uid> model=<id> stats=<stats>
   - ERROR    enrichment_model_env_missing default=<id> ...
   - INFO     enrichment_ner uid=<uid> status=<ran|failed|skipped_already_done> model=<id>
+             [entities=<n>]
 """
 
 import json
@@ -97,7 +98,8 @@ def _resolve_enrichment_model_id() -> str:
     ENRICHMENT_MODEL_ID é o nome preferido (Terraform, infra#215); BEDROCK_MODEL_ID
     é mantido por retrocompatibilidade. Sem nenhuma das duas, cai no default
     legado (DEFAULT_ENRICHMENT_MODEL_ID, inalterado) e loga em ERROR: o Haiku 3
-    teve EOL no Bedrock e o default silencioso zerou o enriquecimento por 15 dias.
+    teve EOL no Bedrock e o default silencioso zerou o enriquecimento de 25/09 a
+    06/10/2026.
     """
     model_id = os.environ.get("ENRICHMENT_MODEL_ID") or os.environ.get("BEDROCK_MODEL_ID")
     if model_id:
