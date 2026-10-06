@@ -126,6 +126,29 @@ class FakeCursor:
             ]
             return
 
+        # worker: NER já feito para o uid? (entidades em news_features OU resposta
+        # crua de NER em news_llm_raw) — anti-amplificação do NER.
+        if low.startswith("select exists") and "news_llm_raw" in low and "? 'entities'" in low:
+            uid = params[0]
+            feats = self.db.news_features.get(uid) or {}
+            done = "entities" in feats or any(
+                p[0] == uid and p[1] == "ner" for p in self.db.llm_raw
+            )
+            self._result = [(done,)]
+            return
+
+        # worker._upsert_ai_features: INSERT ... ON CONFLICT DO UPDATE SET
+        # features = news_features.features || EXCLUDED.features (merge raso).
+        if "insert into news_features" in low:
+            import json as _json
+            uid, payload = params[0], params[1]
+            new = getattr(payload, "adapted", payload)
+            if isinstance(new, str):
+                new = _json.loads(new)
+            self.db.news_features.setdefault(uid, {}).update(new)
+            self.db.features_upserts.append((uid, dict(new)))
+            return
+
         # news.content
         if "select content from news where unique_id" in low:
             uid = params[0]
@@ -332,6 +355,7 @@ class FakeDB:
         self.backfilled = {}   # unique_id -> new entities json str
         self.news_features = {}  # unique_id -> features dict (mutável; menções)
         self.ledger = {}       # model_id -> {input_tokens, output_tokens}
+        self.features_upserts = []  # (unique_id, features dict) por INSERT em news_features
         self.log = []          # (sql, params)
 
     def conn(self):
