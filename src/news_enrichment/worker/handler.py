@@ -12,6 +12,9 @@ Linhas de log estáveis (para métricas/alertas baseados em log; ver README.md):
   - ERROR    enrichment_model_env_missing default=<id> ...
   - INFO     enrichment_ner uid=<uid> status=<ran|failed|skipped_already_done> model=<id>
              [entities=<n>]
+  - WARNING  enrichment_ner uid=<uid> status=skipped_check_failed model=<id> error=<Exceção>
+             (consulta de guarda do NER falhou; NER pulado, recuperar com
+             scripts/backfill_ner_corpus.py)
 """
 
 import json
@@ -194,23 +197,18 @@ def ner_already_done(unique_id: str) -> bool:
     NER (Sonnet) de novo. Também protege entidades já canonicalizadas, que o merge
     `features || {"entities": ...}` sobrescreveria.
 
-    Falha de DB → True (fail-closed: pula o NER e loga WARNING). Um NER pulado é
-    recuperável pelo scripts/backfill_ner_corpus.py; amplificação de custo não é.
+    Falha de DB (conexão ou consulta) → LEVANTA a exceção: "não deu para checar"
+    não é "já feito". Quem chama decide; o _run_ner_once pula o NER (fail-closed)
+    com o status próprio `skipped_check_failed`. Um NER pulado é recuperável pelo
+    scripts/backfill_ner_corpus.py; amplificação de custo não é.
     """
-    try:
-        conn = psycopg2.connect(_get_database_url())
-    except Exception as e:
-        logger.warning(f"ner_already_done: falha ao conectar para {unique_id} (NER pulado): {e}")
-        return True
+    conn = psycopg2.connect(_get_database_url())
     try:
         cursor = conn.cursor()
         cursor.execute(_NER_ALREADY_DONE_SQL, (unique_id, unique_id))
         row = cursor.fetchone()
         cursor.close()
         return bool(row and row[0])
-    except Exception as e:
-        logger.warning(f"ner_already_done: falha na consulta para {unique_id} (NER pulado): {e}")
-        return True
     finally:
         try:
             conn.close()
@@ -364,10 +362,25 @@ def _run_ner_once(
 ) -> tuple[list, dict | None, str]:
     """Roda o NER se ainda não rodou para o uid. Devolve (entities, ner_raw, status).
 
-    status: "ran" | "failed" | "skipped_already_done". Nunca levanta.
+    status: "ran" | "failed" | "skipped_already_done" | "skipped_check_failed".
+    `skipped_check_failed` = a consulta de guarda falhou (erro de DB): o NER é
+    pulado (fail-closed, sem amplificar custo) e a linha estável sai em WARNING,
+    separada de `skipped_already_done` para a métrica de NER por uid. Nunca levanta.
     """
     ner_model_id = getattr(classifier.llm_client, "ner_model_id", None)
-    if ner_already_done(unique_id):
+    try:
+        already_done = ner_already_done(unique_id)
+    except Exception as e:
+        logger.warning(f"ner_already_done: falha na consulta de guarda para {unique_id}: {e}")
+        logger.warning(
+            "enrichment_ner uid=%s status=skipped_check_failed model=%s error=%s",
+            unique_id,
+            ner_model_id,
+            type(e).__name__,
+        )
+        return [], None, "skipped_check_failed"
+
+    if already_done:
         logger.info(
             "enrichment_ner uid=%s status=skipped_already_done model=%s", unique_id, ner_model_id
         )
