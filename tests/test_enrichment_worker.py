@@ -511,16 +511,106 @@ class TestNerAlreadyDone:
         assert "features ? 'entities'" in sql
         assert "news_llm_raw" in sql and "task = 'ner'" in sql
 
-    def test_falha_de_db_assume_feito_para_nao_amplificar(self, monkeypatch, caplog):
+    def test_falha_ao_conectar_levanta(self, monkeypatch):
+        # Não devolve True disfarçado de "já feito": quem chama distingue o caso.
         def _boom(*a, **k):
             raise RuntimeError("db down")
 
         monkeypatch.setattr(handler.psycopg2, "connect", _boom)
         monkeypatch.setattr(handler, "_get_database_url", lambda: "postgresql://fake")
+
+        with pytest.raises(RuntimeError, match="db down"):
+            handler.ner_already_done(_UID)
+
+    def test_falha_na_consulta_levanta_e_fecha_conexao(self, monkeypatch):
+        conn = MagicMock()
+        conn.cursor.return_value.execute.side_effect = RuntimeError("statement timeout")
+        monkeypatch.setattr(handler.psycopg2, "connect", lambda *a, **k: conn)
+        monkeypatch.setattr(handler, "_get_database_url", lambda: "postgresql://fake")
+
+        with pytest.raises(RuntimeError, match="statement timeout"):
+            handler.ner_already_done(_UID)
+        conn.close.assert_called_once()
+
+
+class TestNerGuardCheckFailed:
+    """Guarda do NER indisponível (erro de DB): pula o NER (fail-closed) com status próprio.
+
+    A métrica de NER por uid não pode contar "pulado por erro de DB" como "já feito":
+    no caminho de sucesso o tema é gravado e a idempotência impede nova tentativa,
+    então esse artigo fica sem NER até o backfill_ner_corpus.py.
+    """
+
+    @pytest.fixture(autouse=True)
+    def _patches(self, sample_article):
+        with patch.object(handler, "is_already_enriched", return_value=False), patch.object(
+            handler, "fetch_article", return_value=dict(sample_article)
+        ), patch.object(
+            handler, "ner_already_done", side_effect=RuntimeError("db down")
+        ), patch.object(
+            handler, "publish_enriched_event"
+        ) as mock_publish, patch.object(
+            handler,
+            "update_news_enrichment",
+            return_value={"updated": 1, "skipped": 0, "failed": 0},
+        ), patch.object(
+            handler, "_get_code_to_id", return_value={"01.02.03": 15}
+        ), patch.object(
+            handler, "_get_database_url", return_value="postgresql://fake"
+        ), patch.object(
+            handler, "_upsert_ai_features"
+        ) as mock_upsert, patch.object(
+            handler, "store_raw_llm_response"
+        ) as mock_store_raw, patch.object(
+            handler, "_record_ledger_usage"
+        ):
+            self.mock_publish = mock_publish
+            self.mock_upsert = mock_upsert
+            self.mock_store_raw = mock_store_raw
+            yield
+
+    def _stable_ner_lines(self, caplog):
+        return [
+            (r.levelno, r.getMessage())
+            for r in caplog.records
+            if r.getMessage().startswith("enrichment_ner ")
+        ]
+
+    def test_falha_combinada_com_guarda_indisponivel(self, failing_classifier, caplog):
         caplog.set_level(logging.INFO, logger=_HANDLER_LOGGER)
 
-        assert handler.ner_already_done(_UID) is True
-        assert _messages(caplog, logging.WARNING)
+        with patch.object(handler, "_get_classifier", return_value=failing_classifier):
+            result = handler.enrich_article(_UID)
+
+        assert result["status"] == "classification_failed"
+        assert result["ner"] == "skipped_check_failed"
+        failing_classifier.llm_client.extract_entities.assert_not_called()
+        self.mock_store_raw.assert_not_called()
+        self.mock_upsert.assert_not_called()
+        assert self._stable_ner_lines(caplog) == [
+            (
+                logging.WARNING,
+                f"enrichment_ner uid={_UID} status=skipped_check_failed "
+                "model=us.anthropic.claude-sonnet-4-6 error=RuntimeError",
+            )
+        ]
+
+    def test_sucesso_com_guarda_indisponivel(
+        self, failing_classifier, classification_result, caplog
+    ):
+        failing_classifier.classify_single.return_value = dict(classification_result)
+        caplog.set_level(logging.INFO, logger=_HANDLER_LOGGER)
+
+        with patch.object(handler, "_get_classifier", return_value=failing_classifier):
+            result = handler.enrich_article(_UID)
+
+        assert result["status"] == "enriched"
+        failing_classifier.llm_client.extract_entities.assert_not_called()
+        self.mock_publish.assert_called_once()
+        lines = self._stable_ner_lines(caplog)
+        assert len(lines) == 1
+        assert lines[0][1].startswith(f"enrichment_ner uid={_UID} status=skipped_check_failed ")
+        assert all("skipped_already_done" not in m for _, m in lines)
 
 
 class TestSuccessPathNerGuard:
