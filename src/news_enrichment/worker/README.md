@@ -103,7 +103,8 @@ sem NER.
 
 ## Re-enriquecimento sem NER (`scripts/reenrich_combined_window.py`)
 
-Refaz só a chamada combinada numa janela de dias BRT (`--date-to` exclusivo).
+Refaz só a chamada combinada numa janela de dias BRT (`--date-to` exclusivo); com
+`--select null-summary`, refaz só o resumo, com um prompt enxuto (ver abaixo).
 Nunca chama o NER e nunca publica evento. Respeita o governador de cota por modelo.
 
 ```bash
@@ -128,7 +129,60 @@ PYTHONPATH=src .venv/bin/python scripts/reenrich_combined_window.py \
   (`BACKFILL_QUOTA_FRACTION`, default 0.8) é aplicada uma única vez.
 - Depois do backfill, o Typesense só reflete os temas após o `incremental-sync`.
 - Não recupera artigo com tema e sem sentimento (upsert falho ou sentimento `None`
-  depois do UPDATE de tema): a seleção é por tema `NULL` ou resumo `[MOCK]`.
+  depois do UPDATE de tema): a seleção é por tema `NULL` ou resumo `[MOCK]`. O
+  `null-summary` (abaixo) também não gera sentimento; só conta os artigos sem ele.
+
+### Só o resumo: `--select null-summary` (DS-2)
+
+Desde 02/06/2026, o re-scrape do scraper (`_update_existing_articles`, que casa por
+agência + URL) grava `summary = NULL` e `content_embedding = NULL` em artigos já
+enriquecidos. Ficaram ~6.935 artigos com tema e sem resumo, que por isso também
+estão sem embedding e fora da busca semântica. A idempotência do worker olha só o
+tema, então ele nunca refaz esses resumos. A chamada combinada não serve para o
+backfill: ela manda a taxonomia inteira (~18,9k tokens de entrada por artigo) para
+refazer um tema que já existe.
+
+```bash
+ENRICHMENT_MODEL_ID=us.anthropic.claude-haiku-4-5-20251001-v1:0 \
+BEDROCK_DAILY_TOKEN_QUOTA='{"us.anthropic.claude-haiku-4-5-20251001-v1:0": <cota AWS real>}' \
+PYTHONPATH=src .venv/bin/python scripts/reenrich_combined_window.py \
+    --select null-summary --date-from 2026-06-01 --date-to <hoje BRT> \
+    --dry-run   # depois --limit 10, depois completo
+```
+
+- **Seleção:** `most_specific_theme_id IS NOT NULL AND summary IS NULL` na janela
+  BRT, mais recentes primeiro. `--date-to` é obrigatório e no máximo hoje (BRT),
+  como no `null-theme`.
+- **Prompt enxuto** (`BedrockLLMClient.summarize_single`): as mesmas regras de
+  resumo da chamada combinada (`SUMMARY_TASK_INSTRUCTION`, `SUMMARY_EXAMPLE` e
+  2.000 caracteres de conteúdo), sem a taxonomia, os códigos de tema e o
+  sentimento. O prompt tem no máximo ~3 mil caracteres. A resposta é
+  `{"summary": "..."}`, e as cercas `` ```json `` são toleradas.
+- **Escrita:** `UPDATE news SET summary = %s, updated_at = NOW() WHERE unique_id = %s
+  AND summary IS NULL`. Não regrava tema, não roda o NER, não grava `news_features`,
+  não publica `dgb.news.enriched` e não toca `content_embedding`.
+- **Falhas:** resumo vazio ou inválido não é gravado e conta como `summary_failed`.
+  O artigo continua selecionável no próximo run. Se outro processo gravar o resumo
+  no meio do run, a guarda `IS NULL` preserva o resumo dele (`summary_present`).
+- **Sentimento:** não é gerado. O script reporta `sem_sentimento=N dos M
+  selecionados` na seleção (inclusive no `--dry-run`) e no fim do run.
+- Mesmo modelo (`ENRICHMENT_MODEL_ID`, obrigatório), mesmo ledger e mesmo
+  governador de cota do `null-theme`. Os tokens de respostas descartadas também
+  entram no ledger.
+
+**Ordem operacional** (cada etapa com OK):
+
+1. **Deploy do SC-1 (scraper).** Sem ele, o re-scrape apaga de novo o resumo e o
+   embedding dos artigos ainda na janela de re-scrape (~16 h) e continua apagando
+   os novos.
+2. **Backfill dos resumos (este modo):** `--dry-run`, depois `--limit 10`, depois
+   completo. É resumível: para em `budget_exhausted` e retoma no dia UTC seguinte.
+3. **Backfill dos embeddings (B3):** `embeddings/scripts/backfill_embeddings.py`. O
+   texto do embedding é `title + summary` (o `content` só entra sem resumo), e o
+   script só pega `content_embedding IS NULL`. Rodar antes do passo 2 gravaria um
+   embedding sem o resumo, que depois não seria refeito.
+4. **`incremental-sync` do Typesense (B4):** workflow `typesense-maintenance-sync`
+   do `data-platform`, cobrindo a janela.
 
 ## Pendências fora deste código
 
