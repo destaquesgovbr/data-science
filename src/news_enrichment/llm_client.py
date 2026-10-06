@@ -67,6 +67,16 @@ _MODEL_UNAVAILABLE_MARKERS = (
     "on-demand throughput",
     "access to the model",
 )
+# Só para AccessDeniedException: o deny de IAM/SCP no InvokeModel cita a ação e
+# o ARN do modelo com hífen ("...:foundation-model/<id>", "...:inference-profile/
+# <id>"). É o erro de uma troca de modelo sem IAM para o perfil `us.` ou para os
+# ARNs regionais. Não valem para ValidationException (erro de entrada pode citar
+# o ARN).
+_ACCESS_DENIED_MODEL_MARKERS = (
+    "bedrock:invokemodel",
+    "foundation-model",
+    "inference-profile",
+)
 
 
 def format_bedrock_error(exc: BaseException) -> str:
@@ -91,6 +101,9 @@ def is_model_unavailable_error(error: Optional[str]) -> bool:
     - ValidationException / AccessDeniedException → só quando a mensagem fala do
       modelo (id inválido, fim de vida, perfil de inferência, sem acesso). Erros de
       entrada ("Input is too long for requested model") NÃO contam.
+    - AccessDeniedException também quando é o deny de IAM/SCP no InvokeModel
+      (mensagem com `bedrock:InvokeModel` ou o ARN `foundation-model/…` /
+      `inference-profile/…`).
     """
     if not error:
         return False
@@ -100,7 +113,10 @@ def is_model_unavailable_error(error: Optional[str]) -> bool:
         return True
     if code in _MODEL_UNAVAILABLE_CODES_WITH_MARKER:
         low = message.lower()
-        return any(marker in low for marker in _MODEL_UNAVAILABLE_MARKERS)
+        markers = _MODEL_UNAVAILABLE_MARKERS
+        if code == "AccessDeniedException":
+            markers = markers + _ACCESS_DENIED_MODEL_MARKERS
+        return any(marker in low for marker in markers)
     return False
 
 
