@@ -58,10 +58,11 @@ nem as chaves; campos novos entram no fim.
 | Nível | Linha | Quando |
 |---|---|---|
 | ERROR | `enrichment_combined_failed uid=<uid> model=<id> error=<ErrorCode>: <msg>` | Toda falha da chamada combinada. `error` vem de `_error`; sem `_error` (temas todos nulos) é `AllThemeFieldsNull: …`. |
-| CRITICAL | `enrichment_model_unavailable model=<id> error_code=<ErrorCode>` | Falha combinada por modelo indisponível: `ResourceNotFoundException` (fim de vida, id inexistente) ou `ValidationException`/`AccessDeniedException` que falam do modelo. **Alerta: troque `ENRICHMENT_MODEL_ID`.** |
+| CRITICAL | `enrichment_model_unavailable model=<id> error_code=<ErrorCode>` | Falha combinada por modelo indisponível: `ResourceNotFoundException` (fim de vida, id inexistente), `ValidationException`/`AccessDeniedException` que falam do modelo, ou `AccessDeniedException` de IAM/SCP no `bedrock:InvokeModel` (ARN `foundation-model/…` ou `inference-profile/…`). **Alerta: troque `ENRICHMENT_MODEL_ID` ou corrija o IAM do modelo.** |
 | ERROR | `enrichment_update_failed uid=<uid> model=<id> stats=<stats>` | Classificou, mas nenhum código de tema mapeou para `themes`. |
 | ERROR | `enrichment_model_env_missing default=<id> (...)` | No cold start, sem `ENRICHMENT_MODEL_ID`/`BEDROCK_MODEL_ID`. |
 | INFO | `enrichment_ner uid=<uid> status=<ran\|failed\|skipped_already_done> model=<id> [entities=<n>]` | Uma por evento que chega à etapa de NER (métrica de NER por uid). |
+| WARNING | `enrichment_ner uid=<uid> status=skipped_check_failed model=<id> error=<Exceção>` | A consulta de guarda do NER falhou (erro de DB): NER pulado (fail-closed). Não é "já feito": no caminho de sucesso o tema é gravado e o worker não tenta de novo, então recupere com `scripts/backfill_ner_corpus.py`. |
 
 Outras linhas úteis: `Cliente Bedrock inicializado: enrichment=<id> ner=<id>` (cold
 start) e `Result for <uid>: <status>` (`app.py`, por evento).
@@ -95,8 +96,10 @@ OR EXISTS (news_llm_raw WHERE task = 'ner')  -- NER respondeu, mesmo sem entidad
 
 A guarda vale nos dois caminhos (falha e sucesso) e também protege entidades já
 canonicalizadas, que o merge `features || {"entities": …}` sobrescreveria. Se a
-consulta falhar, o NER é pulado (fail-closed) com WARNING; o
-`scripts/backfill_ner_corpus.py` recupera os artigos sem NER.
+consulta falhar (erro de DB), o NER é pulado (fail-closed) com a linha estável
+`enrichment_ner … status=skipped_check_failed` em WARNING, separada de
+`skipped_already_done`. O `scripts/backfill_ner_corpus.py` recupera os artigos
+sem NER.
 
 ## Re-enriquecimento sem NER (`scripts/reenrich_combined_window.py`)
 
@@ -107,16 +110,36 @@ Nunca chama o NER e nunca publica evento. Respeita o governador de cota por mode
 ENRICHMENT_MODEL_ID=us.anthropic.claude-haiku-4-5-20251001-v1:0 \
 BEDROCK_DAILY_TOKEN_QUOTA='{"us.anthropic.claude-haiku-4-5-20251001-v1:0": <cota AWS real>}' \
 PYTHONPATH=src .venv/bin/python scripts/reenrich_combined_window.py \
-    --select null-theme --date-from 2026-09-25 --dry-run   # depois --limit 10, depois completo
+    --select null-theme --date-from 2026-09-25 --date-to 2026-10-06 \
+    --dry-run   # depois --limit 10, depois completo
 ```
 
-- `--select null-theme`: `most_specific_theme_id IS NULL` na janela (B2).
-- `--select mock`: `summary LIKE '[MOCK]%'` na janela (B5).
+- `--select null-theme`: `most_specific_theme_id IS NULL` na janela (B2). **Exige
+  `--date-to`, no máximo hoje (BRT).** Sem teto, o `ORDER BY published_at DESC`
+  pegaria primeiro artigos novos que o worker ao vivo ainda vai processar; o script
+  gravaria o tema sem NER e sem publicar, e o worker passaria a devolver `skipped`
+  (artigo sem `dgb.news.enriched`: embeddings, Typesense, push, federation). A
+  janela do B2 vai até o corte do INF-1 (06/10 00:19Z = 05/10 21:19 BRT), então
+  `--date-to 2026-10-06` só é aceito a partir de 06/10 BRT.
+- `--select mock`: `summary LIKE '[MOCK]%'` na janela (B5); `--date-to` opcional.
 - `ENRICHMENT_MODEL_ID` é obrigatória (sem fallback). Modelo indisponível aborta com
   código 1. `budget_exhausted` encerra com 0 e o run é retomável.
 - Use a cota **real** da AWS em `BEDROCK_DAILY_TOKEN_QUOTA`. A fração
   (`BACKFILL_QUOTA_FRACTION`, default 0.8) é aplicada uma única vez.
 - Depois do backfill, o Typesense só reflete os temas após o `incremental-sync`.
+- Não recupera artigo com tema e sem sentimento (upsert falho ou sentimento `None`
+  depois do UPDATE de tema): a seleção é por tema `NULL` ou resumo `[MOCK]`.
+
+## Pendências fora deste código
+
+- **Alertas:** este serviço só emite as linhas estáveis. A log-based metric e a
+  alert policy (`enrichment_model_unavailable`, `enrichment_update_failed`) ficam
+  no `infra/` (Terraform). O worker loga texto puro (`logging.basicConfig`), então
+  o filtro usa `textPayload:"…"` (como na consulta acima), não `severity`.
+- **Chamada combinada repetida:** a guarda de NER não cobre a chamada combinada.
+  Artigo em `update_failed` ou `AllThemeFieldsNull` continua sem tema e refaz a
+  chamada paga (Haiku 4.5) a cada republicação do scraper (~13x/dia). A correção é
+  no scraper: publicar `scraped` em update só quando o `content_hash` mudar.
 
 ## Testes
 
