@@ -547,6 +547,21 @@ class TestSelectNullSummary:
         assert uids == ["meio", "inicio"]  # ORDER BY published_at DESC
 
 
+class TestContagemComEmbedding:
+    def test_sql_so_conta_sem_escrever(self, rec):
+        sql = " ".join(rec.WITH_EMBEDDING_SQL.split()).lower()
+        assert sql.startswith("select count(*) from news n where")
+        assert "n.unique_id = any(%s)" in sql
+        assert "n.content_embedding is not null" in sql
+
+    def test_conta_so_os_uids_pedidos_com_embedding(self, rec, env):
+        env.db.seed_news("a", "2026-09-01", most_specific_theme_id=15, content_embedding=[0.1])
+        env.db.seed_news("b", "2026-09-01", most_specific_theme_id=15)
+        env.db.seed_news("fora", "2026-09-01", most_specific_theme_id=15, content_embedding=[0.2])
+
+        assert rec.count_with_embedding(["a", "b", "inexistente"]) == 1
+
+
 class TestFluxoResumo:
     def _seed(self, db, *uids, summary=None):
         for uid in uids:
@@ -752,6 +767,42 @@ class TestMainNullSummary:
         assert "sem_sentimento=1" in final
         assert env.db.features_upserts == []  # o sentimento NÃO é gerado aqui
         assert env.db.news_features["u2"] == {"entities": []}
+
+    def test_reporta_com_embedding_sem_tocar_no_embedding(self, rec, env, capsys):
+        # u1 já tem embedding, feito sem o resumo (a partir do content). O B3 só pega
+        # content_embedding IS NULL e não o refaria: o operador precisa ver quantos são.
+        self._seed(env.db)
+        env.db.seed_news("u1", "2026-06-15", most_specific_theme_id=15, content_embedding=[0.1])
+
+        code = rec.main(["--select", "null-summary", *SUMMARY_WINDOW])
+
+        assert code == 0
+        selecao, final = capsys.readouterr().out.split("FIM:")
+        assert "com_embedding=1 dos 2 selecionados" in selecao
+        assert "com_embedding=1 dos 2 selecionados" in final
+        assert env.db.news["u1"]["summary"] == "Resumo enxuto de u1."
+        assert env.db.news["u1"]["content_embedding"] == [0.1]  # embedding intacto
+        assert env.db.news["u2"]["content_embedding"] is None
+        assert all("content_embedding" not in sql for sql, _ in _news_updates(env.db))
+
+    def test_dry_run_reporta_com_embedding(self, rec, env, capsys):
+        self._seed(env.db)
+        env.db.seed_news("u2", "2026-10-01", most_specific_theme_id=15, content_embedding=[0.2])
+
+        code = rec.main(["--select", "null-summary", *SUMMARY_WINDOW, "--dry-run"])
+
+        assert code == 0
+        assert "com_embedding=1 dos 2 selecionados" in capsys.readouterr().out
+        assert _news_updates(env.db) == []
+        env.clf.llm_client.summarize_single.assert_not_called()
+
+    def test_null_theme_nao_reporta_com_embedding(self, rec, env, capsys):
+        env.db.seed_news("t1", "2026-09-30", content_embedding=[0.3])
+
+        code = rec.main(["--select", "null-theme", *B2_WINDOW, "--dry-run"])
+
+        assert code == 0
+        assert "com_embedding" not in capsys.readouterr().out
 
     def test_aborta_sem_enrichment_model_id(self, rec, env, monkeypatch):
         self._seed(env.db)

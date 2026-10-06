@@ -203,6 +203,19 @@ class FakeCursor:
             self._result = [(missing,)]
             return
 
+        # reenrich_combined_window --select null-summary: quantos dos uids JÁ têm
+        # content_embedding (feito sem o resumo; o B3 só pega IS NULL). Só reportado.
+        if low.startswith("select count(*) from news n where") and (
+            "content_embedding is not null" in low
+        ):
+            with_embedding = sum(
+                1
+                for uid in params[0]
+                if (self.db.news.get(uid) or {}).get("content_embedding") is not None
+            )
+            self._result = [(with_embedding,)]
+            return
+
         # news.content
         if "select content from news where unique_id" in low:
             uid = params[0]
@@ -410,18 +423,27 @@ class FakeDB:
         self.news_features = {}  # unique_id -> features dict (mutável; menções)
         self.ledger = {}       # model_id -> {input_tokens, output_tokens}
         self.features_upserts = []  # (unique_id, features dict) por INSERT em news_features
-        self.news = {}         # unique_id -> {published_date, most_specific_theme_id, summary}
+        # unique_id -> {published_date, most_specific_theme_id, summary, content_embedding}
+        self.news = {}
         self.log = []          # (sql, params)
 
     def conn(self):
         return FakeConn(self)
 
-    def seed_news(self, unique_id, published_date, most_specific_theme_id=None, summary=None):
+    def seed_news(
+        self,
+        unique_id,
+        published_date,
+        most_specific_theme_id=None,
+        summary=None,
+        content_embedding=None,
+    ):
         """Semeia uma linha de news (published_date = dia BRT 'YYYY-MM-DD')."""
         self.news[unique_id] = {
             "published_date": published_date,
             "most_specific_theme_id": most_specific_theme_id,
             "summary": summary,
+            "content_embedding": content_embedding,
         }
 
     def seed_alias(self, alias_norm, type, entity_id):
