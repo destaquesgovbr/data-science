@@ -193,7 +193,8 @@ def fetch_pending(conn, limit: int) -> List[dict]:
 
     Ordem: primeiro as formas cujo artigo de amostra foi publicado nos últimos
     RECENT_PRIORITY_DAYS dias (NER ao vivo), depois as demais (fila histórica);
-    FIFO por first_seen_at dentro de cada grupo. O corte fica no ON do LEFT JOIN
+    FIFO por first_seen_at dentro de cada grupo, com desempate pela chave
+    (surface_norm, type) para o LIMIT ser determinístico. O corte fica no ON do LEFT JOIN
     para o planner ler só as notícias recentes (idx_news_published_at).
     """
     recent_cutoff = datetime.now(timezone.utc) - timedelta(days=RECENT_PRIORITY_DAYS)
@@ -206,7 +207,7 @@ def fetch_pending(conn, limit: int) -> List[dict]:
             LEFT JOIN news n
               ON n.unique_id = s.sample_unique_id AND n.published_at >= %s
             WHERE s.status = 'pending'
-            ORDER BY (n.unique_id IS NOT NULL) DESC, s.first_seen_at ASC
+            ORDER BY (n.unique_id IS NOT NULL) DESC, s.first_seen_at ASC, s.surface_norm, s.type
             LIMIT %s
             """,
             (recent_cutoff, limit),
