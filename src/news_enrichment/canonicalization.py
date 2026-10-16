@@ -24,6 +24,7 @@ import logging
 import os
 import re
 import unicodedata
+from difflib import SequenceMatcher
 from typing import Callable, Dict, List, Optional, Tuple
 
 logger = logging.getLogger(__name__)
@@ -962,6 +963,196 @@ def _is_acronym_variant(name_a: str, name_b: str) -> bool:
     return False
 
 
+# =============================================================================
+# Guarda da fusão Wikidata-wins (add_alias): nomes compatíveis
+# =============================================================================
+#
+# Quando um alias já aponta para uma entidade interna (dgb_) e o canon grava o
+# mesmo alias para um QID, add_alias fundia a entidade interna inteira no QID.
+# Uma sigla compartilhada bastava ("tse" do Tribunal → Toulouse School of
+# Economics; "cns" do Conselho Nacional de Saúde → James Martin Center). A fusão só
+# acontece agora quando os NOMES das duas entidades são compatíveis.
+
+# Palavras sem conteúdo para comparar nomes (PT/EN/ES/FR).
+_MERGE_STOPWORDS = frozenset(
+    "a o as os de da do das dos e em na no nas nos para por the of and for "
+    "la le el del des du y et di".split()
+)
+# Qualificadores que não distinguem entidades num corpus brasileiro.
+_MERGE_NEUTRAL_TOKENS = frozenset({"brasil", "brasileiro", "brasileira", "br"})
+# UFs (nome e sigla): uma UF presente em só um dos nomes indica outra unidade
+# (regional × nacional, ou outro estado).
+_UF_NAMES = (
+    "acre", "alagoas", "amapa", "amazonas", "bahia", "ceara", "distrito federal",
+    "espirito santo", "goias", "maranhao", "mato grosso", "mato grosso do sul",
+    "minas gerais", "para", "paraiba", "parana", "pernambuco", "piaui",
+    "rio de janeiro", "rio grande do norte", "rio grande do sul", "rondonia",
+    "roraima", "santa catarina", "sao paulo", "sergipe", "tocantins",
+)
+# sigla → nome, na ordem de _UF_NAMES ("rj" e "rio de janeiro" são a mesma UF).
+_UF_SIGLA_TO_NAME = dict(zip(
+    "ac al ap am ba ce df es go ma mt ms mg pa pb pr pe pi rj rn rs ro rr sc sp se to".split(),
+    _UF_NAMES,
+))
+_UF_NAME_RE = re.compile(
+    r"\b(" + "|".join(sorted((re.escape(u) for u in _UF_NAMES), key=len, reverse=True)) + r")\b"
+)
+_TOKEN_SPLIT_RE = re.compile(r"[^a-z0-9]+")
+# Sigla solta como nome inteiro (após tirar parênteses): sem espaço, até 12 caracteres.
+_MERGE_BARE_MAX_LEN = 12
+# Similaridade mínima (Jaccard de tokens, com casamento aproximado de grafia).
+MERGE_NAME_SIMILARITY = 0.6
+_MERGE_TOKEN_FUZZY = 0.85
+# P31 de publicações: um QID assim nunca é uma organização/lugar/evento (caso ABCD,
+# ligada a um artigo científico homônimo).
+_ARTICLE_INSTANCE_QIDS = frozenset({"Q13442814", "Q191067", "Q7318358"})
+
+
+def _merge_tokens(name: str, keep_parens: bool = False) -> List[str]:
+    src = name if keep_parens else _strip_parens(name)
+    return [t for t in _TOKEN_SPLIT_RE.split(normalize(src)) if t and t not in _MERGE_STOPWORDS]
+
+
+def _merge_places(name: str) -> frozenset:
+    """UFs citadas no nome, por extenso ou por sigla (como token), pelo nome da UF."""
+    norm = normalize(name)
+    found = set(_UF_NAME_RE.findall(norm))
+    found |= {_UF_SIGLA_TO_NAME[t] for t in _TOKEN_SPLIT_RE.split(norm) if t in _UF_SIGLA_TO_NAME}
+    return frozenset(found)
+
+
+def _tokens_match(a: str, b: str) -> bool:
+    """Mesmo token, ou grafia próxima ("eleitoral"/"electoral", "povo"/"povos")."""
+    if a == b:
+        return True
+    return (
+        len(a) >= 4 and len(b) >= 4
+        and SequenceMatcher(None, a, b).ratio() >= _MERGE_TOKEN_FUZZY
+    )
+
+
+def _bare_sigla_matches(bare: str, other: str) -> bool:
+    """Sigla solta coerente com o outro nome: é o parêntese dele ("ANS" × "... (ANS)")
+    ou as iniciais das palavras dele, admitindo uma palavra sem letra na sigla
+    ("ANS" × "Agência Nacional de Saúde Suplementar")."""
+    letters = "".join(c for c in bare if c.isalpha())
+    if not letters:
+        return False
+    if letters in _paren_contents(other):
+        return True
+    initials = "".join(t[0] for t in _merge_tokens(other))
+    return (
+        len(letters) >= 2
+        and letters[0] == initials[:1]
+        and _is_subsequence(letters, initials)
+        and len(letters) >= len(initials) - 1
+    )
+
+
+def _merge_compat_reason(name_a: Optional[str], name_b: Optional[str]) -> Optional[str]:
+    """Motivo da compatibilidade entre dois nomes de entidade, ou None se incompatíveis."""
+    if not name_a or not name_b:
+        return None
+    # Números (edição, ano, artigo, região) e UFs têm de coincidir.
+    if set(_DIGITS_RE.findall(normalize(name_a))) != set(_DIGITS_RE.findall(normalize(name_b))):
+        return None
+    if _merge_places(name_a) != _merge_places(name_b):
+        return None
+    full_a, full_b = set(_merge_tokens(name_a, True)), set(_merge_tokens(name_b, True))
+    if full_a and full_a == full_b:
+        return "igual"
+    if _is_acronym_variant(name_a, name_b):
+        return "sigla do nome-base"
+    # Sigla solta contra nome por extenso: só o parêntese ou as iniciais servem.
+    for x, y in ((name_a, name_b), (name_b, name_a)):
+        bare = normalize(_strip_parens(x))
+        if bare and " " not in bare and len(bare) <= _MERGE_BARE_MAX_LEN and " " in normalize(
+            _strip_parens(y)
+        ):
+            return "sigla solta coerente" if _bare_sigla_matches(bare, y) else None
+    ta = [t for t in _merge_tokens(name_a) if t not in _MERGE_NEUTRAL_TOKENS] or _merge_tokens(
+        name_a
+    )
+    tb = [t for t in _merge_tokens(name_b) if t not in _MERGE_NEUTRAL_TOKENS] or _merge_tokens(
+        name_b
+    )
+    if not ta or not tb:
+        return None
+    # Palavra-cabeça diferente = outro tipo de coisa ("Aeroporto … de Brasília" ×
+    # "Brasília"; "Conselho Deliberativo do FAT" × "Fundo de Amparo ao Trabalhador").
+    if not _tokens_match(ta[0], tb[0]):
+        return None
+    sa, rest = set(ta), set(tb)
+    matched = 0
+    for tok in sa:
+        hit = tok if tok in rest else next((u for u in rest if _tokens_match(tok, u)), None)
+        if hit is not None:
+            matched += 1
+            rest.discard(hit)
+    score = matched / (len(sa) + len(set(tb)) - matched)
+    return f"similaridade {score:.2f}" if score >= MERGE_NAME_SIMILARITY else None
+
+
+def names_compatible_for_merge(name_a: Optional[str], name_b: Optional[str]) -> bool:
+    """True se os nomes podem ser a mesma entidade (critério da fusão Wikidata-wins).
+
+    Normaliza (acentos, caixa, pontuação, palavras vazias) e exige, nesta ordem:
+      - os mesmos números (edição/ano) e as mesmas UFs nos dois nomes;
+      - e então: mesmos tokens; ou variante por sigla do próprio nome
+        (_is_acronym_variant); ou, se um dos nomes é uma sigla solta, que ela seja
+        o parêntese ou as iniciais do outro; ou mesma palavra-cabeça e similaridade
+        de tokens >= MERGE_NAME_SIMILARITY (grafia próxima conta como igual).
+    Uma sigla compartilhada entre dois nomes por extenso não basta.
+    """
+    return _merge_compat_reason(name_a, name_b) is not None
+
+
+def _merge_block_reason(conn, source_id: str, target_id: str) -> Optional[str]:
+    """Motivo para NÃO fundir source_id (dgb_) em target_id (QID), ou None se pode."""
+    cursor = conn.cursor()
+    try:
+        cursor.execute(
+            "SELECT entity_id, canonical_name, type, extra FROM entity_registry "
+            "WHERE entity_id IN (%s, %s)",
+            (source_id, target_id),
+        )
+        rows = {r[0]: r for r in cursor.fetchall()}
+    finally:
+        cursor.close()
+    src, tgt = rows.get(source_id), rows.get(target_id)
+    if src is None or tgt is None:
+        return "entidade ausente do registry"
+    extra = tgt[3] or {}
+    if isinstance(extra, str):
+        try:
+            extra = json.loads(extra)
+        except ValueError:
+            extra = {}
+    if tgt[2] != "WORK" and set(extra.get("instance_of") or []) & _ARTICLE_INSTANCE_QIDS:
+        return "alvo é artigo científico no Wikidata"
+    if not names_compatible_for_merge(src[1], tgt[1]):
+        return f"nomes incompatíveis ({src[1]!r} × {tgt[1]!r})"
+    return None
+
+
+# Sigla solta sugerida pelo LLM: forma normalizada sem espaço e curta, ou só
+# maiúsculas no original. Só entra como alias quando vem de menção real (a forma
+# resolvida) ou de seed, nunca da lista de aliases do LLM.
+_BARE_SIGLA_ALIAS_MAX_LEN = 10
+
+
+def is_bare_sigla_alias(alias: Optional[str]) -> bool:
+    """True para "TSE", "SC", "IRBr/MRE", "Palmares", "ELETRONUCLEAR" (sem espaço e
+    <= 10 caracteres normalizados, ou sem espaço e todo em maiúsculas)."""
+    norm = normalize(alias)
+    if not norm or " " in norm:
+        return False
+    if len(norm) <= _BARE_SIGLA_ALIAS_MAX_LEN:
+        return True
+    letters = [c for c in alias if c.isalpha()]
+    return len(letters) >= 2 and all(c.isupper() for c in letters)
+
+
 def find_existing_by_wikidata(conn, qid: str) -> Optional[str]:
     """Reuso por QID exato: entity_registry.wikidata_id == qid OU entity_id == qid."""
     if not qid:
@@ -1344,6 +1535,9 @@ def add_alias(
                 # base: não é evidência para fundir a entidade da base inteira.
                 if existing_source == SOURCE_FALLBACK_SIGLA:
                     blocked = "alias derivado do fallback de sigla"
+                else:
+                    # Um alias em comum não basta: os nomes têm de ser compatíveis.
+                    blocked = _merge_block_reason(conn, existing, entity_id)
             if blocked is not None:
                 logger.warning(
                     "Fusão Wikidata-wins bloqueada (%s): (%r, %s) continua em %s; não funde em %s",

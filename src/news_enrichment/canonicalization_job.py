@@ -59,6 +59,7 @@ from .canonicalization import (
     find_existing_org_by_name,
     gazetteer_lookup,
     get_canon_model_id,
+    is_bare_sigla_alias,
     list_candidates,
     llm_canonicalize,
     merge_entities,
@@ -573,10 +574,13 @@ def _persist_decision(conn, form_norm: str, type: str, attempts: int, decision: 
     # alias para a forma resolvida (skip+record em ambiguidade cross-entity).
     if decision.get("write_alias"):
         add_alias(conn, form_norm, resolved_type, entity_id, SOURCE_CANON, confidence)
-        # também grava aliases adicionais do LLM (não-ambíguos).
+        # também grava aliases adicionais do LLM (não-ambíguos). Sigla solta sugerida
+        # pelo LLM ("TSE", "SC", "Palmares") não entra: é ambígua entre entidades e
+        # era o gatilho das fusões erradas. Siglas entram pela menção real (a própria
+        # forma resolvida, acima) ou pelas seeds.
         for alias in aliases:
             alias_norm = normalize(alias)
-            if alias_norm and alias_norm != form_norm:
+            if alias_norm and alias_norm != form_norm and not is_bare_sigla_alias(alias):
                 add_alias(conn, alias_norm, resolved_type, entity_id, SOURCE_CANON, confidence)
 
     _update_seen(conn, form_norm, type, "resolved", entity_id, attempts + 1)
