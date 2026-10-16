@@ -373,6 +373,32 @@ class TestResolvePendingGovernor:
 # ---------------------------------------------------------------------- #
 
 
+class TestFetchPendingSqlShape:
+    """Trava a forma do SQL da fila: o FakeDB reimplementa a ordenação e não pega
+    mutações como DESC→ASC ou o corte de data movido do ON para o WHERE."""
+
+    def _sql(self):
+        conn = MagicMock()
+        cur = conn.cursor.return_value
+        cur.description = [("surface_norm",), ("type",), ("sample_unique_id",), ("attempts",)]
+        cur.fetchall.return_value = []
+        J.fetch_pending(conn, 10)
+        sql = " ".join(cur.execute.call_args[0][0].split())
+        return sql
+
+    def test_cutoff_de_data_fica_no_on_e_nao_no_where(self):
+        sql = self._sql()
+        on_part = sql.split("LEFT JOIN news n", 1)[1].split("WHERE", 1)[0]
+        where_part = sql.split("WHERE", 1)[1].split("ORDER BY", 1)[0]
+        assert "n.published_at >= %s" in on_part
+        assert "published_at" not in where_part
+
+    def test_ordem_recentes_primeiro_fifo_e_desempate_pela_chave(self):
+        sql = self._sql()
+        order = sql.split("ORDER BY", 1)[1].split("LIMIT", 1)[0].strip()
+        assert order == "(n.unique_id IS NOT NULL) DESC, s.first_seen_at ASC, s.surface_norm, s.type"
+
+
 class TestFetchPendingPriority:
     """Formas cujo artigo de amostra é recente passam à frente da fila histórica.
 
