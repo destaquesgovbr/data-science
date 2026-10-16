@@ -883,6 +883,13 @@ def choose_floor(
     return None, None
 
 
+def article_text(article: Dict) -> str:
+    """Texto que o modelo viu: título, subtítulo, lead e o recorte de 3000 caracteres."""
+    parts = [article.get("title"), article.get("subtitle"), article.get("editorial_lead")]
+    parts.append((article.get("content") or "")[:3000])
+    return "\n".join(p for p in parts if p)
+
+
 def blind_review(items: List[Dict], arm_name: str, seed: int = 20261016) -> Tuple[str, Dict]:
     rng = random.Random(seed)
     key: Dict[str, Dict[str, str]] = {}
@@ -905,6 +912,18 @@ def blind_review(items: List[Dict], arm_name: str, seed: int = 20261016) -> Tupl
             "",
             f"`{it['uid']}`",
             "",
+            *(
+                [
+                    "<details><summary>Texto enviado ao modelo</summary>",
+                    "",
+                    *[f"> {line}" if line.strip() else ">" for line in it["text"].splitlines()],
+                    "",
+                    "</details>",
+                    "",
+                ]
+                if it.get("text")
+                else []
+            ),
             "**Lista A**",
             "",
             *_fmt_ents(a),
@@ -1337,6 +1356,7 @@ def cmd_report(args) -> int:
             {
                 "uid": u,
                 "title": by_uid[u].get("title"),
+                "text": article_text(by_uid[u]),
                 "ref": _ref_of(by_uid[u]),
                 "cand": records[cand_arm][u].get("entities") or [],
                 "f1": f1s[u],

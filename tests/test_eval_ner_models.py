@@ -785,3 +785,27 @@ class TestRelaxedKeys:
         m = ev.arm_metrics(sample, recs, alias_set=set())
         assert m["strict"]["f1"] == pytest.approx(0.0)
         assert m["relaxed"]["f1"] == pytest.approx(1.0)
+
+
+class TestBlindReviewText:
+    def test_includes_article_text_in_details(self):
+        items = [
+            {
+                "uid": "u1",
+                "title": "T1",
+                "text": "Lead do artigo\nConteúdo com Finep",
+                "ref": [E("Finep", "ORG")],
+                "cand": [],
+                "f1": 0.0,
+            }
+        ]
+        md, _ = ev.blind_review(items, "h55_off_low", seed=1)
+        assert "<details>" in md
+        assert "> Conteúdo com Finep" in md
+
+    def test_article_text_helper(self):
+        art = {"title": "T", "subtitle": None, "editorial_lead": "L", "content": "x" * 5000}
+        txt = ev.article_text(art)
+        assert txt.startswith("T\n")
+        assert "L" in txt
+        assert txt.count("x") == 3000  # o mesmo recorte do prompt
