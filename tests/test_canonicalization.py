@@ -1022,6 +1022,26 @@ class TestAddAliasWikidataWins:
         # alias ainda aponta para o original.
         assert db.alias[("yy", "ORG")] == "Q1"
 
+    def test_alias_derivado_do_fallback_nao_dispara_merge(self):
+        """Alias com source='fallback_sigla' é derivado do alias da base: uma escrita do
+        canon com QID nessa chave não funde a entidade da base inteira (revisão do #46)."""
+        db = FakeDB()
+        db.seed_registry("dgb_claa", "Conselho Latino-Americano da Água", "ORG")
+        db.seed_registry("Q_OUTRO", "Conselho Latino-Americano da Água (CLAA)", "ORG")
+        form = "conselho latino-americano da agua (claa)"
+        db.seed_alias("conselho latino-americano da agua", "ORG", "dgb_claa")
+        db.seed_alias(form, "ORG", "dgb_claa", source="fallback_sigla")
+        conn = db.conn()
+        result = C.add_alias(conn, form, "ORG", "Q_OUTRO", "canon", 0.9)
+        assert result["written"] is False
+        assert result["ambiguous"] is True
+        assert not result.get("merged")
+        assert "dgb_claa" in db.registry
+        assert db.alias[(form, "ORG")] == "dgb_claa"
+        assert db.alias_source[(form, "ORG")] == "fallback_sigla"
+        assert db.alias[("conselho latino-americano da agua", "ORG")] == "dgb_claa"
+        assert not any(s.lower().startswith("delete from entity_registry") for s, _ in db.log)
+
     def test_wikidata_wins_dgb_removed_from_registry(self):
         """Após Wikidata-wins, dgb_ não existe mais no registry."""
         db = FakeDB()

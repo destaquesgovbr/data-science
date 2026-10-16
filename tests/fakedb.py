@@ -39,6 +39,21 @@ class FakeCursor:
             if ent is not None:
                 self._result = [(ent,)]
             return
+        # entity_alias SELECT com a origem do alias (add_alias)
+        if low.startswith("select entity_id, source from entity_alias where alias_norm"):
+            key = (params[0], params[1])
+            ent = self.db.alias.get(key)
+            if ent is not None:
+                self._result = [(ent, self.db.alias_source.get(key))]
+            return
+        # entity_registry: nome/type/extra de um par de entidades (guarda de fusão)
+        if low.startswith("select entity_id, canonical_name, type, extra from entity_registry "
+                          "where entity_id in"):
+            self._result = [
+                (r["entity_id"], r["canonical_name"], r.get("type"), r.get("extra"))
+                for eid, r in self.db.registry.items() if eid in params
+            ]
+            return
 
         # entity_alias INSERT (params: alias_norm, type, entity_id, source, confidence)
         if "insert into entity_alias" in low:
@@ -55,10 +70,11 @@ class FakeCursor:
 
         # fallback de sigla: formas de seen terminadas em ")" sem alias exato ou com
         # alias derivado (params: padrão LIKE, source do alias derivado).
-        if low.startswith(
-            "select s.surface_norm, s.type, s.status, a.entity_id, a.source "
-            "from entity_registry_seen s left join entity_alias a"
+        # (com ou sem s.entity_id na projeção).
+        if low.startswith("select s.surface_norm, s.type, s.status,") and (
+            "from entity_registry_seen s left join entity_alias a" in low
         ):
+            with_seen_eid = low.startswith("select s.surface_norm, s.type, s.status, s.entity_id,")
             suffix, derived = params[0].lstrip("%"), params[1]
             res = []
             for key, row in self.db.seen.items():
@@ -67,7 +83,10 @@ class FakeCursor:
                 ent = self.db.alias.get(key)
                 src = self.db.alias_source.get(key) if ent is not None else None
                 if ent is None or src == derived:
-                    res.append((key[0], key[1], row["status"], ent, src))
+                    if with_seen_eid:
+                        res.append((key[0], key[1], row["status"], row.get("entity_id"), ent, src))
+                    else:
+                        res.append((key[0], key[1], row["status"], ent, src))
             self._result = res
             return
 
@@ -82,6 +101,13 @@ class FakeCursor:
             if key in self.db.alias and self.db.alias_source.get(key) == source:
                 del self.db.alias[key]
                 self.db.alias_source.pop(key, None)
+            return
+        # fallback de sigla: a forma resolvida para o alvo antigo do derivado acompanha a
+        # re-sincronização (params: novo entity_id, surface_norm, type, alvo antigo).
+        if low.startswith("update entity_registry_seen set entity_id = %s where surface_norm"):
+            row = self.db.seen.get((params[1], params[2]))
+            if row is not None and row["status"] == "resolved" and row.get("entity_id") == params[3]:
+                row["entity_id"] = params[0]
             return
         # fallback de sigla: devolve à fila a forma resolvida para o alvo removido.
         if low.startswith("update entity_registry_seen set entity_id = null, status = 'pending'"):

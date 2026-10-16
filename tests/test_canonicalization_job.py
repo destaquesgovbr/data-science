@@ -1134,7 +1134,7 @@ class TestLinkSiglaFallbacks:
         J.link_sigla_fallbacks(db.conn())
         n_log = len(db.log)
         stats = J.link_sigla_fallbacks(db.conn())
-        assert stats == {"linked": 0, "resynced": 0, "removed": 0}
+        assert stats == {"linked": 0, "resynced": 0, "removed": 0, "skipped_resolved": 0}
         writes = [s for (s, _p) in db.log[n_log:] if not s.lower().startswith("select")]
         assert writes == []
 
@@ -1184,6 +1184,124 @@ class TestLinkSiglaFallbacks:
         assert stats["linked"] == 2
         assert (STF, "ORG") not in db.alias
 
+    # -- re-apontamento: a correção tem de convergir (revisão do #46, item 1) --
+
+    SESU = "secretaria de educacao superior (sesu)"
+
+    def _sesu_ligada_ao_alvo_errado(self):
+        """Base e sigla apontam para o mesmo alvo errado; a menção já herdou o id."""
+        db = FakeDB()
+        db.seed_alias("secretaria de educacao superior", "ORG", "Q_UCR")
+        db.seed_alias("sesu", "ORG", "Q_UCR")
+        db.seed_seen(self.SESU, "ORG", status="needs_review")
+        db.features_rows = [("uid-1", {"entities": [
+            {"text": "SESu", "forma_canonica": "Secretaria de Educação Superior (SESu)",
+             "type": "ORG"},
+        ]})]
+        conn = db.conn()
+        assert J.link_sigla_fallbacks(conn)["linked"] == 1
+        J.backfill_canonical_ids(conn, datetime(2018, 1, 1, tzinfo=timezone.utc),
+                                 datetime(2027, 1, 1, tzinfo=timezone.utc))
+        assert json.loads(db.backfilled["uid-1"])[0]["canonical_id"] == "Q_UCR"
+        db.features_rows = [("uid-1", {"entities": json.loads(db.backfilled["uid-1"])})]
+        return db, conn
+
+    def test_reapontar_so_a_base_com_a_sigla_no_alvo_antigo_resincroniza(self):
+        """A sigla ainda aponta para o alvo atual do derivado: o derivado segue a base
+        (não é removido), e o Step C leva a menção para o id novo."""
+        db, conn = self._sesu_ligada_ao_alvo_errado()
+        db.alias[("secretaria de educacao superior", "ORG")] = "Q_SESU"
+        stats = J.link_sigla_fallbacks(conn)
+        assert stats["resynced"] == 1
+        assert stats["removed"] == 0
+        assert db.alias[(self.SESU, "ORG")] == "Q_SESU"
+        assert db.alias_source[(self.SESU, "ORG")] == "fallback_sigla"
+        J.backfill_canonical_ids(conn, datetime(2018, 1, 1, tzinfo=timezone.utc),
+                                 datetime(2027, 1, 1, tzinfo=timezone.utc))
+        assert json.loads(db.backfilled["uid-1"])[0]["canonical_id"] == "Q_SESU"
+
+    def test_reapontamento_converge_em_uma_execucao(self):
+        """Depois de re-sincronizar, a execução seguinte não muda nada (sem oscilar
+        entre re-sincronizar e remover enquanto a sigla continua no alvo antigo)."""
+        db, conn = self._sesu_ligada_ao_alvo_errado()
+        db.alias[("secretaria de educacao superior", "ORG")] = "Q_SESU"
+        J.link_sigla_fallbacks(conn)
+        n_log = len(db.log)
+        stats = J.link_sigla_fallbacks(conn)
+        assert stats == {"linked": 0, "resynced": 0, "removed": 0, "skipped_resolved": 0}
+        assert db.alias[(self.SESU, "ORG")] == "Q_SESU"
+        writes = [s for (s, _p) in db.log[n_log:] if not s.lower().startswith("select")]
+        assert writes == []
+
+    def test_mover_base_e_sigla_juntas_resincroniza(self):
+        db, conn = self._sesu_ligada_ao_alvo_errado()
+        db.alias[("secretaria de educacao superior", "ORG")] = "Q_SESU"
+        db.alias[("sesu", "ORG")] = "Q_SESU"
+        stats = J.link_sigla_fallbacks(conn)
+        assert stats["resynced"] == 1
+        assert db.alias[(self.SESU, "ORG")] == "Q_SESU"
+
+    def test_sigla_reapontada_sozinha_mantem_o_derivado_na_base(self):
+        """O derivado acompanha a base; o conflito de sigla só barra a criação."""
+        db, conn = self._sesu_ligada_ao_alvo_errado()
+        db.alias[("sesu", "ORG")] = "Q_OUTRA"
+        stats = J.link_sigla_fallbacks(conn)
+        assert stats == {"linked": 0, "resynced": 0, "removed": 0, "skipped_resolved": 0}
+        assert db.alias[(self.SESU, "ORG")] == "Q_UCR"
+
+    def test_resync_atualiza_o_seen_da_forma_resolvida_pelo_derivado(self):
+        """Forma resolvida (gazetteer) para o alvo antigo: a re-sincronização move também
+        seen.entity_id, para que uma remoção futura a devolva à fila."""
+        db, conn = self._sesu_ligada_ao_alvo_errado()
+        form = "secretaria de educacao superior (s.esu)"
+        db.seed_seen(form, "ORG", status="pending")
+        J.link_sigla_fallbacks(conn)
+        J.resolve_form(
+            conn, form, "ORG", None, 0,
+            bedrock_client=make_bedrock(canon_json()), wikidata_client=FakeWikidata(),
+            model_id="m",
+        )
+        assert db.seen[(form, "ORG")]["entity_id"] == "Q_UCR"
+        db.alias[("secretaria de educacao superior", "ORG")] = "Q_SESU"
+        J.link_sigla_fallbacks(conn)
+        assert db.alias[(form, "ORG")] == "Q_SESU"
+        assert db.seen[(form, "ORG")]["status"] == "resolved"
+        assert db.seen[(form, "ORG")]["entity_id"] == "Q_SESU"
+        # a base perde o alias → o derivado sai e a forma volta à fila.
+        del db.alias[("secretaria de educacao superior", "ORG")]
+        J.link_sigla_fallbacks(conn)
+        assert (form, "ORG") not in db.alias
+        assert db.seen[(form, "ORG")]["status"] == "pending"
+        assert db.seen[(form, "ORG")]["entity_id"] is None
+
+    # -- formas resolved: não contrariar a decisão anterior (item 3) --
+
+    def test_resolved_para_outra_entidade_nao_liga(self):
+        db = FakeDB()
+        db.seed_alias("procedimentos de distribuicao", "LAW", "Q_MODULO_11")
+        form = "procedimentos de distribuicao (prodist)"
+        db.seen[(form, "LAW")] = {
+            "surface_norm": form, "type": "LAW", "status": "resolved",
+            "entity_id": "dgb_prodist", "attempts": 1, "sample_unique_id": None,
+        }
+        stats = J.link_sigla_fallbacks(db.conn())
+        assert stats["linked"] == 0
+        assert stats["skipped_resolved"] == 1
+        assert (form, "LAW") not in db.alias
+
+    def test_resolved_para_o_mesmo_alvo_liga(self):
+        db = FakeDB()
+        db.seed_alias("diario oficial da uniao", "ORG", "Q3712237")
+        form = "diario oficial da uniao (dou)"
+        db.seen[(form, "ORG")] = {
+            "surface_norm": form, "type": "ORG", "status": "resolved",
+            "entity_id": "Q3712237", "attempts": 1, "sample_unique_id": None,
+        }
+        stats = J.link_sigla_fallbacks(db.conn())
+        assert stats["linked"] == 1
+        assert stats["skipped_resolved"] == 0
+        assert db.alias[(form, "ORG")] == "Q3712237"
+
 
 class TestRunCanonicalizationSiglaFallback:
     def test_ponta_a_ponta_liga_mencao_antiga_sem_llm(self, monkeypatch):
@@ -1210,3 +1328,39 @@ class TestRunCanonicalizationSiglaFallback:
         written = json.loads(db.backfilled["uid-1"])
         assert written[0]["canonical_id"] == "Q519138"
         bedrock.client.invoke_model.assert_not_called()
+
+    def test_excecao_no_a2_nao_aborta_os_steps_b_e_c(self, monkeypatch, caplog):
+        """Falha no fallback de sigla vai para o log; Step B e Step C rodam mesmo assim."""
+        db = FakeDB()
+        db.seed_alias("supremo tribunal federal", "ORG", "Q519138")
+        db.seed_seen("finep", "ORG", sample_unique_id="uid-1")
+        db.features_rows = [
+            ("uid-1", {"entities": [
+                {"text": "Supremo Tribunal Federal", "type": "ORG", "count": 1},
+            ]}),
+        ]
+        conns = []
+
+        def _connect(_url):
+            conns.append(db.conn())
+            return conns[-1]
+
+        def _boom(conn, dry_run=False):
+            raise RuntimeError("falha simulada no A2")
+
+        monkeypatch.setattr(J.psycopg2, "connect", _connect)
+        monkeypatch.setattr(J, "link_sigla_fallbacks", _boom)
+        monkeypatch.delenv("BEDROCK_DAILY_TOKEN_QUOTA", raising=False)
+        bedrock = make_bedrock(canon_json(not_an_entity=True))
+        with caplog.at_level("ERROR"):
+            result = J.run_canonicalization(
+                "postgresql://fake", since="2026-01-01T00:00:00+00:00",
+                until="2026-02-01T00:00:00+00:00", limit=10,
+                bedrock_client=bedrock, wikidata_client=FakeWikidata(), model_id="m",
+            )
+        assert "falha simulada no A2" in result["sigla_fallback"]["error"]
+        assert "falha simulada no A2" in caplog.text
+        assert conns[0].rolled_back >= 1  # transação limpa antes do Step B
+        assert result["resolve"]["total"] == 1  # Step B rodou
+        assert result["backfill"]["mentions_linked"] == 1  # Step C rodou
+        assert json.loads(db.backfilled["uid-1"])[0]["canonical_id"] == "Q519138"
