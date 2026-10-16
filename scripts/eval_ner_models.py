@@ -818,6 +818,50 @@ def _fmt_ents(ents: List[Dict]) -> List[str]:
     return lines or ["- (nenhuma entidade)"]
 
 
+def alt_record(pair: Dict, arm: str = "s46hist") -> Dict:
+    """Registro de "braço" a partir da resposta Sonnet 4.6 mais antiga de um par histórico.
+
+    O par (exportado só leitura) tem duas respostas Sonnet 4.6 gravadas para o
+    mesmo prompt_hash: `ref` (a mais recente, como na amostra) e `alt` (a mais
+    antiga). Comparar alt com ref dá o piso Sonnet 4.6 × Sonnet 4.6 sem chamada.
+    """
+    ref, alt = pair.get("ref") or {}, pair.get("alt") or {}
+    if not ref.get("prompt_hash") or ref.get("prompt_hash") != alt.get("prompt_hash"):
+        raise ValueError(f"par {pair.get('unique_id')}: prompt_hash diferente entre ref e alt")
+    raw = alt.get("raw_response")
+    structured = isinstance(raw, dict) and "raw_text" not in raw
+    text = raw.get("raw_text") if isinstance(raw, dict) and "raw_text" in raw else None
+    return {
+        "uid": pair["unique_id"],
+        "arm": arm,
+        "model_id": "us.anthropic.claude-sonnet-4-6",
+        "status": "ok",
+        "stop_reason": None,
+        "refusal_category": None,
+        "block_types": [],
+        "raw_text": text,
+        "usage": {"input_tokens": 0, "output_tokens": 0},
+        "cost_usd": 0.0,
+        "latency_s": None,
+        "entities": ref_entities(raw),
+        "json_puro": structured,
+        "json_extraivel": structured or _json_flags(_PARSER, text)[1],
+        "error": None,
+        "alt_created_at": alt.get("created_at"),
+    }
+
+
+def choose_floor(
+    live: Optional[Dict], hist: Optional[Dict]
+) -> Tuple[Optional[Dict], Optional[str]]:
+    """Piso: o s46 re-rodado ao vivo quando existe; senão, os pares históricos."""
+    if live and live.get("n"):
+        return live, "s46"
+    if hist and hist.get("n"):
+        return hist, "s46hist"
+    return None, None
+
+
 def blind_review(items: List[Dict], arm_name: str, seed: int = 20261016) -> Tuple[str, Dict]:
     rng = random.Random(seed)
     key: Dict[str, Dict[str, str]] = {}
@@ -1137,7 +1181,13 @@ def cmd_report(args) -> int:
     arm_files = sorted(f for f in os.listdir(args.runs_dir) if f.endswith(f"__{label}.jsonl"))
     records = {f.split("__")[0]: load_records(os.path.join(args.runs_dir, f)) for f in arm_files}
     metrics = {arm: arm_metrics(by_uid, recs, alias_set) for arm, recs in records.items()}
-    floor = metrics.get("s46")
+    floor_hist = None
+    if args.floor_sample:
+        fsample = {r["unique_id"]: r for r in load_sample(args.floor_sample)}
+        flabel = os.path.splitext(os.path.basename(args.floor_sample))[0]
+        frecs = load_records(os.path.join(args.runs_dir, f"{args.floor_arm}__{flabel}.jsonl"))
+        floor_hist = arm_metrics(fsample, frecs, alias_set)
+    floor, floor_label = choose_floor(metrics.get("s46"), floor_hist)
     floor_uids = set(records.get("s46", {}))
     gates = {arm: evaluate_gates(m, floor) for arm, m in metrics.items() if arm != "s46"}
     same20 = {
@@ -1361,9 +1411,24 @@ def cmd_report(args) -> int:
     if floor is None:
         L.append("**Sem piso:** o braço s46 não rodou; G2–G4 ficam indeterminados.")
     else:
+        origem = (
+            "Sonnet 4.6 re-rodado ao vivo contra a referência"
+            if floor_label == "s46"
+            else "pares históricos Sonnet 4.6 × Sonnet 4.6 com o mesmo prompt_hash "
+            "(resposta mais antiga contra a mais recente; sem chamada)"
+        )
         L.append(
-            f"Piso (s46, n={floor['n']}): F1 estrito {fmt(floor['strict']['f1'])}, "
-            f"recall sal≥0,7 {fmt(floor['salience_recall'])}."
+            f"Piso ({floor_label}: {origem}; n={floor['n']}): F1 estrito "
+            f"{fmt(floor['strict']['f1'])}, F1 frouxo {fmt(floor['loose']['f1'])}, "
+            f"recall sal≥0,7 {fmt(floor['salience_recall'])}, "
+            f"ent/art {fmt(floor['ents_per_article'], 2)} (ref {fmt(floor['ref_ents_per_article'], 2)})."
+        )
+        L.append("")
+        L.append(
+            "Piso por estrato: "
+            + "; ".join(
+                f"{k} {fmt(v['f1_strict'])} (n={v['n']})" for k, v in floor["by_stratum"].items()
+            )
         )
     L += [
         "",
@@ -1461,6 +1526,8 @@ def cmd_report(args) -> int:
                     for a, m in metrics.items()
                 },
                 "gates": gates,
+                "floor_label": floor_label,
+                "floor": {k: v for k, v in (floor or {}).items() if k != "per_article_f1"},
                 "projections": projections,
                 "same_as_floor": {
                     a: {k: v for k, v in m.items() if k != "per_article_f1"}
@@ -1529,6 +1596,13 @@ def main(argv=None) -> int:
     rp.add_argument(
         "--quota-tokens-day", default=None, help='JSON {"braço ou model_id": tokens/dia}'
     )
+    rp.add_argument("--floor-sample", default=None, help="amostra de pares históricos (piso)")
+    rp.add_argument("--floor-arm", default="s46hist")
+
+    fp = sub.add_parser("floor-pairs")
+    fp.add_argument("--sample", required=True)
+    fp.add_argument("--out-dir", required=True)
+    fp.add_argument("--arm", default="s46hist")
 
     args = ap.parse_args(argv)
     return {
@@ -1537,7 +1611,29 @@ def main(argv=None) -> int:
         "prepare": cmd_prepare,
         "run": cmd_run,
         "report": cmd_report,
+        "floor-pairs": cmd_floor_pairs,
     }[args.cmd](args)
+
+
+def cmd_floor_pairs(args) -> int:
+    """Grava o JSONL do piso histórico (sem chamada ao Bedrock)."""
+    sample = load_sample(args.sample)
+    label = os.path.splitext(os.path.basename(args.sample))[0]
+    os.makedirs(args.out_dir, exist_ok=True)
+    out_path = os.path.join(args.out_dir, f"{args.arm}__{label}.jsonl")
+    ok = skipped = 0
+    with open(out_path, "w", encoding="utf-8") as f:
+        for pair in sample:
+            try:
+                rec = alt_record(pair, arm=args.arm)
+            except ValueError as e:
+                skipped += 1
+                print(f"pulado: {e}")
+                continue
+            f.write(json.dumps(rec, ensure_ascii=False, default=str) + "\n")
+            ok += 1
+    print(f"piso histórico: {ok} pares gravados em {out_path}; pulados {skipped}")
+    return 0
 
 
 if __name__ == "__main__":

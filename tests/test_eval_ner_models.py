@@ -676,3 +676,55 @@ class TestBlindReview:
             assert sorted([k["A"], k["B"]]) == ["h55_ad_low", "referencia_s46"]
         assert "h55_ad_low" not in md and "referencia" not in md
         assert md.count("Lista A") == 4
+
+
+# --------------------------------------------------------------------------- #
+# Piso alternativo: pares históricos Sonnet 4.6 × Sonnet 4.6 (sem chamada)    #
+# --------------------------------------------------------------------------- #
+
+
+class TestHistoricalFloor:
+    def _pair(self, alt_raw):
+        return {
+            "unique_id": "p1",
+            "y": "2026",
+            "tam": "M",
+            "ref": {"prompt_hash": "h", "raw_response": {"entities": [E("Finep", "ORG", sal=0.9)]}},
+            "alt": {"prompt_hash": "h", "raw_response": alt_raw},
+        }
+
+    def test_alt_record_structured(self):
+        rec = ev.alt_record(self._pair({"entities": [{"text": "Finep", "type": "ORG"}]}))
+        assert rec["uid"] == "p1"
+        assert rec["arm"] == "s46hist"
+        assert rec["status"] == "ok"
+        assert rec["model_id"] == "us.anthropic.claude-sonnet-4-6"
+        assert [e["text"] for e in rec["entities"]] == ["Finep"]
+        assert rec["json_puro"] is True and rec["json_extraivel"] is True
+        assert rec["cost_usd"] == 0.0
+
+    def test_alt_record_raw_text(self):
+        raw = {"raw_text": '```json\n{"entities": [{"text": "Pix", "type": "PRODUCT"}]}\n```'}
+        rec = ev.alt_record(self._pair(raw))
+        assert rec["json_puro"] is False and rec["json_extraivel"] is True
+        assert [e["text"] for e in rec["entities"]] == ["Pix"]
+
+    def test_alt_record_requires_same_hash(self):
+        pair = self._pair({"entities": []})
+        pair["alt"]["prompt_hash"] = "outro"
+        with pytest.raises(ValueError):
+            ev.alt_record(pair)
+
+    def test_floor_pairs_metrics_against_ref(self):
+        pair = self._pair({"entities": [{"text": "Finep", "type": "ORG"}]})
+        rec = ev.alt_record(pair)
+        m = ev.arm_metrics({"p1": pair}, {"p1": rec}, alias_set=set())
+        assert m["strict"]["f1"] == pytest.approx(1.0)
+        assert m["salience_recall"] == pytest.approx(1.0)
+
+    def test_choose_floor_prefers_live(self):
+        live, hist = {"n": 20}, {"n": 150}
+        assert ev.choose_floor(live, hist) == (live, "s46")
+        assert ev.choose_floor(None, hist) == (hist, "s46hist")
+        assert ev.choose_floor({"n": 0}, hist) == (hist, "s46hist")
+        assert ev.choose_floor(None, None) == (None, None)
