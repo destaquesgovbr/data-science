@@ -1469,3 +1469,160 @@ class TestSiglaFallbackTarget:
 
         assert C.sigla_fallback_target("ministerio da saude (libano)", "ORG", lookup) is None
         assert calls == []
+
+
+# ---------------------------------------------------------------------- #
+# Guarda da fusão Wikidata-wins (causa raiz das fusões erradas)          #
+# ---------------------------------------------------------------------- #
+
+
+class TestNamesCompatibleForMerge:
+    """Uma entidade interna só é fundida num QID quando os NOMES são compatíveis:
+    uma sigla compartilhada (o alias que colidiu) não basta."""
+
+    # Fusões que aconteceram em produção (nome da entidade interna, nome do alvo).
+    FUSOES_ERRADAS = [
+        ("Brasília, Distrito Federal", "Aeroporto Internacional Presidente Juscelino Kubitschek"),
+        ("Tribunal Superior Electoral", "Toulouse School of Economics"),
+        ("Tribunal Superior Eleitoral", "Toulouse School of Economics"),
+        ("Santa Catarina", "Carolina do Sul"),
+        ("Ministério das Relações Exteriores", "instituto rio branco"),
+        ("Conselho Nacional de Saúde (CNS)",
+         "James Martin Center for Nonproliferation Studies (CNS)"),
+        ("Ministério da Agricultura e Pecuária (MAPA)", "MAP Linhas Aéreas"),
+        ("Ministério da Pesca e Aquicultura", "Motion Picture Association (MPA)"),
+        ("Fundação Cultural Palmares", "Quilombo dos Palmares"),
+        # mesma sigla, mesma palavra-cabeça, outra entidade
+        ("Instituto Benjamin Constant (IBC)", "Instituto Brasileiro do Café (IBC)"),
+        ("Secretaria de Política Agrícola (SPA)", "Sociedade Portuguesa de Autores (SPA)"),
+        ("Fundo Social", "Força Sindical"),
+        # nomes parecidos, lugares diferentes
+        ("Prefeitura Municipal de Belém", "Prefeitura Municipal de Betim"),
+        ("Região Metropolitana de Salvador", "Região Metropolitana de Sorocaba"),
+        # unidade regional ou subordinada no órgão nacional
+        ("Superintendência do Ibama no Estado do Rio de Janeiro (Supes/RJ)",
+         "Instituto Brasileiro do Meio Ambiente e dos Recursos Naturais Renováveis (Ibama)"),
+        ("Serviço de Apoio às Micro e Pequenas Empresas do Amazonas (Sebrae-AM)",
+         "Serviço Brasileiro de Apoio às Micro e Pequenas Empresas (Sebrae)"),
+        ("Conselho Deliberativo do Fundo de Amparo ao Trabalhador (Codefat)",
+         "Fundo de Amparo ao Trabalhador (FAT)"),
+        # edições distintas (número/ano)
+        ("Semana Nacional de Ciência e Tecnologia 2023", "Semana Nacional de Ciência e Tecnologia 2025"),
+        ("30ª Conferência das Nações Unidas sobre Mudança do Clima (COP30)",
+         "Conferência das Nações Unidas sobre Mudanças Climáticas (COP)"),
+        ("cop30", "Conferência das Nações Unidas sobre Mudanças Climáticas (COP)"),
+    ]
+
+    FUSOES_LEGITIMAS = [
+        ("Ministério da Agricultura e Pecuária", "Ministério da Agricultura e Pecuária (MAPA)"),
+        ("Departamento Nacional de Infraestrutura de Transportes",
+         "Departamento Nacional de Infraestrutura de Transportes (DNIT)"),
+        ("Aeroporto Internacional de Brasília Presidente Juscelino Kubitschek",
+         "Aeroporto Internacional Presidente Juscelino Kubitschek"),
+        ("Secretaria de Estado da Segurança Pública de Goiás (SSP/GO)",
+         "Secretaria de Segurança Pública do Estado de Goiás (SSP/GO)"),
+        ("Polícia Federal", "Polícia Federal do Brasil"),
+        # UF por sigla ou por extenso é a mesma UF
+        ("Controladoria-Geral do Estado do Rio de Janeiro (CGE/RJ)",
+         "Controladoria Geral do Estado do Rio de Janeiro"),
+        ("estados unidos", "Estados Unidos da América"),
+        ("Secretaria Nacional dos Direitos da Pessoa LGBTQIA+ (SLGBTQIA+)",
+         "Secretaria Nacional dos Direitos das Pessoas LGBTQIA+ (SLGBTQIA+)"),
+        ("Copa do Mundo FIFA de 2026", "copa do mundo 2026"),
+        ("Povos Yanomami", "Povo Yanomami"),
+        # sigla solta: parêntese do outro nome ou iniciais coerentes
+        ("ANS", "Agência Nacional de Saúde Suplementar"),
+        ("eua", "Estados Unidos da América"),
+        ("facebook", "Meta Platforms (Facebook)"),
+        ("g20", "Grupo dos Vinte (G20)"),
+    ]
+
+    @pytest.mark.parametrize("a,b", FUSOES_ERRADAS)
+    def test_fusoes_erradas_sao_bloqueadas(self, a, b):
+        assert C.names_compatible_for_merge(a, b) is False
+        assert C.names_compatible_for_merge(b, a) is False
+
+    @pytest.mark.parametrize("a,b", FUSOES_LEGITIMAS)
+    def test_fusoes_legitimas_continuam(self, a, b):
+        assert C.names_compatible_for_merge(a, b) is True
+        assert C.names_compatible_for_merge(b, a) is True
+
+    def test_entrada_vazia_nao_e_compativel(self):
+        assert C.names_compatible_for_merge("", "Ministério da Saúde") is False
+        assert C.names_compatible_for_merge("Ministério da Saúde", None) is False
+
+
+class TestAddAliasMergeGuard:
+    def _db(self, src_name, tgt_name, alias, tgt_extra=None):
+        db = FakeDB()
+        db.seed_registry("dgb_src", src_name, "ORG")
+        db.seed_registry("Q_TGT", tgt_name, "ORG", wikidata_id="Q_TGT", extra=tgt_extra)
+        db.seed_alias(alias, "ORG", "dgb_src")
+        return db
+
+    def test_nomes_incompativeis_nao_fundem_e_registram(self, caplog):
+        db = self._db("Tribunal Superior Eleitoral", "Toulouse School of Economics", "tse")
+        db.seed_alias("tribunal superior eleitoral", "ORG", "dgb_src")
+        with caplog.at_level("WARNING"):
+            result = C.add_alias(db.conn(), "tse", "ORG", "Q_TGT", "canon", 0.95)
+        assert result["written"] is False
+        assert result["ambiguous"] is True
+        assert not result.get("merged")
+        assert "nomes" in result["merge_blocked"]
+        assert "dgb_src" in db.registry
+        assert db.alias[("tse", "ORG")] == "dgb_src"
+        assert db.alias[("tribunal superior eleitoral", "ORG")] == "dgb_src"
+        assert "bloqueada" in caplog.text and "dgb_src" in caplog.text and "Q_TGT" in caplog.text
+
+    def test_alvo_artigo_cientifico_nao_absorve_entidade_interna(self):
+        """ABCD: nome igual, mas o QID é um artigo científico (P31 = Q13442814)."""
+        db = self._db(
+            "Autoridade Brasileira de Controle de Dopagem",
+            "Autoridade Brasileira de Controle de Dopagem (ABCD)",
+            "autoridade brasileira de controle de dopagem",
+            tgt_extra={"instance_of": ["Q13442814"]},
+        )
+        result = C.add_alias(
+            db.conn(), "autoridade brasileira de controle de dopagem", "ORG", "Q_TGT", "canon", 0.97
+        )
+        assert result["written"] is False
+        assert "artigo" in result["merge_blocked"]
+        assert "dgb_src" in db.registry
+        assert db.alias[("autoridade brasileira de controle de dopagem", "ORG")] == "dgb_src"
+
+    def test_nomes_compativeis_continuam_fundindo(self):
+        db = self._db(
+            "Ministério da Agricultura e Pecuária",
+            "Ministério da Agricultura e Pecuária (MAPA)",
+            "ministerio da agricultura e pecuaria",
+        )
+        result = C.add_alias(
+            db.conn(), "ministerio da agricultura e pecuaria", "ORG", "Q_TGT", "canon", 0.95
+        )
+        assert result["merged"] is True
+        assert "dgb_src" not in db.registry
+        assert db.alias[("ministerio da agricultura e pecuaria", "ORG")] == "Q_TGT"
+
+    def test_entidade_sem_registro_nao_funde(self):
+        db = FakeDB()
+        db.seed_alias("xyz", "ORG", "dgb_xyz")
+        result = C.add_alias(db.conn(), "xyz", "ORG", "Q_TGT", "canon", 0.9)
+        assert result["written"] is False
+        assert result["merge_blocked"]
+        assert db.alias[("xyz", "ORG")] == "dgb_xyz"
+
+
+class TestIsBareSiglaAlias:
+    @pytest.mark.parametrize("alias", [
+        "TSE", "CNS", "SC", "BSB", "MAP", "MRE", "IRBr/MRE", "Palmares", "Itamaraty",
+        "ELETRONUCLEAR", "BR-101", "ABCD",
+    ])
+    def test_sigla_solta(self, alias):
+        assert C.is_bare_sigla_alias(alias) is True
+
+    @pytest.mark.parametrize("alias", [
+        "Toulouse School of Economics", "Toulouse School of Economics (TSE)",
+        "Conselho Nacional de Saúde", "Eletronuclear S.A.", "Superintendência", "",
+    ])
+    def test_nao_e_sigla_solta(self, alias):
+        assert C.is_bare_sigla_alias(alias) is False

@@ -1364,3 +1364,91 @@ class TestRunCanonicalizationSiglaFallback:
         assert result["resolve"]["total"] == 1  # Step B rodou
         assert result["backfill"]["mentions_linked"] == 1  # Step C rodou
         assert json.loads(db.backfilled["uid-1"])[0]["canonical_id"] == "Q519138"
+
+
+# ---------------------------------------------------------------------- #
+# Causa raiz: siglas soltas sugeridas pelo LLM e fusão Wikidata-wins     #
+# ---------------------------------------------------------------------- #
+
+
+def _wikidata_unico(qid, label, country="Q142"):
+    return FakeWikidata(
+        candidates_by_query={"*": [{"qid": qid, "label": label, "description": "x"}]},
+        claims_by_qid={qid: {"country": country, "country_is_br": country == "Q155",
+                             "instance_of": []}},
+    )
+
+
+class TestAliasesSugeridosPeloLlm:
+    def _resolve_toulouse(self, db):
+        db.content["uid"] = "Pesquisadores da Toulouse School of Economics (TSE)..."
+        bedrock = make_bedrock(canon_json(
+            canonical_name="Toulouse School of Economics", type="ORG", confidence=0.95,
+            aliases=["TSE", "École d'Économie de Toulouse", "Toulouse School of Economics (TSE)",
+                     "Toulouse"],
+            wikidata_query="Toulouse School of Economics",
+        ))
+        return J.resolve_form(
+            db.conn(), "toulouse school of economics", "ORG", "uid", 0,
+            bedrock_client=bedrock, wikidata_client=_wikidata_unico("Q3532921", "TSE"),
+            model_id="m",
+        )
+
+    def test_sigla_solta_do_llm_nao_vira_alias(self):
+        db = FakeDB()
+        decision = self._resolve_toulouse(db)
+        assert decision["action"] == "link"
+        assert db.alias[("toulouse school of economics", "ORG")] == "Q3532921"
+        assert db.alias[("ecole d'economie de toulouse", "ORG")] == "Q3532921"
+        assert db.alias[("toulouse school of economics (tse)", "ORG")] == "Q3532921"
+        assert ("tse", "ORG") not in db.alias
+        assert ("toulouse", "ORG") not in db.alias
+
+    def test_sigla_do_llm_nao_funde_a_entidade_interna_que_ja_tem_a_sigla(self):
+        """Caso TSE: 'tse' (menção real) já aponta para o Tribunal; a Toulouse não o absorve."""
+        db = FakeDB()
+        db.seed_registry("dgb_tse", "Tribunal Superior Eleitoral", "ORG")
+        db.seed_alias("tse", "ORG", "dgb_tse")
+        db.seed_alias("tribunal superior eleitoral", "ORG", "dgb_tse")
+        self._resolve_toulouse(db)
+        assert "dgb_tse" in db.registry
+        assert db.alias[("tse", "ORG")] == "dgb_tse"
+        assert db.alias[("tribunal superior eleitoral", "ORG")] == "dgb_tse"
+
+    def test_nome_completo_do_llm_com_nome_incompativel_nao_funde(self):
+        """Caso MRE: alias por extenso colide com a entidade interna; nomes incompatíveis."""
+        db = FakeDB()
+        db.seed_registry("dgb_mre", "Ministério das Relações Exteriores", "ORG")
+        db.seed_alias("ministerio das relacoes exteriores", "ORG", "dgb_mre")
+        db.seed_registry("Q1135605", "instituto rio branco", "ORG", wikidata_id="Q1135605")
+        db.content["uid"] = "O Itamaraty e o Instituto Rio Branco..."
+        bedrock = make_bedrock(canon_json(
+            canonical_name="Ministério das Relações Exteriores (MRE)", type="ORG",
+            confidence=0.95, aliases=["Ministério das Relações Exteriores", "MRE"],
+            wikidata_query="Ministério das Relações Exteriores",
+        ))
+        J.resolve_form(
+            db.conn(), "ministerio de relacoes exteriores (mre)", "ORG", "uid", 0,
+            bedrock_client=bedrock,
+            wikidata_client=_wikidata_unico("Q1135605", "Instituto Rio Branco", "Q155"),
+            model_id="m",
+        )
+        assert "dgb_mre" in db.registry
+        assert db.alias[("ministerio das relacoes exteriores", "ORG")] == "dgb_mre"
+
+    def test_sigla_que_e_a_propria_forma_continua_sendo_gravada(self):
+        """A sigla entra quando vem de menção real (a forma resolvida), não do LLM."""
+        db = FakeDB()
+        db.content["uid"] = "O TSE divulgou..."
+        bedrock = make_bedrock(canon_json(
+            canonical_name="Tribunal Superior Eleitoral", type="ORG", confidence=0.95,
+            aliases=["TSE", "Tribunal Superior Eleitoral"],
+            wikidata_query="Tribunal Superior Eleitoral",
+        ))
+        J.resolve_form(
+            db.conn(), "tse", "ORG", "uid", 0, bedrock_client=bedrock,
+            wikidata_client=_wikidata_unico("Q3656204", "Tribunal Superior Eleitoral", "Q155"),
+            model_id="m",
+        )
+        assert db.alias[("tse", "ORG")] == "Q3656204"
+        assert db.alias[("tribunal superior eleitoral", "ORG")] == "Q3656204"
