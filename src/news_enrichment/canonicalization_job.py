@@ -64,6 +64,7 @@ from .canonicalization import (
     merge_entities,
     mint_internal_id,
     normalize,
+    sigla_base_target,
     sigla_fallback_target,
     upsert_entity,
 )
@@ -198,7 +199,7 @@ def _upsert_seen_pending(conn, surface_norm: str, type: str, sample_unique_id: O
 
 # Formas "...)" de seen sem alias exato, ou cujo alias é o derivado do fallback.
 _SIGLA_CANDIDATES_SQL = """
-SELECT s.surface_norm, s.type, s.status, a.entity_id, a.source
+SELECT s.surface_norm, s.type, s.status, s.entity_id, a.entity_id, a.source
 FROM entity_registry_seen s
 LEFT JOIN entity_alias a ON a.alias_norm = s.surface_norm AND a.type = s.type
 WHERE s.surface_norm LIKE %s AND (a.source IS NULL OR a.source = %s)
@@ -208,30 +209,38 @@ WHERE s.surface_norm LIKE %s AND (a.source IS NULL OR a.source = %s)
 def link_sigla_fallbacks(conn, dry_run: bool = False) -> dict:
     """Step A2: materializa o fallback de sigla para formas já vistas (retroativo).
 
-    Para cada forma "base (SIGLA)" de entity_registry_seen (pending, needs_review ou
-    resolved) sem alias exato, cria o alias derivado (source='fallback_sigla') para a
-    entidade do alias da base no mesmo type, que o Step C propaga às menções. O status
-    em seen não muda: a decisão original fica auditável e as pending saem pelo
-    gazetteer no Step B. Aliases derivados que já existem são re-sincronizados com o
-    alias atual da base; se a base perdeu o alias (ou a sigla passou a conflitar), o
-    derivado é removido e uma forma resolvida para ele volta a pending.
+    Criação: para cada forma "base (SIGLA)" de entity_registry_seen (pending,
+    needs_review ou resolved) sem alias exato, cria o alias derivado
+    (source='fallback_sigla') para a entidade do alias da base no mesmo type, se a
+    sigla não aponta para outra entidade; o Step C propaga às menções. O status em
+    seen não muda (a decisão original fica auditável; as pending saem pelo gazetteer
+    no Step B). Uma forma resolved cujo seen.entity_id aponta para OUTRA entidade não
+    é ligada (não contraria a decisão anterior; conta em skipped_resolved).
+
+    Derivado existente: acompanha o alias atual da base (re-sincroniza), mesmo que a
+    sigla ainda aponte para o alvo antigo — corrigir só a base converge numa
+    execução, sem oscilar entre re-sincronizar e remover. A forma resolvida para o
+    alvo antigo acompanha (seen.entity_id). Se a base perdeu o alias, o derivado é
+    removido e a forma resolvida para ele volta a pending.
 
     Returns:
-        {"linked": n, "resynced": n, "removed": n}
+        {"linked": n, "resynced": n, "removed": n, "skipped_resolved": n}
     """
     alias_map = _resolve_alias_map(conn)
-    stats = {"linked": 0, "resynced": 0, "removed": 0}
+    lookup = lambda a, t: alias_map.get((a, t))  # noqa: E731
+    stats = {"linked": 0, "resynced": 0, "removed": 0, "skipped_resolved": 0}
     cursor = conn.cursor()
     try:
         cursor.execute(_SIGLA_CANDIDATES_SQL, ("%)", SOURCE_FALLBACK_SIGLA))
         rows = cursor.fetchall()
-        for surface_norm, etype, _status, current, _source in rows:
-            target = sigla_fallback_target(
-                surface_norm, etype, lambda a, t: alias_map.get((a, t))
-            )
-            if target == current:
-                continue
+        for surface_norm, etype, status, seen_eid, current, _source in rows:
             if current is None:
+                target = sigla_fallback_target(surface_norm, etype, lookup)
+                if target is None:
+                    continue
+                if status == "resolved" and seen_eid is not None and seen_eid != target:
+                    stats["skipped_resolved"] += 1
+                    continue
                 stats["linked"] += 1
                 if not dry_run:
                     cursor.execute(
@@ -243,13 +252,22 @@ def link_sigla_fallbacks(conn, dry_run: bool = False) -> dict:
                         (surface_norm, etype, target, SOURCE_FALLBACK_SIGLA,
                          FALLBACK_SIGLA_CONFIDENCE),
                     )
-            elif target is not None:
+                continue
+            target = sigla_base_target(surface_norm, etype, lookup)
+            if target == current:
+                continue
+            if target is not None:
                 stats["resynced"] += 1
                 if not dry_run:
                     cursor.execute(
                         "UPDATE entity_alias SET entity_id = %s WHERE alias_norm = %s "
                         "AND type = %s AND source = %s",
                         (target, surface_norm, etype, SOURCE_FALLBACK_SIGLA),
+                    )
+                    cursor.execute(
+                        "UPDATE entity_registry_seen SET entity_id = %s WHERE surface_norm = %s "
+                        "AND type = %s AND status = 'resolved' AND entity_id = %s",
+                        (target, surface_norm, etype, current),
                     )
             else:
                 stats["removed"] += 1
@@ -1133,7 +1151,17 @@ def run_canonicalization(
             wikidata_client = _build_wikidata_client()
 
         gather_forms(conn, since_dt, until_dt)
-        sigla_stats = link_sigla_fallbacks(conn, dry_run=dry_run)
+        # O A2 é um atalho sem LLM: uma falha nele não pode impedir o Step B nem o
+        # Step C (que sustentam o restante do acervo). Vai para o log e segue.
+        try:
+            sigla_stats = link_sigla_fallbacks(conn, dry_run=dry_run)
+        except Exception as exc:  # noqa: BLE001
+            logger.exception("Step A2 (fallback de sigla) falhou; seguindo para os Steps B e C")
+            try:
+                conn.rollback()
+            except Exception:  # noqa: BLE001
+                pass
+            sigla_stats = {"error": str(exc)[:500]}
         resolve_stats = resolve_pending(
             conn,
             limit,

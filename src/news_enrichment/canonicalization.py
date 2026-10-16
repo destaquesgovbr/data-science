@@ -217,6 +217,22 @@ def split_sigla_suffix(form_norm: Optional[str]) -> Optional[Tuple[str, str]]:
     return base, sigla
 
 
+def sigla_base_target(
+    form_norm: str,
+    type: str,  # noqa: A002
+    lookup: Callable[[str, str], Optional[str]],
+) -> Optional[str]:
+    """entity_id do alias da base de "base (sigla)" no MESMO type, sem olhar a sigla.
+
+    É o alvo que um alias derivado já existente acompanha (re-sincronização): o
+    conflito de sigla só barra a CRIAÇÃO do derivado (sigla_fallback_target).
+    """
+    parts = split_sigla_suffix(form_norm)
+    if parts is None or not type:
+        return None
+    return lookup(parts[0], type)
+
+
 def sigla_fallback_target(
     form_norm: str,
     type: str,  # noqa: A002
@@ -230,14 +246,10 @@ def sigla_fallback_target(
     Args:
         lookup: (alias_norm, type) → entity_id | None (gazetteer_lookup ou dict).
     """
-    parts = split_sigla_suffix(form_norm)
-    if parts is None or not type:
-        return None
-    base, sigla = parts
-    target = lookup(base, type)
+    target = sigla_base_target(form_norm, type, lookup)
     if target is None:
         return None
-    other = lookup(sigla, type)
+    other = lookup(split_sigla_suffix(form_norm)[1], type)
     if other is not None and other != target:
         return None
     return target
@@ -1315,17 +1327,30 @@ def add_alias(
     cursor = conn.cursor()
     try:
         cursor.execute(
-            "SELECT entity_id FROM entity_alias WHERE alias_norm = %s AND type = %s",
+            "SELECT entity_id, source FROM entity_alias WHERE alias_norm = %s AND type = %s",
             (surface_norm, type),
         )
         row = cursor.fetchone()
         if row is not None:
-            existing = row[0]
+            existing, existing_source = row[0], row[1]
             if existing == entity_id:
                 # já mapeado para a mesma entidade — no-op idempotente.
                 return {"written": False, "ambiguous": False, "existing_entity_id": existing}
             # Wikidata-wins: existing é dgb_ e novo entity_id é QID (não começa com dgb_)
             # → promover o alias para o QID via merge_entities.
+            blocked = None
+            if existing.startswith(_MINT_PREFIX) and not entity_id.startswith(_MINT_PREFIX):
+                # O alias derivado do fallback de sigla só repete o vínculo do alias da
+                # base: não é evidência para fundir a entidade da base inteira.
+                if existing_source == SOURCE_FALLBACK_SIGLA:
+                    blocked = "alias derivado do fallback de sigla"
+            if blocked is not None:
+                logger.warning(
+                    "Fusão Wikidata-wins bloqueada (%s): (%r, %s) continua em %s; não funde em %s",
+                    blocked, surface_norm, type, existing, entity_id,
+                )
+                return {"written": False, "ambiguous": True, "existing_entity_id": existing,
+                        "merge_blocked": blocked}
             if existing.startswith(_MINT_PREFIX) and not entity_id.startswith(_MINT_PREFIX):
                 merge_entities(conn, source_id=existing, target_id=entity_id)
                 # Reescreve o alias para apontar para o QID (ON CONFLICT DO UPDATE SET entity_id).
