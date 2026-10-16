@@ -9,6 +9,8 @@ nenhuma chamada real é feita na suíte.
 import json
 from unittest.mock import MagicMock
 
+import pytest
+
 from news_enrichment.llm_client import (
     NER_PROMPT_VERSION,
     SANCTIONED_ENTITY_TYPES,
@@ -515,3 +517,194 @@ class TestNerUsageCapture:
         client = self._client_with_usage(canned, {"input_tokens": 100})
         _, raw = client.extract_entities(SAMPLE_ARTICLE, return_raw=True)
         assert raw["usage"] == {"input_tokens": 100, "output_tokens": 0}
+
+
+# --- Tests: corpo por modelo, leitura por bloco e recusa (modelos 5.5) ---
+
+
+class TestExtractEntitiesBlocksAndRefusal:
+    """extract_entities com respostas no formato dos modelos 5.5 (blocos
+    thinking antes do texto, stop_reason=refusal) e corpo por perfil."""
+
+    def _client(self, payload, model_id="ner-model-test"):
+        client = _make_client(model_id=model_id)
+        client.max_retries = 3
+        body = MagicMock()
+        body.read.return_value = json.dumps(payload).encode()
+        client.client = MagicMock()
+        client.client.invoke_model.return_value = {"body": body}
+        return client
+
+    def test_sonnet_46_body_is_exact_legacy_string(self):
+        """(f) No Sonnet 4.6 o body enviado é exatamente o string de hoje."""
+        payload = {"content": [{"type": "text", "text": '{"entities": []}'}]}
+        client = self._client(payload, model_id="us.anthropic.claude-sonnet-4-6")
+        client.extract_entities(SAMPLE_ARTICLE)
+        _, kwargs = client.client.invoke_model.call_args
+        prompt = client._build_ner_prompt(SAMPLE_ARTICLE)
+        expected = json.dumps(
+            {
+                "anthropic_version": "bedrock-2023-05-31",
+                "max_tokens": 2000,
+                "temperature": 0.0,
+                "messages": [{"role": "user", "content": prompt}],
+            }
+        )
+        assert kwargs["body"] == expected
+        assert kwargs["modelId"] == "us.anthropic.claude-sonnet-4-6"
+
+    @pytest.mark.parametrize(
+        "model_id",
+        [
+            "us.anthropic.claude-sonnet-4-6",
+            "us.anthropic.claude-haiku-4-5-20251001-v1:0",
+            "anthropic.claude-3-haiku-20240307-v1:0",
+        ],
+    )
+    def test_legacy_invoke_body_is_exact_string(self, model_id):
+        """Sonnet 4.6 / Haiku 4.5 / Haiku 3: o string enviado ao invoke_model é o
+        de origin/main, byte a byte (worker ao vivo e canon não mudam)."""
+        payload = {"content": [{"type": "text", "text": '{"entities": []}'}]}
+        client = self._client(payload, model_id=model_id)
+        client.extract_entities(SAMPLE_ARTICLE)
+        _, kwargs = client.client.invoke_model.call_args
+        prompt = client._build_ner_prompt(SAMPLE_ARTICLE)
+        assert kwargs["body"] == (
+            '{"anthropic_version": "bedrock-2023-05-31", "max_tokens": 2000, '
+            '"temperature": 0.0, "messages": [{"role": "user", "content": '
+            + json.dumps(prompt)
+            + "}]}"
+        )
+        assert kwargs["modelId"] == model_id
+
+    @pytest.mark.parametrize(
+        "model_id",
+        [
+            "us.anthropic.claude-haiku-5-5",
+            "global.anthropic.claude-haiku-5-5",
+            "anthropic.claude-haiku-5-5",
+        ],
+    )
+    def test_haiku_55_invoke_body_is_evaluated_profile(self, model_id):
+        """Haiku 5.5 em produção (job histórico): corpo exato do perfil avaliado
+        h55_off_low — thinking desligado, effort low, max_tokens 4000."""
+        payload = {"content": [{"type": "text", "text": '{"entities": []}'}]}
+        client = self._client(payload, model_id=model_id)
+        client.extract_entities(SAMPLE_ARTICLE)
+        _, kwargs = client.client.invoke_model.call_args
+        prompt = client._build_ner_prompt(SAMPLE_ARTICLE)
+        assert kwargs["body"] == (
+            '{"anthropic_version": "bedrock-2023-05-31", "max_tokens": 4000, '
+            '"messages": [{"role": "user", "content": '
+            + json.dumps(prompt)
+            + '}], "output_config": {"effort": "low"}, "thinking": {"type": "disabled"}}'
+        )
+        assert kwargs["modelId"] == model_id
+
+    def test_sonnet_55_invoke_body_unchanged(self):
+        payload = {"content": [{"type": "text", "text": '{"entities": []}'}]}
+        client = self._client(payload, model_id="us.anthropic.claude-sonnet-5-5")
+        client.extract_entities(SAMPLE_ARTICLE)
+        _, kwargs = client.client.invoke_model.call_args
+        prompt = client._build_ner_prompt(SAMPLE_ARTICLE)
+        assert kwargs["body"] == (
+            '{"anthropic_version": "bedrock-2023-05-31", "max_tokens": 4000, '
+            '"messages": [{"role": "user", "content": '
+            + json.dumps(prompt)
+            + '}], "output_config": {"effort": "low"}, "thinking": {"type": "between_tools"}}'
+        )
+
+    def test_haiku_55_body_has_no_temperature(self):
+        payload = {"content": [{"type": "text", "text": '{"entities": []}'}]}
+        client = self._client(payload, model_id="us.anthropic.claude-haiku-5-5")
+        client.extract_entities(SAMPLE_ARTICLE)
+        _, kwargs = client.client.invoke_model.call_args
+        sent = json.loads(kwargs["body"])
+        assert "temperature" not in sent
+        assert sent["output_config"]["effort"] == "low"
+
+    def test_thinking_first_block_parses_and_keeps_usage(self):
+        """(d)+(g) Primeiro bloco thinking: entidades lidas do texto e usage extraído."""
+        canned = json.dumps({"entities": [{"text": "Finep", "type": "ORG", "count": 1}]})
+        payload = {
+            "content": [
+                {"type": "thinking", "thinking": "", "signature": "sig"},
+                {"type": "text", "text": canned},
+            ],
+            "stop_reason": "end_turn",
+            "usage": {"input_tokens": 2100, "output_tokens": 340},
+        }
+        client = self._client(payload, model_id="us.anthropic.claude-haiku-5-5")
+        ents, raw = client.extract_entities(SAMPLE_ARTICLE, return_raw=True)
+        assert [e["text"] for e in ents] == ["Finep"]
+        assert raw["usage"] == {"input_tokens": 2100, "output_tokens": 340}
+        assert raw["raw_response"] == json.loads(canned)
+        assert client.client.invoke_model.call_count == 1
+
+    def test_refusal_is_not_retried_and_becomes_marker(self):
+        """(e) Recusa: uma única chamada, entidades vazias, marcador em raw_response."""
+        payload = {
+            "content": [],
+            "stop_reason": "refusal",
+            "stop_details": {"type": "refusal", "category": "general_harms", "explanation": "e"},
+            "usage": {"input_tokens": 1800, "output_tokens": 2},
+        }
+        client = self._client(payload, model_id="us.anthropic.claude-haiku-5-5")
+        ents, raw = client.extract_entities(SAMPLE_ARTICLE, return_raw=True)
+        assert ents == []
+        assert client.client.invoke_model.call_count == 1
+        assert raw["raw_response"] == {
+            "refusal": {"category": "general_harms", "explanation": "e"}
+        }
+        assert raw["usage"] == {"input_tokens": 1800, "output_tokens": 2}
+        assert raw["model_id"] == "us.anthropic.claude-haiku-5-5"
+        assert raw["prompt_version"] == NER_PROMPT_VERSION
+        assert len(raw["prompt_hash"]) == 64
+
+    def test_refusal_without_return_raw_returns_empty_list(self):
+        payload = {"content": [], "stop_reason": "refusal"}
+        client = self._client(payload, model_id="us.anthropic.claude-sonnet-5-5")
+        assert client.extract_entities(SAMPLE_ARTICLE) == []
+        assert client.client.invoke_model.call_count == 1
+
+    def test_only_thinking_is_retried_then_fails(self, monkeypatch):
+        """Sem bloco de texto (max_tokens no pensamento): repete e falha (raw None),
+        nunca grava artigo processado com 0 entidades."""
+        import news_enrichment.llm_client as llm
+
+        monkeypatch.setattr(llm.time, "sleep", lambda *_: None)
+        payload = {
+            "content": [{"type": "thinking", "thinking": "", "signature": "s"}],
+            "stop_reason": "max_tokens",
+            "usage": {"input_tokens": 10, "output_tokens": 8000},
+        }
+        client = self._client(payload, model_id="us.anthropic.claude-haiku-5-5")
+        ents, raw = client.extract_entities(SAMPLE_ARTICLE, return_raw=True)
+        assert ents == []
+        assert raw is None
+        assert client.client.invoke_model.call_count == 3
+
+    def test_max_tokens_with_text_logs_warning(self, caplog):
+        payload = {
+            "content": [{"type": "text", "text": '{"entities": [{"text": "Fin'}],
+            "stop_reason": "max_tokens",
+        }
+        client = self._client(payload, model_id="us.anthropic.claude-sonnet-4-6")
+        with caplog.at_level("WARNING"):
+            client.extract_entities(SAMPLE_ARTICLE, return_raw=True)
+        assert any("max_tokens" in r.getMessage() for r in caplog.records)
+
+    def test_invoke_ner_raw_returns_full_body_with_overrides(self):
+        payload = {
+            "content": [{"type": "text", "text": "{}"}],
+            "stop_reason": "end_turn",
+            "usage": {"input_tokens": 1, "output_tokens": 1},
+        }
+        client = self._client(payload, model_id="us.anthropic.claude-haiku-5-5")
+        out = client._invoke_ner_raw("p", effort="medium", thinking="disabled", max_tokens=4000)
+        assert out == payload
+        _, kwargs = client.client.invoke_model.call_args
+        sent = json.loads(kwargs["body"])
+        assert sent["thinking"] == {"type": "disabled"}
+        assert sent["output_config"] == {"effort": "medium"}
+        assert sent["max_tokens"] == 4000

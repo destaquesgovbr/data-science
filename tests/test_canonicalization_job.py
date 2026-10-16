@@ -7,7 +7,7 @@ nenhum reprocessamento contra dados reais.
 """
 
 import json
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from unittest.mock import MagicMock
 
 from news_enrichment import canonicalization_job as J
@@ -366,6 +366,120 @@ class TestResolvePendingGovernor:
         # Sem cota → não bloqueia, resolve tudo.
         assert stats["resolved"] == 2
         assert stats["budget_exhausted"] is False
+
+
+# ---------------------------------------------------------------------- #
+# Step B — ordem da fila: formas recentes (NER ao vivo) primeiro          #
+# ---------------------------------------------------------------------- #
+
+
+class TestFetchPendingSqlShape:
+    """Trava a forma do SQL da fila: o FakeDB reimplementa a ordenação e não pega
+    mutações como DESC→ASC ou o corte de data movido do ON para o WHERE."""
+
+    def _sql(self):
+        conn = MagicMock()
+        cur = conn.cursor.return_value
+        cur.description = [("surface_norm",), ("type",), ("sample_unique_id",), ("attempts",)]
+        cur.fetchall.return_value = []
+        J.fetch_pending(conn, 10)
+        sql = " ".join(cur.execute.call_args[0][0].split())
+        return sql
+
+    def test_cutoff_de_data_fica_no_on_e_nao_no_where(self):
+        sql = self._sql()
+        on_part = sql.split("LEFT JOIN news n", 1)[1].split("WHERE", 1)[0]
+        where_part = sql.split("WHERE", 1)[1].split("ORDER BY", 1)[0]
+        assert "n.published_at >= %s" in on_part
+        assert "published_at" not in where_part
+
+    def test_ordem_recentes_primeiro_fifo_e_desempate_pela_chave(self):
+        sql = self._sql()
+        order = sql.split("ORDER BY", 1)[1].split("LIMIT", 1)[0].strip()
+        assert order == "(n.unique_id IS NOT NULL) DESC, s.first_seen_at ASC, s.surface_norm, s.type"
+
+
+class TestFetchPendingPriority:
+    """Formas cujo artigo de amostra é recente passam à frente da fila histórica.
+
+    Com o NER histórico mais rápido que o teto do canon, a fila cresce; em FIFO
+    puro as formas do NER ao vivo ficariam atrás dela e sem canonical_id.
+    """
+
+    def _seed(self, db, form, now, first_seen_ago, published_ago, status="pending"):
+        uid = f"uid-{form}"
+        db.seed_seen(form, "ORG", status=status, sample_unique_id=uid,
+                     first_seen_at=now - first_seen_ago)
+        if published_ago is not None:
+            db.seed_news(uid, "-", published_at=now - published_ago)
+
+    def test_recent_forms_first_fifo_within_each_group(self):
+        db = FakeDB()
+        now = datetime.now(timezone.utc)
+        d, h = timedelta(days=1), timedelta(hours=1)
+        # Fila histórica (staged há dias, artigos antigos)...
+        self._seed(db, "antiga1", now, 5 * d, 1000 * d)
+        self._seed(db, "antiga2", now, 4 * d, 900 * d)
+        # ...formas do NER ao vivo, staged depois...
+        self._seed(db, "recente2", now, 1 * h, 2 * h)
+        self._seed(db, "recente1", now, 1 * d, 1 * d + 1 * h)
+        # ...e uma antiga staged na mesma passada do ao vivo.
+        self._seed(db, "antiga3", now, 2 * h, 800 * d)
+        # Terminal não entra na fila, mesmo com amostra recente.
+        self._seed(db, "revisao", now, 3 * h, 3 * h, status="needs_review")
+
+        got = [p["surface_norm"] for p in J.fetch_pending(db.conn(), 10)]
+
+        assert got == ["recente1", "recente2", "antiga1", "antiga2", "antiga3"]
+
+    def test_limit_keeps_recent_forms_ahead_of_backlog(self):
+        db = FakeDB()
+        now = datetime.now(timezone.utc)
+        d = timedelta(days=1)
+        for i in range(5):
+            self._seed(db, f"antiga{i}", now, (10 - i) * d, 900 * d)
+        self._seed(db, "recente_a", now, 2 * d, 2 * d)
+        self._seed(db, "recente_b", now, 1 * d, 1 * d)
+
+        got = [p["surface_norm"] for p in J.fetch_pending(db.conn(), 2)]
+
+        assert got == ["recente_a", "recente_b"]
+
+    def test_window_boundary_and_missing_sample_stay_in_queue(self):
+        db = FakeDB()
+        now = datetime.now(timezone.utc)
+        d = timedelta(days=1)
+        self._seed(db, "fora_15d", now, 10 * d, 15 * d)
+        db.seed_seen("sem_amostra", "ORG", sample_unique_id=None, first_seen_at=now - 9 * d)
+        db.seed_seen("amostra_sumiu", "ORG", sample_unique_id="uid-inexistente",
+                     first_seen_at=now - 8 * d)
+        self._seed(db, "dentro_13d", now, 7 * d, 13 * d)
+
+        got = [p["surface_norm"] for p in J.fetch_pending(db.conn(), 10)]
+
+        # Janela de RECENT_PRIORITY_DAYS (14): 13d é recente, 15d não. Sem
+        # amostra (ou amostra fora de news) continua na fila, no grupo FIFO.
+        assert got == ["dentro_13d", "fora_15d", "sem_amostra", "amostra_sumiu"]
+        assert J.RECENT_PRIORITY_DAYS == 14
+
+    def test_resolve_pending_spends_limited_run_on_recent_form(self):
+        db = FakeDB()
+        now = datetime.now(timezone.utc)
+        d = timedelta(days=1)
+        self._seed(db, "antiga", now, 3 * d, 900 * d)
+        self._seed(db, "recente", now, 1 * d, 1 * d)
+        bedrock = make_bedrock_usage(
+            [canon_json(canonical_name="Recente", type="ORG", confidence=0.95)],
+            [{"input_tokens": 1, "output_tokens": 1}],
+        )
+        stats = J.resolve_pending(
+            db.conn(), 1, bedrock_client=bedrock, wikidata_client=FakeWikidata(),
+            model_id="sonnet", daily_quota=None,
+        )
+
+        assert stats["resolved"] == 1
+        assert db.seen[("recente", "ORG")]["status"] == "resolved"
+        assert db.seen[("antiga", "ORG")]["status"] == "pending"
 
 
 # ---------------------------------------------------------------------- #

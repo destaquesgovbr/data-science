@@ -10,7 +10,8 @@ Etapas:
                distintos de news_features sobre a janela, excluindo formas já
                resolvidas/needs_review em entity_registry_seen e já presentes em
                entity_alias; upsert em entity_registry_seen (status pending).
-  B (resolve): para cada forma pending (até --limit): gazetteer_lookup → senão
+  B (resolve): para cada forma pending (até --limit; amostras publicadas nos
+               últimos 14 dias primeiro, FIFO no resto): gazetteer_lookup → senão
                llm_canonicalize → link_wikidata → apply_gates → escreve
                entity_registry(+reuse) / entity_alias; atualiza seen. Grava o raw
                em news_llm_raw (task='canon').
@@ -67,6 +68,9 @@ WIKIDATA_URL_PREFIX = "https://www.wikidata.org/wiki/"
 SOURCE_CANON = "canon"
 # Checa o budget a cada N formas resolvidas (tolera pequena ultrapassagem).
 BUDGET_CHECK_EVERY = 5
+# Step B: formas cuja amostra foi publicada nos últimos N dias furam a fila, para
+# as entidades do NER ao vivo não esperarem atrás do backlog do NER histórico.
+RECENT_PRIORITY_DAYS = 14
 
 
 # =============================================================================
@@ -185,18 +189,28 @@ def _upsert_seen_pending(conn, surface_norm: str, type: str, sample_unique_id: O
 
 
 def fetch_pending(conn, limit: int) -> List[dict]:
-    """Busca formas pending de entity_registry_seen (até limit)."""
+    """Busca formas pending de entity_registry_seen (até limit).
+
+    Ordem: primeiro as formas cujo artigo de amostra foi publicado nos últimos
+    RECENT_PRIORITY_DAYS dias (NER ao vivo), depois as demais (fila histórica);
+    FIFO por first_seen_at dentro de cada grupo, com desempate pela chave
+    (surface_norm, type) para o LIMIT ser determinístico. O corte fica no ON do LEFT JOIN
+    para o planner ler só as notícias recentes (idx_news_published_at).
+    """
+    recent_cutoff = datetime.now(timezone.utc) - timedelta(days=RECENT_PRIORITY_DAYS)
     cursor = conn.cursor()
     try:
         cursor.execute(
             """
-            SELECT surface_norm, type, sample_unique_id, attempts
-            FROM entity_registry_seen
-            WHERE status = 'pending'
-            ORDER BY first_seen_at ASC
+            SELECT s.surface_norm, s.type, s.sample_unique_id, s.attempts
+            FROM entity_registry_seen s
+            LEFT JOIN news n
+              ON n.unique_id = s.sample_unique_id AND n.published_at >= %s
+            WHERE s.status = 'pending'
+            ORDER BY (n.unique_id IS NOT NULL) DESC, s.first_seen_at ASC, s.surface_norm, s.type
             LIMIT %s
             """,
-            (limit,),
+            (recent_cutoff, limit),
         )
         cols = [d[0] for d in cursor.description]
         return [dict(zip(cols, row)) for row in cursor.fetchall()]

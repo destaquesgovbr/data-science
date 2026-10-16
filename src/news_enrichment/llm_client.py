@@ -51,6 +51,155 @@ _TYPE_TAIL_NORMALIZATION = {
     "PRÊMIO": "EVENT",
 }
 
+# -----------------------------------------------------------------------------
+# Corpo da requisição NER por modelo
+# -----------------------------------------------------------------------------
+# Modelos legados (Sonnet 4.6, Haiku 4.5, Haiku 3 e qualquer ID fora dos perfis
+# abaixo) recebem o corpo de sempre, BYTE A BYTE: temperature 0.0 e max_tokens
+# 2000. Sonnet 5.5 e Haiku 5.5 rejeitam temperature fora do default (400),
+# trazem pensamento ligado por padrão e aceitam output_config.effort; por isso
+# têm perfil próprio. O perfil é escolhido pelo ID, sem env nova: o worker ao
+# vivo, o canon e o job no Sonnet 4.6 não mudam nada.
+NER_LEGACY_MAX_TOKENS = 2000
+NER_EFFORT_LEVELS = ("low", "medium", "high", "xhigh", "max")
+# Pensamento desligado (disabled / between_tools) só é aceito com effort ≤ high.
+_NER_EFFORT_THINKING_OFF = ("low", "medium", "high")
+_NER_MODEL_FAMILY_RE = re.compile(r"claude-(sonnet|haiku)-5-5(?![0-9])")
+# thinking: "adaptive" = default do modelo (campo omitido no corpo);
+# "between_tools" (só Sonnet 5.5) e "disabled" (só Haiku 5.5) desligam o pensamento.
+# Haiku 5.5: perfil avaliado h55_off_low (ner-eval-2026-10; revisão cega 95%
+# melhor-ou-igual à referência Sonnet 4.6, 97,5% JSON puro, 0 max_tokens em
+# 265 chamadas). O adaptativo (h55_ad_low) segue acessível por override.
+NER_PROFILES: Dict[str, Dict] = {
+    "sonnet-5-5": {"effort": "low", "thinking": "between_tools", "max_tokens": 4000},
+    "haiku-5-5": {"effort": "low", "thinking": "disabled", "max_tokens": 4000},
+}
+_NER_THINKING_ALLOWED = {
+    "sonnet-5-5": frozenset({"adaptive", "between_tools"}),
+    "haiku-5-5": frozenset({"adaptive", "disabled"}),
+}
+
+
+class NerRefusal(Exception):
+    """O modelo recusou a requisição (HTTP 200, stop_reason="refusal").
+
+    Não é transitória: repetir o mesmo prompt dá o mesmo resultado. O NER grava
+    um marcador em raw_response em vez de repetir.
+    """
+
+    def __init__(
+        self,
+        category: Optional[str] = None,
+        explanation: Optional[str] = None,
+        usage: Optional[Dict[str, int]] = None,
+    ):
+        self.category = category
+        self.explanation = explanation
+        self.usage = usage or {"input_tokens": 0, "output_tokens": 0}
+        super().__init__(f"refusal (category={category})")
+
+
+def ner_model_family(model_id: Optional[str]) -> str:
+    """Família do perfil NER: "sonnet-5-5", "haiku-5-5" ou "legacy"."""
+    match = _NER_MODEL_FAMILY_RE.search(model_id or "")
+    if not match:
+        return "legacy"
+    return f"{match.group(1)}-5-5"
+
+
+def build_ner_request_body(
+    model_id: Optional[str],
+    prompt: str,
+    *,
+    effort: Optional[str] = None,
+    thinking: Optional[str] = None,
+    max_tokens: Optional[int] = None,
+) -> Dict:
+    """Monta o corpo InvokeModel do NER para o modelo.
+
+    - Legado: o dicionário de sempre (mesma ordem de chaves → mesmo json.dumps).
+      Qualquer override é recusado, para o corpo nunca mudar por acidente.
+    - Sonnet 5.5 / Haiku 5.5: sem temperature, com output_config.effort, thinking
+      e max_tokens do perfil (overrides opcionais). Combinações que a API rejeita
+      levantam ValueError antes da chamada.
+    """
+    messages = [{"role": "user", "content": prompt}]
+    family = ner_model_family(model_id)
+
+    if family == "legacy":
+        if effort is not None or thinking is not None or max_tokens is not None:
+            raise ValueError(
+                f"modelo {model_id!r} usa o corpo NER legado: "
+                "effort/thinking/max_tokens não se aplicam"
+            )
+        return {
+            "anthropic_version": "bedrock-2023-05-31",
+            "max_tokens": NER_LEGACY_MAX_TOKENS,
+            "temperature": 0.0,
+            "messages": messages,
+        }
+
+    profile = NER_PROFILES[family]
+    effort = profile["effort"] if effort is None else effort
+    thinking = profile["thinking"] if thinking is None else thinking
+    max_tokens = profile["max_tokens"] if max_tokens is None else max_tokens
+
+    if effort not in NER_EFFORT_LEVELS:
+        raise ValueError(f"effort inválido: {effort!r}")
+    if thinking not in _NER_THINKING_ALLOWED[family]:
+        raise ValueError(f"thinking={thinking!r} não é aceito por {family}")
+    if thinking != "adaptive" and effort not in _NER_EFFORT_THINKING_OFF:
+        raise ValueError(f"thinking={thinking!r} exige effort ≤ high (recebido {effort!r})")
+    if isinstance(max_tokens, bool) or not isinstance(max_tokens, int) or max_tokens < 1:
+        raise ValueError(f"max_tokens inválido: {max_tokens!r}")
+
+    body: Dict = {
+        "anthropic_version": "bedrock-2023-05-31",
+        "max_tokens": max_tokens,
+        "messages": messages,
+        "output_config": {"effort": effort},
+    }
+    if thinking != "adaptive":
+        # between_tools não aceita nenhum outro campo dentro de thinking.
+        body["thinking"] = {"type": thinking}
+    return body
+
+
+def ner_response_text(response_body: Dict) -> str:
+    """Texto da resposta NER: junta só os blocos type=text, na ordem.
+
+    - Bloco sem `type` conta como texto (formato antigo/mocks).
+    - Blocos thinking / redacted_thinking são ignorados.
+    - stop_reason="refusal" → NerRefusal (com categoria e usage).
+    - Nenhum bloco de texto (ex.: max_tokens gasto no pensamento) → ValueError,
+      que o chamador trata como falha repetível.
+    """
+    body = response_body or {}
+    stop_reason = body.get("stop_reason")
+    if stop_reason == "refusal":
+        details = body.get("stop_details") or {}
+        raise NerRefusal(
+            category=details.get("category"),
+            explanation=details.get("explanation"),
+            usage=_extract_usage(body),
+        )
+    texts = [
+        block["text"]
+        for block in (body.get("content") or [])
+        if isinstance(block, dict)
+        and block.get("type", "text") == "text"
+        and isinstance(block.get("text"), str)
+    ]
+    if not texts:
+        block_types = [
+            b.get("type", "text") if isinstance(b, dict) else type(b).__name__
+            for b in (body.get("content") or [])
+        ]
+        raise ValueError(
+            f"resposta NER sem bloco de texto (stop_reason={stop_reason}, blocos={block_types})"
+        )
+    return "".join(texts)
+
 
 # Erros do Bedrock que indicam MODELO INDISPONÍVEL (fim de vida, id inexistente,
 # perfil de inferência exigido, sem acesso). Não são transitórios: exigem trocar
@@ -725,32 +874,51 @@ FORMATO DE SAÍDA (JSON VÁLIDO):
 
         return prompt
 
+    def _invoke_ner_raw(
+        self,
+        prompt: str,
+        *,
+        effort: Optional[str] = None,
+        thinking: Optional[str] = None,
+        max_tokens: Optional[int] = None,
+    ) -> Dict:
+        """Chama o Bedrock com o corpo NER do modelo e devolve o corpo inteiro da resposta.
+
+        Overrides (effort/thinking/max_tokens) só valem para os perfis 5.5; o
+        corpo legado é sempre o mesmo (ver build_ner_request_body).
+        """
+        request_body = build_ner_request_body(
+            self.ner_model_id,
+            prompt,
+            effort=effort,
+            thinking=thinking,
+            max_tokens=max_tokens,
+        )
+        response = self.client.invoke_model(
+            modelId=self.ner_model_id,
+            body=json.dumps(request_body)
+        )
+        return json.loads(response['body'].read())
+
     def _call_bedrock_ner(self, prompt: str) -> Tuple[str, Dict[str, int]]:
         """Realiza a chamada NER ao Bedrock usando o modelo NER configurável.
 
         Returns:
             (texto, usage) onde usage = {input_tokens, output_tokens} extraído do
             corpo da resposta (para o ledger de cota). Campos ausentes → 0.
+
+        Raises:
+            NerRefusal: stop_reason="refusal" (não deve ser repetida).
+            ValueError: resposta sem bloco de texto.
         """
-        request_body = {
-            "anthropic_version": "bedrock-2023-05-31",
-            "max_tokens": 2000,
-            "temperature": 0.0,
-            "messages": [
-                {
-                    "role": "user",
-                    "content": prompt
-                }
-            ]
-        }
-
-        response = self.client.invoke_model(
-            modelId=self.ner_model_id,
-            body=json.dumps(request_body)
-        )
-
-        response_body = json.loads(response['body'].read())
-        return response_body['content'][0]['text'], _extract_usage(response_body)
+        response_body = self._invoke_ner_raw(prompt)
+        if response_body.get("stop_reason") == "max_tokens":
+            logger.warning(
+                "NER resposta truncada (stop_reason=max_tokens) model=%s usage=%s",
+                self.ner_model_id,
+                _extract_usage(response_body),
+            )
+        return ner_response_text(response_body), _extract_usage(response_body)
 
     def extract_entities(
         self, article: Dict, return_raw: bool = False
@@ -775,11 +943,20 @@ FORMATO DE SAÍDA (JSON VÁLIDO):
         prompt_hash = hashlib.sha256(prompt.encode("utf-8")).hexdigest()
 
         raw_text: Optional[str] = None
+        refusal: Optional[NerRefusal] = None
         usage: Dict[str, int] = {"input_tokens": 0, "output_tokens": 0}
         max_retries = getattr(self, "max_retries", 3)
         for attempt in range(max_retries):
             try:
                 raw_text, usage = self._call_bedrock_ner(prompt)
+                break
+            except NerRefusal as r:
+                # Recusa não é transitória: não repete. Vira marcador auditável.
+                refusal = r
+                logger.warning(
+                    f"NER recusado para {article.get('unique_id', 'unknown')}: "
+                    f"category={r.category}"
+                )
                 break
             except ClientError as e:
                 error_code = e.response.get('Error', {}).get('Code', '')
@@ -797,6 +974,22 @@ FORMATO DE SAÍDA (JSON VÁLIDO):
                 )
                 if attempt < max_retries - 1:
                     time.sleep(0.2 * (2 ** attempt))
+
+        if refusal is not None:
+            if not return_raw:
+                return []
+            return [], {
+                "model_id": self.ner_model_id,
+                "prompt_version": NER_PROMPT_VERSION,
+                "prompt_hash": prompt_hash,
+                "raw_response": {
+                    "refusal": {
+                        "category": refusal.category,
+                        "explanation": refusal.explanation,
+                    }
+                },
+                "usage": refusal.usage,
+            }
 
         if raw_text is None:
             logger.error(
