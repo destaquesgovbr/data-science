@@ -191,15 +191,35 @@ def _name(ent: Dict) -> str:
     return normalize(ent.get("forma_canonica") or ent.get("text"))
 
 
+_TRAILING_PAREN_RE = re.compile(r"\s*\([^()]*\)$")
+
+
+def _strip_trailing_paren(name: str) -> str:
+    """Tira uma sigla/aposto final entre parênteses ("ministerio x (mx)" → "ministerio x")."""
+    stripped = _TRAILING_PAREN_RE.sub("", name).strip()
+    return stripped or name
+
+
 def entity_keys(ents: Iterable[Dict], mode: str) -> Set:
-    if mode not in ("strict", "loose"):
+    """Chaves de comparação.
+
+    strict  = (nome normalizado, tipo); loose = só o nome;
+    relaxed = (nome sem parêntese final, tipo) — DIAGNÓSTICO, não é portão: separa
+    divergência de estilo da forma_canonica (com/sem sigla) de divergência real.
+    """
+    if mode not in ("strict", "loose", "relaxed"):
         raise ValueError(f"modo inválido: {mode!r}")
     out: Set = set()
     for e in ents or []:
         name = _name(e)
         if not name:
             continue
-        out.add((name, e.get("type")) if mode == "strict" else name)
+        if mode == "strict":
+            out.add((name, e.get("type")))
+        elif mode == "relaxed":
+            out.add((_strip_trailing_paren(name), e.get("type")))
+        else:
+            out.add(name)
     return out
 
 
@@ -622,7 +642,7 @@ def arm_metrics(
     """Métricas de um braço contra a referência gravada (sobre os registros dados)."""
     sel = [u for u in records if u in sample_by_uid and (uids is None or u in uids)]
     sel.sort()
-    tot = {"strict": [0, 0, 0], "loose": [0, 0, 0]}
+    tot = {"strict": [0, 0, 0], "loose": [0, 0, 0], "relaxed": [0, 0, 0]}
     strata: Dict[str, List[int]] = defaultdict(lambda: [0, 0, 0, 0])  # tp fp fn n
     sal_hits = sal_total = 0
     alias_hits = alias_total = ref_alias_hits = ref_alias_total = 0
@@ -641,7 +661,7 @@ def arm_metrics(
         stops[rec.get("stop_reason")] += 1
         json_extr += bool(rec.get("json_extraivel"))
         json_puro += bool(rec.get("json_puro"))
-        for mode in ("strict", "loose"):
+        for mode in ("strict", "loose", "relaxed"):
             c = prf_counts(entity_keys(ref, mode), entity_keys(cand, mode))
             for i in range(3):
                 tot[mode][i] += c[i]
@@ -695,6 +715,7 @@ def arm_metrics(
         "json_puro_rate": json_puro / n if n else None,
         "strict": prf("strict"),
         "loose": prf("loose"),
+        "relaxed": prf("relaxed"),
         "f1_strict_macro": statistics.mean(per_article_f1) if per_article_f1 else None,
         "salience_recall": sal_hits / sal_total if sal_total else None,
         "salience_n": sal_total,
@@ -1348,14 +1369,15 @@ def cmd_report(args) -> int:
         f"Gerado em {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M UTC')}. "
         f"Amostra `{label}`: {len(sample)} artigos; referência não-JSON puro: {ref_nonjson}.",
         "Preços de lista (Bedrock pode diferir). Referência = linha mais recente de "
-        "`news_llm_raw` (Sonnet 4.6, ner-v1); piso = Sonnet 4.6 re-rodado contra a própria referência.",
+        "`news_llm_raw` (Sonnet 4.6, ner-v1); piso = concordância Sonnet 4.6 × Sonnet 4.6 "
+        '(origem na seção dos portões). "F1 sem sigla" é diagnóstico (não é portão).',
         "",
         "## Métricas por braço",
         "",
         "| braço | modelo | n | ok | recusa | sem texto | erro API | max_tokens | JSON extraível | "
-        "JSON puro | P estrito | R estrito | F1 estrito | F1 frouxo | recall sal≥0,7 | ent/art (ref) | "
-        "alias (ref) | US$/art | tok in/out | lat p50/p95 s |",
-        "|" + "---|" * 20,
+        "JSON puro | P estrito | R estrito | F1 estrito | F1 frouxo | F1 sem sigla (diag.) | "
+        "recall sal≥0,7 | ent/art (ref) | alias (ref) | US$/art | tok in/out | lat p50/p95 s |",
+        "|" + "---|" * 21,
     ]
     for arm, m in sorted(metrics.items()):
         st = m["status"]
@@ -1363,7 +1385,8 @@ def cmd_report(args) -> int:
             f"| {arm} | `{model_of.get(arm)}` | {m['n']} | {st.get('ok', 0)} | {m['refusals']} | "
             f"{m['no_text']} | {m['api_errors']} | {m['max_tokens']} | {fmt(m['json_extraivel_rate'])} | "
             f"{fmt(m['json_puro_rate'])} | {fmt(m['strict']['precision'])} | {fmt(m['strict']['recall'])} | "
-            f"{fmt(m['strict']['f1'])} | {fmt(m['loose']['f1'])} | {fmt(m['salience_recall'])} | "
+            f"{fmt(m['strict']['f1'])} | {fmt(m['loose']['f1'])} | {fmt(m['relaxed']['f1'])} | "
+            f"{fmt(m['salience_recall'])} | "
             f"{fmt(m['ents_per_article'], 2)} ({fmt(m['ref_ents_per_article'], 2)}) | "
             f"{fmt(m['alias_coverage'])} ({fmt(m['ref_alias_coverage'])}) | "
             f"{fmt(m['cost_per_article'], 5)} | {fmt(m['input_tokens_per_article'], 0)}/"
@@ -1420,6 +1443,7 @@ def cmd_report(args) -> int:
         L.append(
             f"Piso ({floor_label}: {origem}; n={floor['n']}): F1 estrito "
             f"{fmt(floor['strict']['f1'])}, F1 frouxo {fmt(floor['loose']['f1'])}, "
+            f"F1 sem sigla (diag.) {fmt(floor['relaxed']['f1'])}, "
             f"recall sal≥0,7 {fmt(floor['salience_recall'])}, "
             f"ent/art {fmt(floor['ents_per_article'], 2)} (ref {fmt(floor['ref_ents_per_article'], 2)})."
         )

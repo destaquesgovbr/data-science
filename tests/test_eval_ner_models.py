@@ -728,3 +728,60 @@ class TestHistoricalFloor:
         assert ev.choose_floor(None, hist) == (hist, "s46hist")
         assert ev.choose_floor({"n": 0}, hist) == (hist, "s46hist")
         assert ev.choose_floor(None, None) == (None, None)
+
+
+# --------------------------------------------------------------------------- #
+# Métrica diagnóstica "sem sigla" (não é portão)                              #
+# --------------------------------------------------------------------------- #
+
+
+class TestRelaxedKeys:
+    def test_strips_trailing_parenthetical(self):
+        ents = [
+            E("DOU", "ORG", forma="Diário Oficial da União (DOU)"),
+            E("MIDR", "ORG", forma="Ministério da Integração e do Desenvolvimento Regional"),
+        ]
+        assert ev.entity_keys(ents, "relaxed") == {
+            ("diario oficial da uniao", "ORG"),
+            ("ministerio da integracao e do desenvolvimento regional", "ORG"),
+        }
+
+    def test_inner_parenthetical_kept(self):
+        ents = [E("Lei (A) B", "LAW")]
+        assert ev.entity_keys(ents, "relaxed") == {("lei (a) b", "LAW")}
+
+    def test_only_parenthetical_kept(self):
+        assert ev.entity_keys([E("(CGU)", "ORG")], "relaxed") == {("(cgu)", "ORG")}
+
+    def test_type_still_counts(self):
+        a = ev.entity_keys([E("X", "ORG", forma="Xis (X)")], "relaxed")
+        b = ev.entity_keys([E("X", "LOC", forma="Xis")], "relaxed")
+        assert a != b
+
+    def test_arm_metrics_reports_relaxed(self):
+        sample = {
+            "a": {
+                "unique_id": "a",
+                "y": "2025",
+                "tam": "G",
+                "ref": {
+                    "raw_response": {"entities": [E("DOU", "ORG", forma="Diário Oficial da União")]}
+                },
+            }
+        }
+        recs = {
+            "a": {
+                "uid": "a",
+                "status": "ok",
+                "entities": [E("DOU", "ORG", forma="Diário Oficial da União (DOU)")],
+                "json_extraivel": True,
+                "json_puro": True,
+                "stop_reason": "end_turn",
+                "usage": {},
+                "cost_usd": 0.0,
+                "latency_s": 0.1,
+            }
+        }
+        m = ev.arm_metrics(sample, recs, alias_set=set())
+        assert m["strict"]["f1"] == pytest.approx(0.0)
+        assert m["relaxed"]["f1"] == pytest.approx(1.0)
