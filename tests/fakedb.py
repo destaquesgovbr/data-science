@@ -7,6 +7,11 @@ geral — reconhece os comandos por substring estável e opera sobre dicts em
 memória. Suficiente para validar a lógica de gates/reuso/persistência sem DB real.
 """
 
+from datetime import datetime, timezone
+
+_EPOCH = datetime(1970, 1, 1, tzinfo=timezone.utc)
+
+
 class FakeCursor:
     def __init__(self, db, conn):
         self.db = db
@@ -116,13 +121,35 @@ class FakeCursor:
             self._upsert_registry(params)
             return
 
-        # fetch pending
-        if "where status = 'pending'" in low:
+        # fetch pending (Step B). Emula a ordem que o SQL pede: com o LEFT JOIN em
+        # news, formas cuja amostra foi publicada >= corte (params[0]) vêm antes;
+        # FIFO por first_seen_at dentro de cada grupo; LIMIT = último parâmetro.
+        if (
+            low.startswith("select")
+            and "from entity_registry_seen" in low
+            and "status = 'pending'" in low
+        ):
+            rows = [r for r in self.db.seen.values() if r["status"] == "pending"]
+
+            def _fifo(r):
+                return r.get("first_seen_at") or _EPOCH
+
+            if "left join news" in low:
+                cutoff = params[0]
+
+                def _recent(r):
+                    pub = (self.db.news.get(r.get("sample_unique_id")) or {}).get("published_at")
+                    return pub is not None and pub >= cutoff
+
+                rows.sort(key=lambda r: (not _recent(r), _fifo(r)))
+            elif "order by first_seen_at" in low:
+                rows.sort(key=_fifo)
+            if params:
+                rows = rows[: params[-1]]
             self.description = [("surface_norm",), ("type",), ("sample_unique_id",), ("attempts",)]
             self._result = [
                 (r["surface_norm"], r["type"], r.get("sample_unique_id"), r.get("attempts", 0))
-                for r in self.db.seen.values()
-                if r["status"] == "pending"
+                for r in rows
             ]
             return
 
@@ -437,13 +464,32 @@ class FakeDB:
         most_specific_theme_id=None,
         summary=None,
         content_embedding=None,
+        published_at=None,
     ):
-        """Semeia uma linha de news (published_date = dia BRT 'YYYY-MM-DD')."""
+        """Semeia uma linha de news (published_date = dia BRT 'YYYY-MM-DD';
+        published_at = timestamptz, usado pela prioridade da fila do canon)."""
         self.news[unique_id] = {
             "published_date": published_date,
             "most_specific_theme_id": most_specific_theme_id,
             "summary": summary,
             "content_embedding": content_embedding,
+            "published_at": published_at,
+        }
+
+    def seed_seen(
+        self, surface_norm, type, status="pending", sample_unique_id=None,
+        first_seen_at=None, attempts=0,
+    ):
+        """Semeia uma linha de entity_registry_seen (fila do canon)."""
+        self.seen[(surface_norm, type)] = {
+            "surface_norm": surface_norm,
+            "type": type,
+            "status": status,
+            "entity_id": None,
+            "attempts": attempts,
+            "sample_unique_id": sample_unique_id,
+            "last_error": None,
+            "first_seen_at": first_seen_at,
         }
 
     def seed_alias(self, alias_norm, type, entity_id):
