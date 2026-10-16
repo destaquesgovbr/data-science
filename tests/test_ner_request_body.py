@@ -41,6 +41,7 @@ SONNET_55_IDS = [
 HAIKU_55_IDS = [
     "us.anthropic.claude-haiku-5-5",
     "anthropic.claude-haiku-5-5",
+    "global.anthropic.claude-haiku-5-5",
 ]
 
 
@@ -49,6 +50,25 @@ def _legacy_string(prompt: str) -> str:
     return (
         '{"anthropic_version": "bedrock-2023-05-31", "max_tokens": 2000, '
         '"temperature": 0.0, "messages": [{"role": "user", "content": ' + json.dumps(prompt) + "}]}"
+    )
+
+
+def _haiku_55_default_string(prompt: str) -> str:
+    """Corpo exato do perfil avaliado h55_off_low (ner-eval-2026-10): thinking
+    desligado, effort low, max_tokens 4000 — o default de produção do Haiku 5.5."""
+    return (
+        '{"anthropic_version": "bedrock-2023-05-31", "max_tokens": 4000, '
+        '"messages": [{"role": "user", "content": ' + json.dumps(prompt) + "}], "
+        '"output_config": {"effort": "low"}, "thinking": {"type": "disabled"}}'
+    )
+
+
+def _sonnet_55_default_string(prompt: str) -> str:
+    """Corpo exato do perfil Sonnet 5.5 (s55_bt_low), que não muda."""
+    return (
+        '{"anthropic_version": "bedrock-2023-05-31", "max_tokens": 4000, '
+        '"messages": [{"role": "user", "content": ' + json.dumps(prompt) + "}], "
+        '"output_config": {"effort": "low"}, "thinking": {"type": "between_tools"}}'
     )
 
 
@@ -138,9 +158,37 @@ class TestProfile55Body:
         assert body["thinking"] == {"type": "between_tools"}  # sem outros campos
         assert body["output_config"] == {"effort": "low"}
 
-    def test_haiku_default_is_adaptive_low(self):
-        body = build_ner_request_body("us.anthropic.claude-haiku-5-5", PROMPT)
-        assert "thinking" not in body  # adaptativo = default do modelo, campo omitido
+    @pytest.mark.parametrize("model_id", HAIKU_55_IDS)
+    def test_haiku_default_is_evaluated_h55_off_low(self, model_id):
+        # Perfil avaliado na ner-eval-2026-10 (G7: 95% melhor-ou-igual):
+        # thinking desligado, effort low, max_tokens 4000.
+        body = build_ner_request_body(model_id, PROMPT)
+        assert body["thinking"] == {"type": "disabled"}
+        assert body["output_config"] == {"effort": "low"}
+        assert body["max_tokens"] == 4000
+        assert NER_PROFILES["haiku-5-5"] == {
+            "effort": "low",
+            "thinking": "disabled",
+            "max_tokens": 4000,
+        }
+
+    @pytest.mark.parametrize("model_id", HAIKU_55_IDS)
+    def test_haiku_default_exact_string(self, model_id):
+        body = build_ner_request_body(model_id, PROMPT)
+        assert json.dumps(body) == _haiku_55_default_string(PROMPT)
+
+    @pytest.mark.parametrize("model_id", SONNET_55_IDS)
+    def test_sonnet_default_exact_string_unchanged(self, model_id):
+        body = build_ner_request_body(model_id, PROMPT)
+        assert json.dumps(body) == _sonnet_55_default_string(PROMPT)
+
+    def test_haiku_adaptive_still_reachable_by_override(self):
+        # O braço h55_ad_low (adaptativo, 8000) continua reproduzível no harness.
+        body = build_ner_request_body(
+            "us.anthropic.claude-haiku-5-5", PROMPT, thinking="adaptive", max_tokens=8000
+        )
+        assert "thinking" not in body
+        assert body["max_tokens"] == 8000
         assert body["output_config"] == {"effort": "low"}
 
     def test_overrides_applied(self):

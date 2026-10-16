@@ -436,6 +436,27 @@ class TestArmModelCheck:
         ev.check_arm_model("s46", "us.anthropic.claude-sonnet-4-6")
 
 
+class TestProductionDefaultMatchesEvaluatedArm:
+    """O default de produção é exatamente o corpo que foi avaliado."""
+
+    @pytest.mark.parametrize(
+        "model_id",
+        ["us.anthropic.claude-haiku-5-5", "global.anthropic.claude-haiku-5-5"],
+    )
+    def test_haiku_55_default_is_h55_off_low(self, model_id):
+        prompt = ev.build_prompt(ARTICLE)
+        assert json.dumps(ev.build_ner_request_body(model_id, prompt)) == json.dumps(
+            ev.build_request_for(model_id, ev.ARMS["h55_off_low"], prompt)
+        )
+
+    def test_sonnet_55_default_is_s55_bt_low(self):
+        prompt = ev.build_prompt(ARTICLE)
+        mid = "us.anthropic.claude-sonnet-5-5"
+        assert json.dumps(ev.build_ner_request_body(mid, prompt)) == json.dumps(
+            ev.build_request_for(mid, ev.ARMS["s55_bt_low"], prompt)
+        )
+
+
 class TestResume:
     def test_done_uids_only_final_statuses(self, tmp_path):
         p = tmp_path / "r.jsonl"

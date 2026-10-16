@@ -9,6 +9,8 @@ nenhuma chamada real é feita na suíte.
 import json
 from unittest.mock import MagicMock
 
+import pytest
+
 from news_enrichment.llm_client import (
     NER_PROMPT_VERSION,
     SANCTIONED_ENTITY_TYPES,
@@ -550,6 +552,67 @@ class TestExtractEntitiesBlocksAndRefusal:
         )
         assert kwargs["body"] == expected
         assert kwargs["modelId"] == "us.anthropic.claude-sonnet-4-6"
+
+    @pytest.mark.parametrize(
+        "model_id",
+        [
+            "us.anthropic.claude-sonnet-4-6",
+            "us.anthropic.claude-haiku-4-5-20251001-v1:0",
+            "anthropic.claude-3-haiku-20240307-v1:0",
+        ],
+    )
+    def test_legacy_invoke_body_is_exact_string(self, model_id):
+        """Sonnet 4.6 / Haiku 4.5 / Haiku 3: o string enviado ao invoke_model é o
+        de origin/main, byte a byte (worker ao vivo e canon não mudam)."""
+        payload = {"content": [{"type": "text", "text": '{"entities": []}'}]}
+        client = self._client(payload, model_id=model_id)
+        client.extract_entities(SAMPLE_ARTICLE)
+        _, kwargs = client.client.invoke_model.call_args
+        prompt = client._build_ner_prompt(SAMPLE_ARTICLE)
+        assert kwargs["body"] == (
+            '{"anthropic_version": "bedrock-2023-05-31", "max_tokens": 2000, '
+            '"temperature": 0.0, "messages": [{"role": "user", "content": '
+            + json.dumps(prompt)
+            + "}]}"
+        )
+        assert kwargs["modelId"] == model_id
+
+    @pytest.mark.parametrize(
+        "model_id",
+        [
+            "us.anthropic.claude-haiku-5-5",
+            "global.anthropic.claude-haiku-5-5",
+            "anthropic.claude-haiku-5-5",
+        ],
+    )
+    def test_haiku_55_invoke_body_is_evaluated_profile(self, model_id):
+        """Haiku 5.5 em produção (job histórico): corpo exato do perfil avaliado
+        h55_off_low — thinking desligado, effort low, max_tokens 4000."""
+        payload = {"content": [{"type": "text", "text": '{"entities": []}'}]}
+        client = self._client(payload, model_id=model_id)
+        client.extract_entities(SAMPLE_ARTICLE)
+        _, kwargs = client.client.invoke_model.call_args
+        prompt = client._build_ner_prompt(SAMPLE_ARTICLE)
+        assert kwargs["body"] == (
+            '{"anthropic_version": "bedrock-2023-05-31", "max_tokens": 4000, '
+            '"messages": [{"role": "user", "content": '
+            + json.dumps(prompt)
+            + '}], "output_config": {"effort": "low"}, "thinking": {"type": "disabled"}}'
+        )
+        assert kwargs["modelId"] == model_id
+
+    def test_sonnet_55_invoke_body_unchanged(self):
+        payload = {"content": [{"type": "text", "text": '{"entities": []}'}]}
+        client = self._client(payload, model_id="us.anthropic.claude-sonnet-5-5")
+        client.extract_entities(SAMPLE_ARTICLE)
+        _, kwargs = client.client.invoke_model.call_args
+        prompt = client._build_ner_prompt(SAMPLE_ARTICLE)
+        assert kwargs["body"] == (
+            '{"anthropic_version": "bedrock-2023-05-31", "max_tokens": 4000, '
+            '"messages": [{"role": "user", "content": '
+            + json.dumps(prompt)
+            + '}], "output_config": {"effort": "low"}, "thinking": {"type": "between_tools"}}'
+        )
 
     def test_haiku_55_body_has_no_temperature(self):
         payload = {"content": [{"type": "text", "text": '{"entities": []}'}]}

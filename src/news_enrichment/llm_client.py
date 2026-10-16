@@ -67,9 +67,12 @@ _NER_EFFORT_THINKING_OFF = ("low", "medium", "high")
 _NER_MODEL_FAMILY_RE = re.compile(r"claude-(sonnet|haiku)-5-5(?![0-9])")
 # thinking: "adaptive" = default do modelo (campo omitido no corpo);
 # "between_tools" (só Sonnet 5.5) e "disabled" (só Haiku 5.5) desligam o pensamento.
+# Haiku 5.5: perfil avaliado h55_off_low (ner-eval-2026-10; revisão cega 95%
+# melhor-ou-igual à referência Sonnet 4.6, 97,5% JSON puro, 0 max_tokens em
+# 265 chamadas). O adaptativo (h55_ad_low) segue acessível por override.
 NER_PROFILES: Dict[str, Dict] = {
     "sonnet-5-5": {"effort": "low", "thinking": "between_tools", "max_tokens": 4000},
-    "haiku-5-5": {"effort": "low", "thinking": "adaptive", "max_tokens": 8000},
+    "haiku-5-5": {"effort": "low", "thinking": "disabled", "max_tokens": 4000},
 }
 _NER_THINKING_ALLOWED = {
     "sonnet-5-5": frozenset({"adaptive", "between_tools"}),
