@@ -428,7 +428,8 @@ def done_uids(path: str) -> Set[str]:
     return {u for u, r in load_records(path).items() if r.get("status") in FINAL_STATUSES}
 
 
-def load_records(path: str) -> Dict[str, Dict]:
+def load_records(path: str, key: str = "uid") -> Dict[str, Dict]:
+    """Registros de um JSONL de braço, indexados por `key` (default uid; sem o campo → uid)."""
     recs: Dict[str, Dict] = {}
     if not os.path.exists(path):
         return recs
@@ -437,7 +438,7 @@ def load_records(path: str) -> Dict[str, Dict]:
             line = line.strip()
             if line:
                 r = json.loads(line)
-                recs[r["uid"]] = r
+                recs[r.get(key) or r["uid"]] = r
     return recs
 
 
@@ -839,6 +840,15 @@ def _fmt_ents(ents: List[Dict]) -> List[str]:
     return lines or ["- (nenhuma entidade)"]
 
 
+def pair_key(pair: Dict) -> str:
+    """Chave de um par histórico: unique_id|prompt_hash.
+
+    Um artigo pode ter mais de um par (prompt_hash diferentes, conteúdo
+    re-raspado); indexar só por unique_id descartava pares em silêncio.
+    """
+    return f"{pair['unique_id']}|{(pair.get('ref') or {}).get('prompt_hash')}"
+
+
 def alt_record(pair: Dict, arm: str = "s46hist") -> Dict:
     """Registro de "braço" a partir da resposta Sonnet 4.6 mais antiga de um par histórico.
 
@@ -854,6 +864,7 @@ def alt_record(pair: Dict, arm: str = "s46hist") -> Dict:
     text = raw.get("raw_text") if isinstance(raw, dict) and "raw_text" in raw else None
     return {
         "uid": pair["unique_id"],
+        "pair_key": pair_key(pair),
         "arm": arm,
         "model_id": "us.anthropic.claude-sonnet-4-6",
         "status": "ok",
@@ -870,6 +881,27 @@ def alt_record(pair: Dict, arm: str = "s46hist") -> Dict:
         "error": None,
         "alt_created_at": alt.get("created_at"),
     }
+
+
+def load_floor(sample_path: str, records_path: str) -> Tuple[Dict[str, Dict], Dict[str, Dict]]:
+    """Amostra e registros do piso histórico, indexados por par (pair_key).
+
+    Registros gerados antes do pair_key (sem o campo) caem para unique_id, como
+    antes, com aviso para re-rodar `floor-pairs` (sem chamada ao Bedrock).
+    """
+    rows = load_sample(sample_path)
+    recs = load_records(records_path, key="pair_key")
+    if recs and not all("pair_key" in r for r in recs.values()):
+        uids = {r["unique_id"] for r in rows}
+        print(
+            f"AVISO: registros do piso sem pair_key; indexando por unique_id "
+            f"({len(rows)} pares → {len(uids)} artigos). Re-rode floor-pairs para usar todos."
+        )
+        return {r["unique_id"]: r for r in rows}, load_records(records_path)
+    sample = {pair_key(r): r for r in rows}
+    if len(sample) < len(rows):
+        print(f"AVISO: {len(rows) - len(sample)} pares repetidos na amostra do piso")
+    return sample, recs
 
 
 def choose_floor(
@@ -1223,9 +1255,10 @@ def cmd_report(args) -> int:
     metrics = {arm: arm_metrics(by_uid, recs, alias_set) for arm, recs in records.items()}
     floor_hist = None
     if args.floor_sample:
-        fsample = {r["unique_id"]: r for r in load_sample(args.floor_sample)}
         flabel = os.path.splitext(os.path.basename(args.floor_sample))[0]
-        frecs = load_records(os.path.join(args.runs_dir, f"{args.floor_arm}__{flabel}.jsonl"))
+        fsample, frecs = load_floor(
+            args.floor_sample, os.path.join(args.runs_dir, f"{args.floor_arm}__{flabel}.jsonl")
+        )
         floor_hist = arm_metrics(fsample, frecs, alias_set)
     floor, floor_label = choose_floor(metrics.get("s46"), floor_hist)
     floor_uids = set(records.get("s46", {}))

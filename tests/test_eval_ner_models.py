@@ -743,6 +743,54 @@ class TestHistoricalFloor:
         assert m["strict"]["f1"] == pytest.approx(1.0)
         assert m["salience_recall"] == pytest.approx(1.0)
 
+    def test_alt_record_has_pair_key(self):
+        rec = ev.alt_record(self._pair({"entities": []}))
+        assert rec["uid"] == "p1"
+        assert rec["pair_key"] == "p1|h"
+
+    def _write_jsonl(self, path, rows):
+        with open(path, "w", encoding="utf-8") as f:
+            for r in rows:
+                f.write(json.dumps(r) + "\n")
+
+    def _two_pairs_same_article(self):
+        # Mesmo artigo, dois prompt_hash (conteúdo re-raspado): dois pares distintos.
+        a = self._pair({"entities": [{"text": "Finep", "type": "ORG"}]})
+        b = self._pair({"entities": [{"text": "MCTI", "type": "ORG"}]})
+        b["ref"]["prompt_hash"] = b["alt"]["prompt_hash"] = "h2"
+        return a, b
+
+    def test_load_floor_keeps_every_pair_of_same_article(self, tmp_path):
+        a, b = self._two_pairs_same_article()
+        sp, rp = str(tmp_path / "pares.jsonl"), str(tmp_path / "s46hist__pares.jsonl")
+        self._write_jsonl(sp, [a, b])
+        self._write_jsonl(rp, [ev.alt_record(a), ev.alt_record(b)])
+        sample, recs = ev.load_floor(sp, rp)
+        assert set(sample) == set(recs) == {"p1|h", "p1|h2"}
+        m = ev.arm_metrics(sample, recs, alias_set=set())
+        assert m["n"] == 2  # antes: 1 (o 2º par sobrescrevia o 1º em silêncio)
+        # par a: 1 tp; par b: 1 fp + 1 fn → F1 micro 0,5
+        assert m["strict"]["f1"] == pytest.approx(0.5)
+
+    def test_load_floor_old_records_without_pair_key_fall_back_to_uid(self, tmp_path, capsys):
+        a, b = self._two_pairs_same_article()
+        sp, rp = str(tmp_path / "pares.jsonl"), str(tmp_path / "s46hist__pares.jsonl")
+        self._write_jsonl(sp, [a, b])
+        old = []
+        for p in (a, b):
+            r = ev.alt_record(p)
+            r.pop("pair_key")
+            old.append(r)
+        self._write_jsonl(rp, old)
+        sample, recs = ev.load_floor(sp, rp)
+        assert set(sample) == set(recs) == {"p1"}
+        assert "floor-pairs" in capsys.readouterr().out  # avisa em vez de descartar calado
+
+    def test_load_records_default_key_is_uid(self, tmp_path):
+        rp = str(tmp_path / "r.jsonl")
+        self._write_jsonl(rp, [{"uid": "u1", "pair_key": "u1|x"}])
+        assert set(ev.load_records(rp)) == {"u1"}
+
     def test_choose_floor_prefers_live(self):
         live, hist = {"n": 20}, {"n": 150}
         assert ev.choose_floor(live, hist) == (live, "s46")
