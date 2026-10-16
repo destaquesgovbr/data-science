@@ -1336,3 +1336,116 @@ class TestPolicyOntologyClassification:
         })
         result = C.parse_canon_response(resp, "X")
         assert result["policy_lifecycle_phase"] is None
+
+
+# ---------------------------------------------------------------------- #
+# Fallback de sigla: "Nome (SIGLA)" → entidade de "Nome" (zero LLM)      #
+# ---------------------------------------------------------------------- #
+
+
+class TestSplitSiglaSuffix:
+    """split_sigla_suffix: separa "base (sigla)" só quando a sigla deriva do base."""
+
+    def test_separa_base_e_sigla(self):
+        assert C.split_sigla_suffix("supremo tribunal federal (stf)") == (
+            "supremo tribunal federal",
+            "stf",
+        )
+
+    @pytest.mark.parametrize(
+        "form, expected",
+        [
+            # ponto e hífen fazem parte da sigla; as letras seguem o nome-base.
+            ("escola virtual de governo (ev.g)", ("escola virtual de governo", "ev.g")),
+            ("universidade federal de minas gerais (uf-mg)",
+             ("universidade federal de minas gerais", "uf-mg")),
+            # dígito aceito quando o próprio nome-base já tem o número.
+            ("subgrupo de trabalho no 5 (sgt-5)", ("subgrupo de trabalho no 5", "sgt-5")),
+            # só o ÚLTIMO parêntese é a sigla.
+            ("ministerio x (mx) (mx)", ("ministerio x (mx)", "mx")),
+        ],
+    )
+    def test_aceita_variantes(self, form, expected):
+        assert C.split_sigla_suffix(form) == expected
+
+    @pytest.mark.parametrize(
+        "form",
+        [
+            "supremo tribunal federal",  # sem parêntese
+            "ministerio da saude (libano)",  # qualificador: não é subsequência do base
+            "prefeitura de santos (sp)",  # UF que não sai das letras do base
+            "enem (2026)",  # ano/edição, sem letras
+            "conferencia das partes (cop30)",  # número novo → outra edição
+            "agencia nacional de mineracao (abcdefghijklm)",  # sigla > 12
+            "agencia nacional (a)",  # sigla < 2
+            "secretaria nacional de politicas sobre drogas (senad/mjsp)",  # "/" fora do conjunto
+            "anatel sao paulo (gr 01)",  # espaço dentro do parêntese
+            "(stf)",  # sem base
+            "supremo tribunal federal(stf)",  # sem o espaço do sufixo " (xxx)"
+            "",
+            None,
+        ],
+    )
+    def test_rejeita(self, form):
+        assert C.split_sigla_suffix(form) is None
+
+
+class TestSiglaFallbackTarget:
+    """sigla_fallback_target: alvo = alias da base no MESMO type, sem conflito da sigla."""
+
+    FORM = "supremo tribunal federal (stf)"
+
+    @staticmethod
+    def _lookup(aliases):
+        return lambda alias_norm, etype: aliases.get((alias_norm, etype))
+
+    def test_liga_ao_alias_da_base_do_mesmo_type(self):
+        aliases = {("supremo tribunal federal", "ORG"): "Q519138"}
+        assert C.sigla_fallback_target(self.FORM, "ORG", self._lookup(aliases)) == "Q519138"
+
+    def test_base_sem_alias(self):
+        assert C.sigla_fallback_target(self.FORM, "ORG", self._lookup({})) is None
+
+    def test_base_so_em_outro_type_nao_liga(self):
+        """Caso SUS: o Haiku tipa como POLICY, o alias da base é ORG → não resolve tipo trocado."""
+        aliases = {("sistema unico de saude", "ORG"): "Q_SUS"}
+        assert (
+            C.sigla_fallback_target("sistema unico de saude (sus)", "POLICY", self._lookup(aliases))
+            is None
+        )
+
+    def test_conflito_sigla_aponta_para_outra_entidade(self):
+        aliases = {
+            ("confederacao nacional da industria", "ORG"): "Q_CNI",
+            ("cni", "ORG"): "Q_OUTRA",
+        }
+        assert (
+            C.sigla_fallback_target(
+                "confederacao nacional da industria (cni)", "ORG", self._lookup(aliases)
+            )
+            is None
+        )
+
+    def test_sigla_com_alias_da_mesma_entidade_liga(self):
+        aliases = {
+            ("supremo tribunal federal", "ORG"): "Q519138",
+            ("stf", "ORG"): "Q519138",
+        }
+        assert C.sigla_fallback_target(self.FORM, "ORG", self._lookup(aliases)) == "Q519138"
+
+    def test_sigla_com_alias_em_outro_type_nao_conflita(self):
+        aliases = {
+            ("supremo tribunal federal", "ORG"): "Q519138",
+            ("stf", "EVENT"): "dgb_outro",
+        }
+        assert C.sigla_fallback_target(self.FORM, "ORG", self._lookup(aliases)) == "Q519138"
+
+    def test_forma_fora_do_padrao_nao_consulta(self):
+        calls = []
+
+        def lookup(alias_norm, etype):
+            calls.append((alias_norm, etype))
+            return "Q1"
+
+        assert C.sigla_fallback_target("ministerio da saude (libano)", "ORG", lookup) is None
+        assert calls == []

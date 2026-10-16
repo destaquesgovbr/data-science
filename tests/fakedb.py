@@ -40,13 +40,54 @@ class FakeCursor:
                 self._result = [(ent,)]
             return
 
-        # entity_alias INSERT
+        # entity_alias INSERT (params: alias_norm, type, entity_id, source, confidence)
         if "insert into entity_alias" in low:
             alias_norm, atype, entity_id = params[0], params[1], params[2]
+            source = params[3] if len(params) > 3 else None
+            key = (alias_norm, atype)
             if "on conflict" in low and "do update" in low:
-                self.db.alias[(alias_norm, atype)] = entity_id  # sobrescreve (ON CONFLICT DO UPDATE)
-            else:
-                self.db.alias.setdefault((alias_norm, atype), entity_id)  # first-write-wins
+                self.db.alias[key] = entity_id  # sobrescreve (ON CONFLICT DO UPDATE)
+                self.db.alias_source[key] = source
+            elif key not in self.db.alias:  # first-write-wins (ON CONFLICT DO NOTHING)
+                self.db.alias[key] = entity_id
+                self.db.alias_source[key] = source
+            return
+
+        # fallback de sigla: formas de seen terminadas em ")" sem alias exato ou com
+        # alias derivado (params: padrão LIKE, source do alias derivado).
+        if low.startswith(
+            "select s.surface_norm, s.type, s.status, a.entity_id, a.source "
+            "from entity_registry_seen s left join entity_alias a"
+        ):
+            suffix, derived = params[0].lstrip("%"), params[1]
+            res = []
+            for key, row in self.db.seen.items():
+                if not key[0].endswith(suffix):
+                    continue
+                ent = self.db.alias.get(key)
+                src = self.db.alias_source.get(key) if ent is not None else None
+                if ent is None or src == derived:
+                    res.append((key[0], key[1], row["status"], ent, src))
+            self._result = res
+            return
+
+        # fallback de sigla: re-sincroniza / remove o alias derivado (só o da source dada).
+        if low.startswith("update entity_alias set entity_id = %s where alias_norm"):
+            entity_id, key, source = params[0], (params[1], params[2]), params[3]
+            if key in self.db.alias and self.db.alias_source.get(key) == source:
+                self.db.alias[key] = entity_id
+            return
+        if low.startswith("delete from entity_alias where alias_norm"):
+            key, source = (params[0], params[1]), params[2]
+            if key in self.db.alias and self.db.alias_source.get(key) == source:
+                del self.db.alias[key]
+                self.db.alias_source.pop(key, None)
+            return
+        # fallback de sigla: devolve à fila a forma resolvida para o alvo removido.
+        if low.startswith("update entity_registry_seen set entity_id = null, status = 'pending'"):
+            row = self.db.seen.get((params[0], params[1]))
+            if row is not None and row["status"] == "resolved" and row.get("entity_id") == params[2]:
+                row.update(status="pending", entity_id=None)
             return
 
         # entity_registry reuse by wikidata
@@ -440,6 +481,7 @@ class FakeDB:
 
     def __init__(self):
         self.alias = {}        # (alias_norm, type) -> entity_id
+        self.alias_source = {}  # (alias_norm, type) -> source
         self.registry = {}     # entity_id -> row dict
         self.seen = {}         # (surface_norm, type) -> row dict
         self.content = {}      # unique_id -> content
@@ -492,8 +534,9 @@ class FakeDB:
             "first_seen_at": first_seen_at,
         }
 
-    def seed_alias(self, alias_norm, type, entity_id):
+    def seed_alias(self, alias_norm, type, entity_id, source="canon"):
         self.alias[(alias_norm, type)] = entity_id
+        self.alias_source[(alias_norm, type)] = source
 
     def seed_news_features(self, unique_id, entities):
         """Semeia uma linha news_features com lista de menções (entities)."""

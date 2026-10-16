@@ -998,3 +998,214 @@ class TestDedupOrgThreshold:
         assert result["proposed"] >= 1
         assert result["merged"] == 0
         assert len(db.registry) == 2
+
+
+# ---------------------------------------------------------------------- #
+# Fallback de sigla — Step B (antes do LLM) e passo retroativo           #
+# ---------------------------------------------------------------------- #
+
+STF = "supremo tribunal federal (stf)"
+
+
+class TestSiglaFallbackStepB:
+    def test_forma_pending_liga_a_base_sem_chamar_llm(self):
+        db = FakeDB()
+        db.seed_alias("supremo tribunal federal", "ORG", "Q519138")
+        db.seed_seen(STF, "ORG", sample_unique_id="uid")
+        bedrock = make_bedrock(canon_json())
+        decision = J.resolve_form(
+            db.conn(), STF, "ORG", "uid", 0,
+            bedrock_client=bedrock, wikidata_client=FakeWikidata(), model_id="m",
+        )
+        assert decision["action"] == "fallback_sigla"
+        assert decision["status"] == "resolved"
+        assert decision["entity_id"] == "Q519138"
+        assert decision["usage"] == {"input_tokens": 0, "output_tokens": 0}
+        bedrock.client.invoke_model.assert_not_called()
+        # alias materializado, com origem identificável → o Step C propaga.
+        assert db.alias[(STF, "ORG")] == "Q519138"
+        assert db.alias_source[(STF, "ORG")] == "fallback_sigla"
+        assert db.seen[(STF, "ORG")]["status"] == "resolved"
+        assert db.seen[(STF, "ORG")]["entity_id"] == "Q519138"
+        assert db.llm_raw == []
+
+    def test_conflito_de_sigla_segue_para_o_llm(self):
+        db = FakeDB()
+        db.seed_alias("confederacao nacional da industria", "ORG", "Q_CNI")
+        db.seed_alias("cni", "ORG", "Q_OUTRA")
+        form = "confederacao nacional da industria (cni)"
+        db.seed_seen(form, "ORG", sample_unique_id="uid")
+        bedrock = make_bedrock(canon_json(canonical_name="CNI", confidence=0.95))
+        decision = J.resolve_form(
+            db.conn(), form, "ORG", "uid", 0,
+            bedrock_client=bedrock, wikidata_client=FakeWikidata(), model_id="m",
+        )
+        assert decision["action"] != "fallback_sigla"
+        assert bedrock.client.invoke_model.called
+        assert db.alias_source.get((form, "ORG")) != "fallback_sigla"
+
+    def test_type_diferente_da_base_segue_para_o_llm(self):
+        """SUS tipado como POLICY não herda o alias ORG da base."""
+        db = FakeDB()
+        db.seed_alias("sistema unico de saude", "ORG", "Q_SUS")
+        form = "sistema unico de saude (sus)"
+        db.seed_seen(form, "POLICY", sample_unique_id="uid")
+        bedrock = make_bedrock(canon_json(canonical_name="SUS", type="POLICY", confidence=0.95))
+        decision = J.resolve_form(
+            db.conn(), form, "POLICY", "uid", 0,
+            bedrock_client=bedrock, wikidata_client=FakeWikidata(), model_id="m",
+        )
+        assert decision["action"] != "fallback_sigla"
+        assert bedrock.client.invoke_model.called
+        assert db.alias_source.get((form, "POLICY")) != "fallback_sigla"
+
+    def test_dry_run_nao_escreve(self):
+        db = FakeDB()
+        db.seed_alias("supremo tribunal federal", "ORG", "Q519138")
+        db.seed_seen(STF, "ORG", sample_unique_id="uid")
+        decision = J.resolve_form(
+            db.conn(), STF, "ORG", "uid", 0,
+            bedrock_client=make_bedrock(canon_json()), wikidata_client=FakeWikidata(),
+            model_id="m", dry_run=True,
+        )
+        assert decision["action"] == "fallback_sigla"
+        assert (STF, "ORG") not in db.alias
+        assert db.seen[(STF, "ORG")]["status"] == "pending"
+
+
+class TestLinkSiglaFallbacks:
+    """Passo retroativo: liga formas já pending/needs_review/resolved-sem-alias."""
+
+    def _db(self):
+        db = FakeDB()
+        db.seed_alias("supremo tribunal federal", "ORG", "Q519138")
+        db.seed_alias("agencia nacional de telecomunicacoes", "ORG", "Q4056893")
+        db.seed_seen(STF, "ORG", status="needs_review")
+        db.seed_seen("agencia nacional de telecomunicacoes (anatel)", "ORG", status="pending")
+        return db
+
+    def test_liga_needs_review_e_pending_sem_mexer_no_status(self):
+        db = self._db()
+        stats = J.link_sigla_fallbacks(db.conn())
+        assert stats["linked"] == 2
+        assert db.alias[(STF, "ORG")] == "Q519138"
+        assert db.alias_source[(STF, "ORG")] == "fallback_sigla"
+        anatel = ("agencia nacional de telecomunicacoes (anatel)", "ORG")
+        assert db.alias[anatel] == "Q4056893"
+        # needs_review continua needs_review (a decisão original fica auditável);
+        # a pending é resolvida pelo gazetteer no Step B, sem LLM.
+        assert db.seen[(STF, "ORG")]["status"] == "needs_review"
+        assert db.seen[anatel]["status"] == "pending"
+
+    def test_resolved_sem_alias_tambem_liga(self):
+        db = FakeDB()
+        db.seed_alias("diario oficial da uniao", "ORG", "Q3712237")
+        form = "diario oficial da uniao (dou)"
+        db.seen[(form, "ORG")] = {
+            "surface_norm": form, "type": "ORG", "status": "resolved",
+            "entity_id": None, "attempts": 1, "sample_unique_id": None,
+        }
+        stats = J.link_sigla_fallbacks(db.conn())
+        assert stats["linked"] == 1
+        assert db.alias[(form, "ORG")] == "Q3712237"
+
+    def test_nao_toca_alias_exato_conflito_nem_type_trocado(self):
+        db = FakeDB()
+        # forma com alias exato do canon → intocada.
+        db.seed_alias("ministerio da educacao", "ORG", "Q_MEC")
+        db.seed_alias("ministerio da educacao (mec)", "ORG", "Q_MEC_CANON")
+        db.seed_seen("ministerio da educacao (mec)", "ORG", status="resolved")
+        # conflito: a sigla aponta para outra entidade do mesmo type.
+        db.seed_alias("confederacao nacional da industria", "ORG", "Q_CNI")
+        db.seed_alias("cni", "ORG", "Q_OUTRA")
+        db.seed_seen("confederacao nacional da industria (cni)", "ORG", status="needs_review")
+        # type trocado (SUS como POLICY; alias da base só em ORG).
+        db.seed_alias("sistema unico de saude", "ORG", "Q_SUS")
+        db.seed_seen("sistema unico de saude (sus)", "POLICY", status="needs_review")
+        stats = J.link_sigla_fallbacks(db.conn())
+        assert stats["linked"] == 0
+        assert db.alias[("ministerio da educacao (mec)", "ORG")] == "Q_MEC_CANON"
+        assert db.alias_source[("ministerio da educacao (mec)", "ORG")] == "canon"
+        assert ("confederacao nacional da industria (cni)", "ORG") not in db.alias
+        assert ("sistema unico de saude (sus)", "POLICY") not in db.alias
+
+    def test_idempotente(self):
+        db = self._db()
+        J.link_sigla_fallbacks(db.conn())
+        n_log = len(db.log)
+        stats = J.link_sigla_fallbacks(db.conn())
+        assert stats == {"linked": 0, "resynced": 0, "removed": 0}
+        writes = [s for (s, _p) in db.log[n_log:] if not s.lower().startswith("select")]
+        assert writes == []
+
+    def test_resincroniza_quando_o_alias_da_base_e_corrigido(self):
+        db = FakeDB()
+        db.seed_alias("tribunal superior eleitoral", "ORG", "Q_TOULOUSE")
+        form = "tribunal superior eleitoral (tse)"
+        db.seed_seen(form, "ORG", status="needs_review")
+        J.link_sigla_fallbacks(db.conn())
+        assert db.alias[(form, "ORG")] == "Q_TOULOUSE"
+        # correção do vínculo da base (re-apontar o alias) → o derivado acompanha.
+        db.alias[("tribunal superior eleitoral", "ORG")] = "Q_TSE"
+        stats = J.link_sigla_fallbacks(db.conn())
+        assert stats["resynced"] == 1
+        assert db.alias[(form, "ORG")] == "Q_TSE"
+        assert db.alias_source[(form, "ORG")] == "fallback_sigla"
+
+    def test_remove_derivado_quando_a_base_perde_o_alias(self):
+        db = FakeDB()
+        db.seed_alias("ministerio da pesca e aquicultura", "ORG", "Q_ERRADO")
+        db.seed_seen("ministerio da pesca e aquicultura (mpa)", "ORG", status="needs_review")
+        db.seed_seen("ministerio da pesca e aquicultura (m.p.a)", "ORG", status="pending")
+        conn = db.conn()
+        J.link_sigla_fallbacks(conn)
+        # a pending foi resolvida (pelo gazetteer) para o alvo derivado.
+        J.resolve_form(
+            conn, "ministerio da pesca e aquicultura (m.p.a)", "ORG", None, 0,
+            bedrock_client=make_bedrock(canon_json()), wikidata_client=FakeWikidata(),
+            model_id="m",
+        )
+        assert db.seen[("ministerio da pesca e aquicultura (m.p.a)", "ORG")]["status"] == "resolved"
+        # alias errado da base removido → derivados removidos; a resolvida volta à fila.
+        del db.alias[("ministerio da pesca e aquicultura", "ORG")]
+        stats = J.link_sigla_fallbacks(conn)
+        assert stats["removed"] == 2
+        assert ("ministerio da pesca e aquicultura (mpa)", "ORG") not in db.alias
+        assert ("ministerio da pesca e aquicultura (m.p.a)", "ORG") not in db.alias
+        assert db.seen[("ministerio da pesca e aquicultura (mpa)", "ORG")]["status"] == "needs_review"
+        mpa2 = db.seen[("ministerio da pesca e aquicultura (m.p.a)", "ORG")]
+        assert mpa2["status"] == "pending"
+        assert mpa2["entity_id"] is None
+
+    def test_dry_run_conta_sem_escrever(self):
+        db = self._db()
+        stats = J.link_sigla_fallbacks(db.conn(), dry_run=True)
+        assert stats["linked"] == 2
+        assert (STF, "ORG") not in db.alias
+
+
+class TestRunCanonicalizationSiglaFallback:
+    def test_ponta_a_ponta_liga_mencao_antiga_sem_llm(self, monkeypatch):
+        """needs_review antiga → alias derivado → Step C grava canonical_id na menção."""
+        db = FakeDB()
+        db.seed_alias("supremo tribunal federal", "ORG", "Q519138")
+        db.seed_seen(STF, "ORG", status="needs_review")
+        db.features_rows = [
+            ("uid-1", {"entities": [
+                {"text": "STF", "forma_canonica": "Supremo Tribunal Federal (STF)",
+                 "type": "ORG", "count": 3},
+            ]}),
+        ]
+        monkeypatch.setattr(J.psycopg2, "connect", lambda _url: db.conn())
+        monkeypatch.delenv("BEDROCK_DAILY_TOKEN_QUOTA", raising=False)
+        bedrock = make_bedrock(canon_json())
+        result = J.run_canonicalization(
+            "postgresql://fake", since="2026-01-01T00:00:00+00:00",
+            until="2026-02-01T00:00:00+00:00", limit=10,
+            bedrock_client=bedrock, wikidata_client=FakeWikidata(), model_id="m",
+        )
+        assert result["sigla_fallback"]["linked"] == 1
+        assert result["backfill"]["mentions_linked"] == 1
+        written = json.loads(db.backfilled["uid-1"])
+        assert written[0]["canonical_id"] == "Q519138"
+        bedrock.client.invoke_model.assert_not_called()
