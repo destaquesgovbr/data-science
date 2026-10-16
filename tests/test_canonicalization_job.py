@@ -1172,7 +1172,8 @@ class TestLinkSiglaFallbacks:
         assert stats["removed"] == 2
         assert ("ministerio da pesca e aquicultura (mpa)", "ORG") not in db.alias
         assert ("ministerio da pesca e aquicultura (m.p.a)", "ORG") not in db.alias
-        assert db.seen[("ministerio da pesca e aquicultura (mpa)", "ORG")]["status"] == "needs_review"
+        mpa = db.seen[("ministerio da pesca e aquicultura (mpa)", "ORG")]
+        assert mpa["status"] == "needs_review"
         mpa2 = db.seen[("ministerio da pesca e aquicultura (m.p.a)", "ORG")]
         assert mpa2["status"] == "pending"
         assert mpa2["entity_id"] is None

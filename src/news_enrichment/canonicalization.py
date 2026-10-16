@@ -24,7 +24,7 @@ import logging
 import os
 import re
 import unicodedata
-from typing import Dict, List, Optional, Tuple
+from typing import Callable, Dict, List, Optional, Tuple
 
 logger = logging.getLogger(__name__)
 
@@ -179,6 +179,68 @@ def gazetteer_lookup(conn, surface_norm: str, type: str) -> Optional[str]:  # no
         return row[0] if row else None
     finally:
         cursor.close()
+
+
+# =============================================================================
+# Fallback de sigla (determinístico, zero LLM)
+# =============================================================================
+
+# source do alias derivado em entity_alias (identifica o fallback para auditoria/rollback).
+SOURCE_FALLBACK_SIGLA = "fallback_sigla"
+FALLBACK_SIGLA_CONFIDENCE = 0.9
+
+# "base (sigla)" na forma JÁ normalizada: sufixo final " (xxx)" com 2–12 caracteres
+# [a-z0-9.-]. O base pode conter outros parênteses ("x (y) (z)" → base "x (y)").
+_SIGLA_SUFFIX_RE = re.compile(r"^(?P<base>.*\S) \((?P<sigla>[a-z0-9.\-]{2,12})\)$")
+_DIGITS_RE = re.compile(r"\d+")
+
+
+def split_sigla_suffix(form_norm: Optional[str]) -> Optional[Tuple[str, str]]:
+    """Separa "base (sigla)" → (base, sigla) quando a sigla deriva do próprio nome-base.
+
+    Mesmo discriminador de _is_acronym_variant: as letras da sigla (>= 2) formam
+    subsequência das letras do base, o que barra qualificadores de informação nova
+    ("(libano)", "(sp)", "(municipio)"). Um número na sigla que o base não tem
+    ("(cop30)", "(2026)", "(gr07)") indica outra edição/unidade e também barra.
+    """
+    if not form_norm:
+        return None
+    m = _SIGLA_SUFFIX_RE.match(form_norm)
+    if m is None:
+        return None
+    base, sigla = m.group("base"), m.group("sigla")
+    letters = "".join(c for c in sigla if c.isalpha())
+    if len(letters) < 2 or not _is_subsequence(letters, _letters_of(base)):
+        return None
+    if not set(_DIGITS_RE.findall(sigla)) <= set(_DIGITS_RE.findall(base)):
+        return None
+    return base, sigla
+
+
+def sigla_fallback_target(
+    form_norm: str,
+    type: str,  # noqa: A002
+    lookup: Callable[[str, str], Optional[str]],
+) -> Optional[str]:
+    """entity_id do alias da base de "base (sigla)" no MESMO type, ou None.
+
+    Não liga quando a própria sigla tem alias do mesmo type para OUTRA entidade
+    (colisão de sigla) nem quando o alias da base só existe em outro type.
+
+    Args:
+        lookup: (alias_norm, type) → entity_id | None (gazetteer_lookup ou dict).
+    """
+    parts = split_sigla_suffix(form_norm)
+    if parts is None or not type:
+        return None
+    base, sigla = parts
+    target = lookup(base, type)
+    if target is None:
+        return None
+    other = lookup(sigla, type)
+    if other is not None and other != target:
+        return None
+    return target
 
 
 # =============================================================================
