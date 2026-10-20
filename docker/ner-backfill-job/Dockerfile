@@ -26,7 +26,9 @@ ENV PYTHONUNBUFFERED=1
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONPATH=/app/src
 
-# Cloud Run Job: long-running, resumível, sem porta HTTP. O shim parseia
+# Cloud Run Job: long-running, resumível, sem porta HTTP. O shim escolhe o script
+# pela env BACKFILL_SCRIPT (ausente → scripts/backfill_ner_corpus.py;
+# reenrich_combined_window.py → re-enriquecimento; outro valor → exit 64), parseia
 # AWS_BEDROCK_CONNECTION_URI → AWS_ACCESS_KEY_ID/SECRET/DEFAULT_REGION e então
-# `exec`uta o driver de backfill NER, repassando os args do Job ("$@").
+# `exec`uta o script, repassando os args do Job ("$@").
 ENTRYPOINT ["/app/entrypoint.sh"]

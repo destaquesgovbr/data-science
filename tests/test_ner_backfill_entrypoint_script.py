@@ -15,10 +15,12 @@ AWS_BEDROCK_CONNECTION_URI continua o mesmo.
 Diferente de test_entrypoint_creds.py, aqui o entrypoint roda SEM alterações: um
 `python` falso à frente no PATH registra cada chamada; o heredoc do parse de
 credenciais (`python -`) é repassado ao Python real, e o `exec` final só ecoa o
-script, os args e o ambiente AWS (sem Bedrock/DB).
+script, os args e o ambiente AWS (sem Bedrock/DB). Roda com /bin/sh e, se
+houver no host, com dash (o /bin/sh da imagem python:3.12-slim).
 """
 
 import os
+import shutil
 import stat
 import subprocess
 import sys
@@ -34,6 +36,14 @@ REENRICH_SCRIPT = "scripts/reenrich_combined_window.py"
 SECRET_RAW = "abc/def+ghi=="
 SECRET_ENC = "abc%2Fdef%2Bghi%3D%3D"
 URI = f"aws://AKIAEXAMPLE:{SECRET_ENC}@/?region_name=sa-east-1"
+
+SHELLS = ["/bin/sh"] + ([shutil.which("dash")] if shutil.which("dash") else [])
+
+
+@pytest.fixture(params=SHELLS, ids=lambda s: os.path.basename(s))
+def shell(request):
+    return request.param
+
 
 REENRICH_ARGS = [
     "--select", "mock",
@@ -68,12 +78,12 @@ def _fake_python(tmp_path):
     return str(bindir), calls
 
 
-def _run(tmp_path, env, args):
+def _run(shell, tmp_path, env, args):
     bindir, calls = _fake_python(tmp_path)
     full_env = {"PATH": f"{bindir}{os.pathsep}{os.environ['PATH']}"}
     full_env.update(env)
     proc = subprocess.run(
-        ["/bin/sh", NER_SH, *args], env=full_env, cwd=str(tmp_path), capture_output=True, text=True
+        [shell, NER_SH, *args], env=full_env, cwd=str(tmp_path), capture_output=True, text=True
     )
     return proc, calls
 
@@ -92,26 +102,28 @@ def _parse(stdout):
 
 
 @pytest.mark.parametrize("env", [{}, {"BACKFILL_SCRIPT": ""}])
-def test_default_sem_backfill_script_executa_o_ner(tmp_path, env):
+def test_default_sem_backfill_script_executa_o_ner(shell, tmp_path, env):
     """Sem BACKFILL_SCRIPT (ou vazia): segue o NER, como o DAG ner_backfill espera."""
-    proc, _ = _run(tmp_path, env, ["--limit", "20", "--order", "desc"])
+    proc, _ = _run(shell, tmp_path, env, ["--limit", "20", "--order", "desc"])
     assert proc.returncode == 0, proc.stderr
     script, args, _ = _parse(proc.stdout)
     assert script == NER_SCRIPT
     assert args == ["--limit", "20", "--order", "desc"]
 
 
-def test_backfill_script_ner_explicito(tmp_path):
-    proc, _ = _run(tmp_path, {"BACKFILL_SCRIPT": "backfill_ner_corpus.py"}, ["--limit", "5"])
+def test_backfill_script_ner_explicito(shell, tmp_path):
+    proc, _ = _run(
+        shell, tmp_path, {"BACKFILL_SCRIPT": "backfill_ner_corpus.py"}, ["--limit", "5"]
+    )
     assert proc.returncode == 0, proc.stderr
     script, args, _ = _parse(proc.stdout)
     assert script == NER_SCRIPT
     assert args == ["--limit", "5"]
 
 
-def test_backfill_script_reenrich_repassa_args(tmp_path):
+def test_backfill_script_reenrich_repassa_args(shell, tmp_path):
     proc, _ = _run(
-        tmp_path, {"BACKFILL_SCRIPT": "reenrich_combined_window.py"}, REENRICH_ARGS
+        shell, tmp_path, {"BACKFILL_SCRIPT": "reenrich_combined_window.py"}, REENRICH_ARGS
     )
     assert proc.returncode == 0, proc.stderr
     script, args, _ = _parse(proc.stdout)
@@ -119,10 +131,10 @@ def test_backfill_script_reenrich_repassa_args(tmp_path):
     assert args == REENRICH_ARGS
 
 
-def test_args_com_espaco_sao_preservados(tmp_path):
+def test_args_com_espaco_sao_preservados(shell, tmp_path):
     """"$@" chega intacto (um arg com espaço continua um arg só)."""
     proc, _ = _run(
-        tmp_path,
+        shell, tmp_path,
         {"BACKFILL_SCRIPT": "reenrich_combined_window.py"},
         ["--select", "mock", "--date-from", "2025-09-01 extra"],
     )
@@ -142,9 +154,9 @@ def test_args_com_espaco_sao_preservados(tmp_path):
     "REENRICH_COMBINED_WINDOW.PY",
     "reenrich_combined_window.py;id",
 ])
-def test_backfill_script_invalido_falha_sem_executar(tmp_path, value):
+def test_backfill_script_invalido_falha_sem_executar(shell, tmp_path, value):
     proc, calls = _run(
-        tmp_path,
+        shell, tmp_path,
         {"BACKFILL_SCRIPT": value, "AWS_BEDROCK_CONNECTION_URI": URI},
         ["--limit", "1"],
     )
@@ -159,11 +171,11 @@ def test_backfill_script_invalido_falha_sem_executar(tmp_path, value):
     (None, NER_SCRIPT),
     ("reenrich_combined_window.py", REENRICH_SCRIPT),
 ])
-def test_credenciais_continuam_exportadas(tmp_path, backfill_script, expected):
+def test_credenciais_continuam_exportadas(shell, tmp_path, backfill_script, expected):
     env = {"AWS_BEDROCK_CONNECTION_URI": URI}
     if backfill_script is not None:
         env["BACKFILL_SCRIPT"] = backfill_script
-    proc, _ = _run(tmp_path, env, [])
+    proc, _ = _run(shell, tmp_path, env, [])
     assert proc.returncode == 0, proc.stderr
     script, _, aws = _parse(proc.stdout)
     assert script == expected
@@ -172,9 +184,9 @@ def test_credenciais_continuam_exportadas(tmp_path, backfill_script, expected):
     assert aws["AWS_DEFAULT_REGION"] == "sa-east-1"
 
 
-def test_credenciais_discretas_nao_sao_sobrescritas_no_reenrich(tmp_path):
+def test_credenciais_discretas_nao_sao_sobrescritas_no_reenrich(shell, tmp_path):
     proc, _ = _run(
-        tmp_path,
+        shell, tmp_path,
         {
             "BACKFILL_SCRIPT": "reenrich_combined_window.py",
             "AWS_BEDROCK_CONNECTION_URI": URI,
