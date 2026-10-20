@@ -1013,11 +1013,67 @@ def _merge_tokens(name: str, keep_parens: bool = False) -> List[str]:
     return [t for t in _TOKEN_SPLIT_RE.split(normalize(src)) if t and t not in _MERGE_STOPWORDS]
 
 
+# "Pará" por extenso só conta depois de "do"/"no" ("Belém do Pará", "Incra no Pará"),
+# de um separador de qualificador ("Belém (Pará)", "Belém/Pará") ou com o acento no
+# original ("Seção Pará"): no resto é a preposição "para" ("Fundo Nacional para o…").
+_PARA_UF_PREFIX_RE = re.compile(r"(?:\b(?:do|no)|[(/,\-])\s*$")
+_PARA_ACCENT_RE = re.compile(r"\bpar[áÁ]\b", re.IGNORECASE)
+_UF_SIGLA_ALT = "|".join(_UF_SIGLA_TO_NAME)
+_UF_SIGLA_END = r"(?![A-Za-z0-9])"
+# Sigla de UF só em posição de qualificador: "/RJ", "(MA)", ", PA" no fim ou antes de
+# ")" (qualquer caixa); "-AM" (só maiúscula: "-se"/"-o" em minúscula são pronomes,
+# "Cuide-se"); e rodovia estadual "MS-040". Como palavra comum ("Right to Work", "Al
+# Jazeera", "Pé-de-Meia", "Lei Go Live") não conta.
+_UF_SIGLA_QUAL_RE = re.compile(
+    r"(?P<open>[/(])\s*(?P<a>" + _UF_SIGLA_ALT + r")" + _UF_SIGLA_END
+    + r"|,\s*(?P<b>" + _UF_SIGLA_ALT + r")\s*(?:\)|$)",
+    re.IGNORECASE,
+)
+_UF_SIGLA_UPPER_ALT = _UF_SIGLA_ALT.upper()
+_UF_SIGLA_HYPHEN_RE = re.compile(
+    r"-\s*(?P<c>" + _UF_SIGLA_UPPER_ALT + r")" + _UF_SIGLA_END
+    + r"|(?<![A-Za-z0-9])(?P<d>" + _UF_SIGLA_UPPER_ALT + r")-\d"
+)
+
+
+def _ascii_keep_case(s: str) -> str:
+    """Como normalize(), mas preservando maiúsculas (para ler a caixa de uma sigla)."""
+    s = unicodedata.normalize("NFKD", s).encode("ascii", "ignore").decode("ascii")
+    return re.sub(r"\s+", " ", s).strip()
+
+
 def _merge_places(name: str) -> frozenset:
-    """UFs citadas no nome, por extenso ou por sigla (como token), pelo nome da UF."""
+    """UFs citadas no nome, pelo nome da UF.
+
+    - Por extenso ("Rio de Janeiro", "Bahia"); "Pará" só depois de "do"/"no", como
+      qualificador, com acento no original ou quando é o nome inteiro.
+    - Por sigla só como o nome inteiro ("SC"), em posição de qualificador ("/RJ",
+      "-AM", "(MA)", ", PA" no fim) ou em rodovia estadual ("MS-040"). "(XX)" com as
+      iniciais das duas primeiras palavras do nome ("Polícia do Exército (PE)") é a
+      sigla do próprio nome, não UF.
+    """
     norm = normalize(name)
-    found = set(_UF_NAME_RE.findall(norm))
-    found |= {_UF_SIGLA_TO_NAME[t] for t in _TOKEN_SPLIT_RE.split(norm) if t in _UF_SIGLA_TO_NAME}
+    found = set()
+    para_accent = bool(_PARA_ACCENT_RE.search(unicodedata.normalize("NFC", name)))
+    for m in _UF_NAME_RE.finditer(norm):
+        uf = m.group(1)
+        if (
+            uf == "para" and norm != "para" and not para_accent
+            and not _PARA_UF_PREFIX_RE.search(norm[: m.start()])
+        ):
+            continue
+        found.add(uf)
+    if norm in _UF_SIGLA_TO_NAME:
+        found.add(_UF_SIGLA_TO_NAME[norm])
+    text = _ascii_keep_case(name)
+    own_initials = "".join(t[0] for t in _merge_tokens(name)[:2])
+    for m in _UF_SIGLA_QUAL_RE.finditer(text):
+        sigla = (m.group("a") or m.group("b")).lower()
+        if m.group("open") == "(" and sigla == own_initials:
+            continue
+        found.add(_UF_SIGLA_TO_NAME[sigla])
+    for m in _UF_SIGLA_HYPHEN_RE.finditer(text):
+        found.add(_UF_SIGLA_TO_NAME[(m.group("c") or m.group("d")).lower()])
     return frozenset(found)
 
 
@@ -1135,22 +1191,92 @@ def _merge_block_reason(conn, source_id: str, target_id: str) -> Optional[str]:
     return None
 
 
-# Sigla solta sugerida pelo LLM: forma normalizada sem espaço e curta, ou só
-# maiúsculas no original. Só entra como alias quando vem de menção real (a forma
-# resolvida) ou de seed, nunca da lista de aliases do LLM.
-_BARE_SIGLA_ALIAS_MAX_LEN = 10
+# =============================================================================
+# Filtro de siglas sugeridas pelo LLM: só entram se forem coerentes com o nome
+# =============================================================================
+#
+# Uma sigla sugerida pelo LLM que não sai do nome da entidade ("PIS" para a Cofins,
+# "SC" para a Carolina do Sul, "BSB" para o aeroporto) aponta para OUTRA entidade e
+# era o gatilho das fusões erradas. Palavras que não são sigla ("Copacabana",
+# "Correios") seguem a regra anterior: entram sempre.
+
+_VOWELS = frozenset("aeiou")
+# Toda minúscula e com menos de 40% de vogais conta como sigla ("tse", "pndr"): o LLM
+# costuma repetir a sigla já normalizada ao lado da grafia original.
+_SIGLA_MAX_VOWEL_RATIO = 0.4
 
 
-def is_bare_sigla_alias(alias: Optional[str]) -> bool:
-    """True para "TSE", "SC", "IRBr/MRE", "Palmares", "ELETRONUCLEAR" (sem espaço e
-    <= 10 caracteres normalizados, ou sem espaço e todo em maiúsculas)."""
+def is_sigla_alias(alias: Optional[str]) -> bool:
+    """True se o alias é uma sigla, para o filtro de aliases do LLM.
+
+    Sigla = sem espaço (após normalize), com >= 2 letras, e:
+      (a) todas as letras maiúsculas no original ("TSE", "BR-116", "ELETRONUCLEAR"); ou
+      (b) >= 2 maiúsculas e pelo menos metade das letras ("IRBr", "CNPq", "MPor"); ou
+      (c) todas minúsculas e menos de 40% de vogais ("tse", "pndr", "sc").
+    Não são sigla: "Anvisa", "Copacabana", "Pé-de-Meia", "Palmares", "mei", "G20"
+    (uma letra só) e qualquer alias com espaço.
+    """
     norm = normalize(alias)
     if not norm or " " in norm:
         return False
-    if len(norm) <= _BARE_SIGLA_ALIAS_MAX_LEN:
-        return True
     letters = [c for c in alias if c.isalpha()]
-    return len(letters) >= 2 and all(c.isupper() for c in letters)
+    if len(letters) < 2:
+        return False
+    upper = sum(1 for c in letters if c.isupper())
+    if upper == len(letters) or (upper >= 2 and 2 * upper >= len(letters)):
+        return True
+    if upper == 0:
+        plain = _letters_of(alias)
+        vowels = sum(1 for c in plain if c in _VOWELS)
+        return bool(plain) and vowels < _SIGLA_MAX_VOWEL_RATIO * len(plain)
+    return False
+
+
+def _letters_from_word_prefixes(letters: str, words: Tuple[str, ...]) -> bool:
+    """True se `letters` é a concatenação, em ordem, de prefixos não vazios de palavras
+    de `words` (palavras podem ser puladas): iniciais ("tse" ← Toulouse School of
+    Economics) ou sílabas ("anvisa" ← Agência Nacional de VIgilância SAnitária)."""
+    memo: Dict[Tuple[int, int], bool] = {}
+
+    def fits(i: int, j: int) -> bool:
+        if i == len(letters):
+            return True
+        if j == len(words):
+            return False
+        key = (i, j)
+        if key not in memo:
+            ok = fits(i, j + 1)
+            word, k = words[j], 0
+            while not ok and k < len(word) and i + k < len(letters) and word[k] == letters[i + k]:
+                k += 1
+                ok = fits(i + k, j + 1)
+            memo[key] = ok
+        return memo[key]
+
+    return fits(0, 0)
+
+
+def sigla_coherent_with_name(sigla: Optional[str], name: Optional[str]) -> bool:
+    """True se `sigla` é acrônimo coerente de `name`.
+
+    Exige >= 2 letras, todos os números da sigla presentes no nome ("COP30" × "...
+    (COP30)"; "SGT-5" × "SGT-8" não) e as letras da sigla, em ordem, formadas por
+    prefixos (iniciais ou sílabas) das palavras do nome, inclusive as do parêntese
+    (_letters_from_word_prefixes). "PIS" não sai de "Contribuição para o Financiamento
+    da Seguridade Social (Cofins)" nem "SC" de "Carolina do Sul". Uma sigla ambígua
+    pode ser coerente com duas entidades ("TSE" × Toulouse School of Economics): quem
+    impede a fusão com o Tribunal é a guarda de add_alias.
+    """
+    if not sigla or not name:
+        return False
+    letters = _letters_of(sigla)
+    if len(letters) < 2:
+        return False
+    if not set(_DIGITS_RE.findall(normalize(sigla))) <= set(_DIGITS_RE.findall(normalize(name))):
+        return False
+    tokens = _TOKEN_SPLIT_RE.split(normalize(name))
+    words = tuple(w for w in ("".join(c for c in t if c.isalpha()) for t in tokens) if w)
+    return _letters_from_word_prefixes(letters, words)
 
 
 def find_existing_by_wikidata(conn, qid: str) -> Optional[str]:
