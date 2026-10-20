@@ -24,7 +24,8 @@ import logging
 import os
 import re
 import unicodedata
-from typing import Dict, List, Optional, Tuple
+from difflib import SequenceMatcher
+from typing import Callable, Dict, List, Optional, Tuple
 
 logger = logging.getLogger(__name__)
 
@@ -179,6 +180,80 @@ def gazetteer_lookup(conn, surface_norm: str, type: str) -> Optional[str]:  # no
         return row[0] if row else None
     finally:
         cursor.close()
+
+
+# =============================================================================
+# Fallback de sigla (determinístico, zero LLM)
+# =============================================================================
+
+# source do alias derivado em entity_alias (identifica o fallback para auditoria/rollback).
+SOURCE_FALLBACK_SIGLA = "fallback_sigla"
+FALLBACK_SIGLA_CONFIDENCE = 0.9
+
+# "base (sigla)" na forma JÁ normalizada: sufixo final " (xxx)" com 2–12 caracteres
+# [a-z0-9.-]. O base pode conter outros parênteses ("x (y) (z)" → base "x (y)").
+_SIGLA_SUFFIX_RE = re.compile(r"^(?P<base>.*\S) \((?P<sigla>[a-z0-9.\-]{2,12})\)$")
+_DIGITS_RE = re.compile(r"\d+")
+
+
+def split_sigla_suffix(form_norm: Optional[str]) -> Optional[Tuple[str, str]]:
+    """Separa "base (sigla)" → (base, sigla) quando a sigla deriva do próprio nome-base.
+
+    Mesmo discriminador de _is_acronym_variant: as letras da sigla (>= 2) formam
+    subsequência das letras do base, o que barra qualificadores de informação nova
+    ("(libano)", "(sp)", "(municipio)"). Um número na sigla que o base não tem
+    ("(cop30)", "(2026)", "(gr07)") indica outra edição/unidade e também barra.
+    """
+    if not form_norm:
+        return None
+    m = _SIGLA_SUFFIX_RE.match(form_norm)
+    if m is None:
+        return None
+    base, sigla = m.group("base"), m.group("sigla")
+    letters = "".join(c for c in sigla if c.isalpha())
+    if len(letters) < 2 or not _is_subsequence(letters, _letters_of(base)):
+        return None
+    if not set(_DIGITS_RE.findall(sigla)) <= set(_DIGITS_RE.findall(base)):
+        return None
+    return base, sigla
+
+
+def sigla_base_target(
+    form_norm: str,
+    type: str,  # noqa: A002
+    lookup: Callable[[str, str], Optional[str]],
+) -> Optional[str]:
+    """entity_id do alias da base de "base (sigla)" no MESMO type, sem olhar a sigla.
+
+    É o alvo que um alias derivado já existente acompanha (re-sincronização): o
+    conflito de sigla só barra a CRIAÇÃO do derivado (sigla_fallback_target).
+    """
+    parts = split_sigla_suffix(form_norm)
+    if parts is None or not type:
+        return None
+    return lookup(parts[0], type)
+
+
+def sigla_fallback_target(
+    form_norm: str,
+    type: str,  # noqa: A002
+    lookup: Callable[[str, str], Optional[str]],
+) -> Optional[str]:
+    """entity_id do alias da base de "base (sigla)" no MESMO type, ou None.
+
+    Não liga quando a própria sigla tem alias do mesmo type para OUTRA entidade
+    (colisão de sigla) nem quando o alias da base só existe em outro type.
+
+    Args:
+        lookup: (alias_norm, type) → entity_id | None (gazetteer_lookup ou dict).
+    """
+    target = sigla_base_target(form_norm, type, lookup)
+    if target is None:
+        return None
+    other = lookup(split_sigla_suffix(form_norm)[1], type)
+    if other is not None and other != target:
+        return None
+    return target
 
 
 # =============================================================================
@@ -888,6 +963,322 @@ def _is_acronym_variant(name_a: str, name_b: str) -> bool:
     return False
 
 
+# =============================================================================
+# Guarda da fusão Wikidata-wins (add_alias): nomes compatíveis
+# =============================================================================
+#
+# Quando um alias já aponta para uma entidade interna (dgb_) e o canon grava o
+# mesmo alias para um QID, add_alias fundia a entidade interna inteira no QID.
+# Uma sigla compartilhada bastava ("tse" do Tribunal → Toulouse School of
+# Economics; "cns" do Conselho Nacional de Saúde → James Martin Center). A fusão só
+# acontece agora quando os NOMES das duas entidades são compatíveis.
+
+# Palavras sem conteúdo para comparar nomes (PT/EN/ES/FR).
+_MERGE_STOPWORDS = frozenset(
+    "a o as os de da do das dos e em na no nas nos para por the of and for "
+    "la le el del des du y et di".split()
+)
+# Qualificadores que não distinguem entidades num corpus brasileiro.
+_MERGE_NEUTRAL_TOKENS = frozenset({"brasil", "brasileiro", "brasileira", "br"})
+# UFs (nome e sigla): uma UF presente em só um dos nomes indica outra unidade
+# (regional × nacional, ou outro estado).
+_UF_NAMES = (
+    "acre", "alagoas", "amapa", "amazonas", "bahia", "ceara", "distrito federal",
+    "espirito santo", "goias", "maranhao", "mato grosso", "mato grosso do sul",
+    "minas gerais", "para", "paraiba", "parana", "pernambuco", "piaui",
+    "rio de janeiro", "rio grande do norte", "rio grande do sul", "rondonia",
+    "roraima", "santa catarina", "sao paulo", "sergipe", "tocantins",
+)
+# sigla → nome, na ordem de _UF_NAMES ("rj" e "rio de janeiro" são a mesma UF).
+_UF_SIGLA_TO_NAME = dict(zip(
+    "ac al ap am ba ce df es go ma mt ms mg pa pb pr pe pi rj rn rs ro rr sc sp se to".split(),
+    _UF_NAMES,
+))
+_UF_NAME_RE = re.compile(
+    r"\b(" + "|".join(sorted((re.escape(u) for u in _UF_NAMES), key=len, reverse=True)) + r")\b"
+)
+_TOKEN_SPLIT_RE = re.compile(r"[^a-z0-9]+")
+# Sigla solta como nome inteiro (após tirar parênteses): sem espaço, até 12 caracteres.
+_MERGE_BARE_MAX_LEN = 12
+# Similaridade mínima (Jaccard de tokens, com casamento aproximado de grafia).
+MERGE_NAME_SIMILARITY = 0.6
+_MERGE_TOKEN_FUZZY = 0.85
+# P31 de publicações: um QID assim nunca é uma organização/lugar/evento (caso ABCD,
+# ligada a um artigo científico homônimo).
+_ARTICLE_INSTANCE_QIDS = frozenset({"Q13442814", "Q191067", "Q7318358"})
+
+
+def _merge_tokens(name: str, keep_parens: bool = False) -> List[str]:
+    src = name if keep_parens else _strip_parens(name)
+    return [t for t in _TOKEN_SPLIT_RE.split(normalize(src)) if t and t not in _MERGE_STOPWORDS]
+
+
+# "Pará" por extenso só conta depois de "do"/"no" ("Belém do Pará", "Incra no Pará"),
+# de um separador de qualificador ("Belém (Pará)", "Belém/Pará") ou com o acento no
+# original ("Seção Pará"): no resto é a preposição "para" ("Fundo Nacional para o…").
+_PARA_UF_PREFIX_RE = re.compile(r"(?:\b(?:do|no)|[(/,\-])\s*$")
+_PARA_ACCENT_RE = re.compile(r"\bpar[áÁ]\b", re.IGNORECASE)
+_UF_SIGLA_ALT = "|".join(_UF_SIGLA_TO_NAME)
+_UF_SIGLA_END = r"(?![A-Za-z0-9])"
+# Sigla de UF só em posição de qualificador: "/RJ", "(MA)", ", PA" no fim ou antes de
+# ")" (qualquer caixa); "-AM" (só maiúscula: "-se"/"-o" em minúscula são pronomes,
+# "Cuide-se"); e rodovia estadual "MS-040". Como palavra comum ("Right to Work", "Al
+# Jazeera", "Pé-de-Meia", "Lei Go Live") não conta.
+_UF_SIGLA_QUAL_RE = re.compile(
+    r"(?P<open>[/(])\s*(?P<a>" + _UF_SIGLA_ALT + r")" + _UF_SIGLA_END
+    + r"|,\s*(?P<b>" + _UF_SIGLA_ALT + r")\s*(?:\)|$)",
+    re.IGNORECASE,
+)
+_UF_SIGLA_UPPER_ALT = _UF_SIGLA_ALT.upper()
+_UF_SIGLA_HYPHEN_RE = re.compile(
+    r"-\s*(?P<c>" + _UF_SIGLA_UPPER_ALT + r")" + _UF_SIGLA_END
+    + r"|(?<![A-Za-z0-9])(?P<d>" + _UF_SIGLA_UPPER_ALT + r")-\d"
+)
+
+
+def _ascii_keep_case(s: str) -> str:
+    """Como normalize(), mas preservando maiúsculas (para ler a caixa de uma sigla)."""
+    s = unicodedata.normalize("NFKD", s).encode("ascii", "ignore").decode("ascii")
+    return re.sub(r"\s+", " ", s).strip()
+
+
+def _merge_places(name: str) -> frozenset:
+    """UFs citadas no nome, pelo nome da UF.
+
+    - Por extenso ("Rio de Janeiro", "Bahia"); "Pará" só depois de "do"/"no", como
+      qualificador, com acento no original ou quando é o nome inteiro.
+    - Por sigla só como o nome inteiro ("SC"), em posição de qualificador ("/RJ",
+      "-AM", "(MA)", ", PA" no fim) ou em rodovia estadual ("MS-040"). "(XX)" com as
+      iniciais das duas primeiras palavras do nome ("Polícia do Exército (PE)") é a
+      sigla do próprio nome, não UF.
+    """
+    norm = normalize(name)
+    found = set()
+    para_accent = bool(_PARA_ACCENT_RE.search(unicodedata.normalize("NFC", name)))
+    for m in _UF_NAME_RE.finditer(norm):
+        uf = m.group(1)
+        if (
+            uf == "para" and norm != "para" and not para_accent
+            and not _PARA_UF_PREFIX_RE.search(norm[: m.start()])
+        ):
+            continue
+        found.add(uf)
+    if norm in _UF_SIGLA_TO_NAME:
+        found.add(_UF_SIGLA_TO_NAME[norm])
+    text = _ascii_keep_case(name)
+    own_initials = "".join(t[0] for t in _merge_tokens(name)[:2])
+    for m in _UF_SIGLA_QUAL_RE.finditer(text):
+        sigla = (m.group("a") or m.group("b")).lower()
+        if m.group("open") == "(" and sigla == own_initials:
+            continue
+        found.add(_UF_SIGLA_TO_NAME[sigla])
+    for m in _UF_SIGLA_HYPHEN_RE.finditer(text):
+        found.add(_UF_SIGLA_TO_NAME[(m.group("c") or m.group("d")).lower()])
+    return frozenset(found)
+
+
+def _tokens_match(a: str, b: str) -> bool:
+    """Mesmo token, ou grafia próxima ("eleitoral"/"electoral", "povo"/"povos")."""
+    if a == b:
+        return True
+    return (
+        len(a) >= 4 and len(b) >= 4
+        and SequenceMatcher(None, a, b).ratio() >= _MERGE_TOKEN_FUZZY
+    )
+
+
+def _bare_sigla_matches(bare: str, other: str) -> bool:
+    """Sigla solta coerente com o outro nome: é o parêntese dele ("ANS" × "... (ANS)")
+    ou as iniciais das palavras dele, admitindo uma palavra sem letra na sigla
+    ("ANS" × "Agência Nacional de Saúde Suplementar")."""
+    letters = "".join(c for c in bare if c.isalpha())
+    if not letters:
+        return False
+    if letters in _paren_contents(other):
+        return True
+    initials = "".join(t[0] for t in _merge_tokens(other))
+    return (
+        len(letters) >= 2
+        and letters[0] == initials[:1]
+        and _is_subsequence(letters, initials)
+        and len(letters) >= len(initials) - 1
+    )
+
+
+def _merge_compat_reason(name_a: Optional[str], name_b: Optional[str]) -> Optional[str]:
+    """Motivo da compatibilidade entre dois nomes de entidade, ou None se incompatíveis."""
+    if not name_a or not name_b:
+        return None
+    # Números (edição, ano, artigo, região) e UFs têm de coincidir.
+    if set(_DIGITS_RE.findall(normalize(name_a))) != set(_DIGITS_RE.findall(normalize(name_b))):
+        return None
+    if _merge_places(name_a) != _merge_places(name_b):
+        return None
+    full_a, full_b = set(_merge_tokens(name_a, True)), set(_merge_tokens(name_b, True))
+    if full_a and full_a == full_b:
+        return "igual"
+    if _is_acronym_variant(name_a, name_b):
+        return "sigla do nome-base"
+    # Sigla solta contra nome por extenso: só o parêntese ou as iniciais servem.
+    for x, y in ((name_a, name_b), (name_b, name_a)):
+        bare = normalize(_strip_parens(x))
+        if bare and " " not in bare and len(bare) <= _MERGE_BARE_MAX_LEN and " " in normalize(
+            _strip_parens(y)
+        ):
+            return "sigla solta coerente" if _bare_sigla_matches(bare, y) else None
+    ta = [t for t in _merge_tokens(name_a) if t not in _MERGE_NEUTRAL_TOKENS] or _merge_tokens(
+        name_a
+    )
+    tb = [t for t in _merge_tokens(name_b) if t not in _MERGE_NEUTRAL_TOKENS] or _merge_tokens(
+        name_b
+    )
+    if not ta or not tb:
+        return None
+    # Palavra-cabeça diferente = outro tipo de coisa ("Aeroporto … de Brasília" ×
+    # "Brasília"; "Conselho Deliberativo do FAT" × "Fundo de Amparo ao Trabalhador").
+    if not _tokens_match(ta[0], tb[0]):
+        return None
+    sa, rest = set(ta), set(tb)
+    matched = 0
+    for tok in sa:
+        hit = tok if tok in rest else next((u for u in rest if _tokens_match(tok, u)), None)
+        if hit is not None:
+            matched += 1
+            rest.discard(hit)
+    score = matched / (len(sa) + len(set(tb)) - matched)
+    return f"similaridade {score:.2f}" if score >= MERGE_NAME_SIMILARITY else None
+
+
+def names_compatible_for_merge(name_a: Optional[str], name_b: Optional[str]) -> bool:
+    """True se os nomes podem ser a mesma entidade (critério da fusão Wikidata-wins).
+
+    Normaliza (acentos, caixa, pontuação, palavras vazias) e exige, nesta ordem:
+      - os mesmos números (edição/ano) e as mesmas UFs nos dois nomes;
+      - e então: mesmos tokens; ou variante por sigla do próprio nome
+        (_is_acronym_variant); ou, se um dos nomes é uma sigla solta, que ela seja
+        o parêntese ou as iniciais do outro; ou mesma palavra-cabeça e similaridade
+        de tokens >= MERGE_NAME_SIMILARITY (grafia próxima conta como igual).
+    Uma sigla compartilhada entre dois nomes por extenso não basta.
+    """
+    return _merge_compat_reason(name_a, name_b) is not None
+
+
+def _merge_block_reason(conn, source_id: str, target_id: str) -> Optional[str]:
+    """Motivo para NÃO fundir source_id (dgb_) em target_id (QID), ou None se pode."""
+    cursor = conn.cursor()
+    try:
+        cursor.execute(
+            "SELECT entity_id, canonical_name, type, extra FROM entity_registry "
+            "WHERE entity_id IN (%s, %s)",
+            (source_id, target_id),
+        )
+        rows = {r[0]: r for r in cursor.fetchall()}
+    finally:
+        cursor.close()
+    src, tgt = rows.get(source_id), rows.get(target_id)
+    if src is None or tgt is None:
+        return "entidade ausente do registry"
+    extra = tgt[3] or {}
+    if isinstance(extra, str):
+        try:
+            extra = json.loads(extra)
+        except ValueError:
+            extra = {}
+    if tgt[2] != "WORK" and set(extra.get("instance_of") or []) & _ARTICLE_INSTANCE_QIDS:
+        return "alvo é artigo científico no Wikidata"
+    if not names_compatible_for_merge(src[1], tgt[1]):
+        return f"nomes incompatíveis ({src[1]!r} × {tgt[1]!r})"
+    return None
+
+
+# =============================================================================
+# Filtro de siglas sugeridas pelo LLM: só entram se forem coerentes com o nome
+# =============================================================================
+#
+# Uma sigla sugerida pelo LLM que não sai do nome da entidade ("PIS" para a Cofins,
+# "SC" para a Carolina do Sul, "BSB" para o aeroporto) aponta para OUTRA entidade e
+# era o gatilho das fusões erradas. Palavras que não são sigla ("Copacabana",
+# "Correios") seguem a regra anterior: entram sempre.
+
+_VOWELS = frozenset("aeiou")
+# Toda minúscula e com menos de 40% de vogais conta como sigla ("tse", "pndr"): o LLM
+# costuma repetir a sigla já normalizada ao lado da grafia original.
+_SIGLA_MAX_VOWEL_RATIO = 0.4
+
+
+def is_sigla_alias(alias: Optional[str]) -> bool:
+    """True se o alias é uma sigla, para o filtro de aliases do LLM.
+
+    Sigla = sem espaço (após normalize), com >= 2 letras, e:
+      (a) todas as letras maiúsculas no original ("TSE", "BR-116", "ELETRONUCLEAR"); ou
+      (b) >= 2 maiúsculas e pelo menos metade das letras ("IRBr", "CNPq", "MPor"); ou
+      (c) todas minúsculas e menos de 40% de vogais ("tse", "pndr", "sc").
+    Não são sigla: "Anvisa", "Copacabana", "Pé-de-Meia", "Palmares", "mei", "G20"
+    (uma letra só) e qualquer alias com espaço.
+    """
+    norm = normalize(alias)
+    if not norm or " " in norm:
+        return False
+    letters = [c for c in alias if c.isalpha()]
+    if len(letters) < 2:
+        return False
+    upper = sum(1 for c in letters if c.isupper())
+    if upper == len(letters) or (upper >= 2 and 2 * upper >= len(letters)):
+        return True
+    if upper == 0:
+        plain = _letters_of(alias)
+        vowels = sum(1 for c in plain if c in _VOWELS)
+        return bool(plain) and vowels < _SIGLA_MAX_VOWEL_RATIO * len(plain)
+    return False
+
+
+def _letters_from_word_prefixes(letters: str, words: Tuple[str, ...]) -> bool:
+    """True se `letters` é a concatenação, em ordem, de prefixos não vazios de palavras
+    de `words` (palavras podem ser puladas): iniciais ("tse" ← Toulouse School of
+    Economics) ou sílabas ("anvisa" ← Agência Nacional de VIgilância SAnitária)."""
+    memo: Dict[Tuple[int, int], bool] = {}
+
+    def fits(i: int, j: int) -> bool:
+        if i == len(letters):
+            return True
+        if j == len(words):
+            return False
+        key = (i, j)
+        if key not in memo:
+            ok = fits(i, j + 1)
+            word, k = words[j], 0
+            while not ok and k < len(word) and i + k < len(letters) and word[k] == letters[i + k]:
+                k += 1
+                ok = fits(i + k, j + 1)
+            memo[key] = ok
+        return memo[key]
+
+    return fits(0, 0)
+
+
+def sigla_coherent_with_name(sigla: Optional[str], name: Optional[str]) -> bool:
+    """True se `sigla` é acrônimo coerente de `name`.
+
+    Exige >= 2 letras, todos os números da sigla presentes no nome ("COP30" × "...
+    (COP30)"; "SGT-5" × "SGT-8" não) e as letras da sigla, em ordem, formadas por
+    prefixos (iniciais ou sílabas) das palavras do nome, inclusive as do parêntese
+    (_letters_from_word_prefixes). "PIS" não sai de "Contribuição para o Financiamento
+    da Seguridade Social (Cofins)" nem "SC" de "Carolina do Sul". Uma sigla ambígua
+    pode ser coerente com duas entidades ("TSE" × Toulouse School of Economics): quem
+    impede a fusão com o Tribunal é a guarda de add_alias.
+    """
+    if not sigla or not name:
+        return False
+    letters = _letters_of(sigla)
+    if len(letters) < 2:
+        return False
+    if not set(_DIGITS_RE.findall(normalize(sigla))) <= set(_DIGITS_RE.findall(normalize(name))):
+        return False
+    tokens = _TOKEN_SPLIT_RE.split(normalize(name))
+    words = tuple(w for w in ("".join(c for c in t if c.isalpha()) for t in tokens) if w)
+    return _letters_from_word_prefixes(letters, words)
+
+
 def find_existing_by_wikidata(conn, qid: str) -> Optional[str]:
     """Reuso por QID exato: entity_registry.wikidata_id == qid OU entity_id == qid."""
     if not qid:
@@ -1253,17 +1644,33 @@ def add_alias(
     cursor = conn.cursor()
     try:
         cursor.execute(
-            "SELECT entity_id FROM entity_alias WHERE alias_norm = %s AND type = %s",
+            "SELECT entity_id, source FROM entity_alias WHERE alias_norm = %s AND type = %s",
             (surface_norm, type),
         )
         row = cursor.fetchone()
         if row is not None:
-            existing = row[0]
+            existing, existing_source = row[0], row[1]
             if existing == entity_id:
                 # já mapeado para a mesma entidade — no-op idempotente.
                 return {"written": False, "ambiguous": False, "existing_entity_id": existing}
             # Wikidata-wins: existing é dgb_ e novo entity_id é QID (não começa com dgb_)
             # → promover o alias para o QID via merge_entities.
+            blocked = None
+            if existing.startswith(_MINT_PREFIX) and not entity_id.startswith(_MINT_PREFIX):
+                # O alias derivado do fallback de sigla só repete o vínculo do alias da
+                # base: não é evidência para fundir a entidade da base inteira.
+                if existing_source == SOURCE_FALLBACK_SIGLA:
+                    blocked = "alias derivado do fallback de sigla"
+                else:
+                    # Um alias em comum não basta: os nomes têm de ser compatíveis.
+                    blocked = _merge_block_reason(conn, existing, entity_id)
+            if blocked is not None:
+                logger.warning(
+                    "Fusão Wikidata-wins bloqueada (%s): (%r, %s) continua em %s; não funde em %s",
+                    blocked, surface_norm, type, existing, entity_id,
+                )
+                return {"written": False, "ambiguous": True, "existing_entity_id": existing,
+                        "merge_blocked": blocked}
             if existing.startswith(_MINT_PREFIX) and not entity_id.startswith(_MINT_PREFIX):
                 merge_entities(conn, source_id=existing, target_id=entity_id)
                 # Reescreve o alias para apontar para o QID (ON CONFLICT DO UPDATE SET entity_id).
