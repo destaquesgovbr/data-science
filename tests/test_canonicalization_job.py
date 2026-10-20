@@ -10,6 +10,8 @@ import json
 from datetime import datetime, timedelta, timezone
 from unittest.mock import MagicMock
 
+import pytest
+
 from news_enrichment import canonicalization_job as J
 from news_enrichment.wikidata_client import Candidate
 from tests.fakedb import FakeDB
@@ -243,6 +245,171 @@ class TestBackfill:
         update_logs = [s for (s, _p) in db.log if "jsonb_set" in s.lower()]
         assert update_logs
         assert "{entities}" in update_logs[0]
+
+
+# ---------------------------------------------------------------------- #
+# Step C — leitura em lotes (memória constante)                          #
+# ---------------------------------------------------------------------- #
+
+JANELA = (
+    datetime(2018, 1, 1, tzinfo=timezone.utc),
+    datetime(2027, 1, 1, tzinfo=timezone.utc),
+)
+LOTE_PADRAO = 2000
+
+
+def _artigos_variados():
+    """10 artigos da janela, fora de ordem, cobrindo os casos do Step C."""
+    finep = {"text": "Finep", "type": "ORG", "forma_canonica": "Finep", "count": 1}
+    return [
+        ("uid-07", {"word_count": 7, "entities": [dict(finep)]}),             # liga
+        ("uid-02", {"entities": [dict(finep, canonical_id="Q_FINEP")]}),      # já ligado
+        ("uid-10", {"entities": [{"text": "Tema Solto", "type": "POLICY"}]}),  # não resolve
+        ("uid-01", {"entities": [dict(finep, canonical_id="Q_VELHO"),          # re-aponta
+                                 {"text": "MEC", "type": "ORG"}]}),            # liga por text
+        ("uid-05", {"entities": None}),                                        # null → []
+        ("uid-09", {"entities": []}),
+        ("uid-03", {"sentiment": {"label": "positive"},
+                    "entities": [{"text": "MEC", "type": "ORG",
+                                  "forma_canonica": "Ministério da Educação"},
+                                 dict(finep)]}),
+        ("uid-08", {"entities": [{"text": "Lula", "type": "PER"}]}),
+        ("uid-04", {"entities": [{"text": "Finep", "type": "PER"}]}),         # tipo não bate
+        ("uid-06", {"entities": [dict(finep), dict(finep)]}),
+    ]
+
+
+def _backfill_referencia(features_rows, alias_map):
+    """Oráculo: a regra do Step C anterior (fetchall do acervo, um artigo por vez).
+
+    Retorna (stats, {unique_id: entities gravadas}).
+    """
+    stats = {"articles": 0, "updated": 0, "mentions_linked": 0}
+    writes = {}
+    for unique_id, features in features_rows:
+        stats["articles"] += 1
+        entities = (features or {}).get("entities") or []
+        new_entities, linked, changed = J._apply_canonical_ids(entities, alias_map)
+        if not changed:
+            continue
+        stats["mentions_linked"] += linked
+        stats["updated"] += 1
+        writes[unique_id] = new_entities
+    return stats, writes
+
+
+class TestBackfillEmLotes:
+    """O Step C lê news_features em lotes (keyset em unique_id), com memória constante.
+
+    Antes, um fetchall trazia o acervo inteiro desde 2018 (~197 mil artigos com o
+    JSON todo de features) e o job morria por OOM (2Gi) desde 20/10/2026.
+    """
+
+    def _db(self):
+        db = FakeDB()
+        for forma, etype, eid in [
+            ("Finep", "ORG", "Q_FINEP"),
+            ("MEC", "ORG", "Q_MEC"),
+            ("Ministério da Educação", "ORG", "Q_MEC"),
+            ("Lula", "PER", "Q_LULA"),
+        ]:
+            db.seed_alias(J.normalize(forma), etype, eid)
+        db.features_rows = _artigos_variados()
+        return db
+
+    def test_resultado_identico_ao_da_versao_anterior(self):
+        db = self._db()
+        esperado_stats, esperado_writes = _backfill_referencia(db.features_rows, dict(db.alias))
+        stats = J.backfill_canonical_ids(db.conn(), *JANELA, batch_size=3)
+        assert stats == esperado_stats
+        assert stats == {"articles": 10, "updated": 5, "mentions_linked": 8}
+        gravado = {uid: json.loads(v) for uid, v in db.backfilled.items()}
+        assert gravado == esperado_writes
+
+    def test_lote_pequeno_e_lote_unico_gravam_o_mesmo(self):
+        a, b = self._db(), self._db()
+        stats_a = J.backfill_canonical_ids(a.conn(), *JANELA, batch_size=3)
+        stats_b = J.backfill_canonical_ids(b.conn(), *JANELA, batch_size=10_000)
+        assert stats_a == stats_b
+        assert a.backfilled == b.backfilled
+
+        def updates(db):
+            return sorted(p for (s, p) in db.log if s.lower().startswith("update news_features"))
+
+        assert updates(a) == updates(b)
+
+    def test_nenhuma_leitura_traz_mais_que_o_lote(self):
+        db = self._db()
+        J.backfill_canonical_ids(db.conn(), *JANELA, batch_size=3)
+        assert db.backfill_page_sizes == [3, 3, 3, 1]
+        assert max(db.backfill_page_sizes) <= 3
+
+    def test_lote_padrao_de_2000(self):
+        """Sem batch_size explícito, nenhum SELECT traz mais que 2000 artigos."""
+        db = FakeDB()
+        db.seed_alias("finep", "ORG", "Q_FINEP")
+        n = 2 * LOTE_PADRAO + 1
+        db.features_rows = [
+            (f"uid-{i:05d}", {"entities": [{"text": "Finep", "type": "ORG"}]})
+            for i in range(n)
+        ]
+        stats = J.backfill_canonical_ids(db.conn(), *JANELA)
+        assert db.backfill_page_sizes == [LOTE_PADRAO, LOTE_PADRAO, 1]
+        assert stats == {"articles": n, "updated": n, "mentions_linked": n}
+        assert J._BACKFILL_BATCH_SIZE == LOTE_PADRAO
+
+    def test_keyset_avanca_pelo_ultimo_unique_id_sem_pular_nem_repetir(self):
+        db = self._db()
+        stats = J.backfill_canonical_ids(db.conn(), *JANELA, batch_size=3)
+        assert [p[2] for p in db.backfill_selects] == ["", "uid-03", "uid-06", "uid-09"]
+        # mesma janela [since, until) e mesmo LIMIT em todas as páginas
+        assert all(p[:2] == JANELA and p[3] == 3 for p in db.backfill_selects)
+        assert stats["articles"] == 10
+
+    def test_total_multiplo_do_lote_termina_com_pagina_vazia(self):
+        db = self._db()
+        db.features_rows = db.features_rows[:9]
+        stats = J.backfill_canonical_ids(db.conn(), *JANELA, batch_size=3)
+        assert db.backfill_page_sizes == [3, 3, 3, 0]
+        assert stats["articles"] == 9
+
+    def test_select_traz_so_entities_e_mantem_a_janela(self):
+        db = self._db()
+        J.backfill_canonical_ids(db.conn(), *JANELA, batch_size=3)
+        sqls = [s for (s, _p) in db.log if s.lower().startswith("select nf.unique_id")]
+        assert sqls
+        sql = sqls[0]
+        assert sql.startswith(
+            "SELECT nf.unique_id, nf.features->'entities' FROM news_features nf "
+            "JOIN news n ON n.unique_id = nf.unique_id WHERE "
+        )
+        where = sql.split(" WHERE ", 1)[1]
+        assert "n.published_at >= %s AND n.published_at < %s" in where
+        assert "nf.features ? 'entities'" in where
+        assert where.endswith("AND nf.unique_id > %s ORDER BY nf.unique_id LIMIT %s")
+
+    def test_dry_run_paginado_conta_mas_nao_escreve(self):
+        db = self._db()
+        conn = db.conn()
+        stats = J.backfill_canonical_ids(conn, *JANELA, dry_run=True, batch_size=3)
+        assert stats == {"articles": 10, "updated": 5, "mentions_linked": 8}
+        assert db.backfilled == {}
+        assert [s for (s, _p) in db.log if not s.lower().startswith("select")] == []
+        assert conn.committed == 0
+        assert db.backfill_page_sizes == [3, 3, 3, 1]
+
+    def test_falha_num_update_nao_interrompe_os_lotes_seguintes(self):
+        db = self._db()
+        db.fail_update_uids = {"uid-01"}  # 1º lote
+        conn = db.conn()
+        stats = J.backfill_canonical_ids(conn, *JANELA, batch_size=3)
+        assert stats == {"articles": 10, "updated": 4, "mentions_linked": 8}
+        assert set(db.backfilled) == {"uid-03", "uid-06", "uid-07", "uid-08"}
+        assert conn.rolled_back == 1
+
+    def test_batch_size_invalido(self):
+        with pytest.raises(ValueError):
+            J.backfill_canonical_ids(FakeDB().conn(), *JANELA, batch_size=0)
 
 
 # ---------------------------------------------------------------------- #

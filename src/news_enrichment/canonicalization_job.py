@@ -21,7 +21,8 @@ Etapas:
                apply_gates → escreve entity_registry(+reuse) / entity_alias;
                atualiza seen. Grava o raw
                em news_llm_raw (task='canon').
-  C (backfill): para cada artigo da janela, set entity.canonical_id a partir de
+  C (backfill): para cada artigo da janela (lido em lotes por keyset em
+               unique_id, memória constante), set entity.canonical_id a partir de
                entity_alias[normalize(forma_canonica|text), type] quando resolvido;
                UPDATE news_features SET features = jsonb_set(...) (idempotente).
 
@@ -817,12 +818,24 @@ def resolve_pending(
 # Step C — backfill canonical_id nas menções
 # =============================================================================
 
+# Artigos por SELECT no Step C. A leitura é paginada por keyset em unique_id para a
+# memória não crescer com o acervo: um fetchall da janela inteira (desde 2018, ~197
+# mil artigos com o JSON todo de features) estourou os 2Gi do job em 20/10/2026.
+_BACKFILL_BATCH_SIZE = 2000
+
+# Só o array entities é lido: o UPDATE usa jsonb_set no servidor e preserva as
+# outras chaves de features sem precisar delas no cliente. Sem a condição redundante
+# `n.unique_id > %s`: com ela o planner estima mal e troca o nested loop por
+# índice por bitmap + sort em disco.
 _BACKFILL_SELECT_SQL = """
-SELECT nf.unique_id, nf.features
+SELECT nf.unique_id, nf.features->'entities'
 FROM news_features nf
 JOIN news n ON n.unique_id = nf.unique_id
 WHERE n.published_at >= %s AND n.published_at < %s
   AND nf.features ? 'entities'
+  AND nf.unique_id > %s
+ORDER BY nf.unique_id
+LIMIT %s
 """
 
 
@@ -836,49 +849,71 @@ def _resolve_alias_map(conn) -> Dict[tuple, str]:
         cursor.close()
 
 
-def backfill_canonical_ids(conn, since: datetime, until: datetime, dry_run: bool = False) -> dict:
+def _fetch_backfill_batch(
+    conn, since: datetime, until: datetime, after_uid: str, batch_size: int
+) -> list:
+    """Um lote do Step C: até batch_size (unique_id, entities) com unique_id > after_uid."""
+    cursor = conn.cursor()
+    try:
+        cursor.execute(_BACKFILL_SELECT_SQL, (since, until, after_uid, batch_size))
+        return cursor.fetchall()
+    finally:
+        cursor.close()
+
+
+def backfill_canonical_ids(
+    conn,
+    since: datetime,
+    until: datetime,
+    dry_run: bool = False,
+    batch_size: int = _BACKFILL_BATCH_SIZE,
+) -> dict:
     """Step C: anexa canonical_id às menções resolvidas (idempotente, merge-safe).
 
     Para cada artigo da janela, lê features.entities, resolve canonical_id via
     entity_alias[normalize(forma_canonica|text), type] e regrava só o array
     entities com jsonb_set (preserva outras chaves de features).
-    """
-    alias_map = _resolve_alias_map(conn)
-    cursor = conn.cursor()
-    stats = {"articles": 0, "updated": 0, "mentions_linked": 0}
-    try:
-        cursor.execute(_BACKFILL_SELECT_SQL, (since, until))
-        rows = cursor.fetchall()
-    finally:
-        cursor.close()
 
-    for unique_id, features in rows:
-        stats["articles"] += 1
-        entities = (features or {}).get("entities") or []
-        new_entities, linked, changed = _apply_canonical_ids(entities, alias_map)
-        if not changed:
-            continue
-        stats["mentions_linked"] += linked
-        if dry_run:
-            stats["updated"] += 1
-            continue
-        ucur = conn.cursor()
-        try:
-            ucur.execute(
-                """
-                UPDATE news_features
-                SET features = jsonb_set(features, '{entities}', %s::jsonb, true)
-                WHERE unique_id = %s
-                """,
-                (json_dumps(new_entities), unique_id),
-            )
-            conn.commit()
-            stats["updated"] += 1
-        except Exception as e:  # noqa: BLE001
-            conn.rollback()
-            logger.error("Falha no backfill de %s: %s", unique_id, e)
-        finally:
-            ucur.close()
+    Lê em lotes de batch_size por keyset em unique_id (memória constante; só um
+    lote de entities fica em memória por vez). Cada UPDATE tem commit próprio, como
+    antes; os lotes seguintes não dependem de transação aberta.
+    """
+    if batch_size < 1:
+        raise ValueError(f"batch_size deve ser >= 1 (recebido {batch_size})")
+    alias_map = _resolve_alias_map(conn)
+    stats = {"articles": 0, "updated": 0, "mentions_linked": 0}
+    after_uid = ""  # unique_id nunca é vazio: '' fica antes de todos na ordenação
+    while True:
+        rows = _fetch_backfill_batch(conn, since, until, after_uid, batch_size)
+        for unique_id, entities in rows:
+            stats["articles"] += 1
+            new_entities, linked, changed = _apply_canonical_ids(entities or [], alias_map)
+            if not changed:
+                continue
+            stats["mentions_linked"] += linked
+            if dry_run:
+                stats["updated"] += 1
+                continue
+            ucur = conn.cursor()
+            try:
+                ucur.execute(
+                    """
+                    UPDATE news_features
+                    SET features = jsonb_set(features, '{entities}', %s::jsonb, true)
+                    WHERE unique_id = %s
+                    """,
+                    (json_dumps(new_entities), unique_id),
+                )
+                conn.commit()
+                stats["updated"] += 1
+            except Exception as e:  # noqa: BLE001
+                conn.rollback()
+                logger.error("Falha no backfill de %s: %s", unique_id, e)
+            finally:
+                ucur.close()
+        if len(rows) < batch_size:
+            break
+        after_uid = rows[-1][0]
 
     logger.info("Step C: %s", stats)
     return stats
