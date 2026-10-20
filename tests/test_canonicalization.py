@@ -1511,6 +1511,16 @@ class TestNamesCompatibleForMerge:
         ("30ª Conferência das Nações Unidas sobre Mudança do Clima (COP30)",
          "Conferência das Nações Unidas sobre Mudanças Climáticas (COP)"),
         ("cop30", "Conferência das Nações Unidas sobre Mudanças Climáticas (COP)"),
+        # UF real (por extenso, "do Pará" ou sigla em posição de qualificador)
+        ("Caxias (MA)", "Caxias do Sul"),
+        ("Fundação Getulio Vargas - Rio de Janeiro (FGV-RJ)", "Fundação Getulio Vargas (FGV)"),
+        ("Central Única das Favelas do Piauí (CUFA-PI)", "Central Única das Favelas (CUFA)"),
+        ("Instituto Euvaldo Lodi de Mato Grosso (IEL-MT)", "Instituto Euvaldo Lodi (IEL)"),
+        ("Partido Socialista Brasileiro - Seção Pernambuco (PSB-PE)",
+         "Partido Socialista Brasileiro (PSB)"),
+        ("Secretaria de Estado da Saúde do Espírito Santo (SESA-ES)",
+         "Secretaria de Estado da Saúde do Pará (SESPA)"),
+        ("BR-386/RS", "BR-386"),
     ]
 
     FUSOES_LEGITIMAS = [
@@ -1535,6 +1545,13 @@ class TestNamesCompatibleForMerge:
         ("eua", "Estados Unidos da América"),
         ("facebook", "Meta Platforms (Facebook)"),
         ("g20", "Grupo dos Vinte (G20)"),
+        # "para" preposição e palavras comuns não são UF
+        ("Fundo Nacional para o Desenvolvimento Científico e Tecnológico (FNDCT)",
+         "Fundo Nacional de Desenvolvimento Científico e Tecnológico (FNDCT)"),
+        ("Prêmio Almirante Álvaro Alberto para Ciência e Tecnologia",
+         "Prêmio Almirante Álvaro Alberto"),
+        ("Secretaria das Mulheres do Estado da Bahia (SPM-BA)",
+         "Secretaria de Políticas para as Mulheres do Estado da Bahia"),
     ]
 
     @pytest.mark.parametrize("a,b", FUSOES_ERRADAS)
@@ -1612,17 +1629,116 @@ class TestAddAliasMergeGuard:
         assert db.alias[("xyz", "ORG")] == "dgb_xyz"
 
 
-class TestIsBareSiglaAlias:
-    @pytest.mark.parametrize("alias", [
-        "TSE", "CNS", "SC", "BSB", "MAP", "MRE", "IRBr/MRE", "Palmares", "Itamaraty",
-        "ELETRONUCLEAR", "BR-101", "ABCD",
+class TestMergePlaces:
+    """UFs citadas num nome: por extenso; "Pará" só depois de "do/no" (ou como
+    qualificador); sigla de UF só em posição de qualificador (/XX, -XX, (XX), ", XX" no
+    fim) ou como o nome inteiro, nunca como palavra comum."""
+
+    @pytest.mark.parametrize("name", [
+        "Right to Work Act", "Al Jazeera", "Pé-de-Meia", "Lei Go Live", "Rádio MEC AM",
+        "JCDecaux SE", "Cuide-se",
+        "Global Learning and Observations to Benefit the Environment (GLOBE)",
+        "Fundo Nacional para o Desenvolvimento Científico e Tecnológico (FNDCT)",
+        "Prêmio Almirante Álvaro Alberto para Ciência e Tecnologia",
+        "Secretaria de Políticas para as Mulheres",
+        "Convenção para a Proteção do Patrimônio Mundial",
+        # a própria sigla do nome entre parênteses não é UF
+        "Polícia do Exército (PE)",
+        "Comitê Executivo do Programa Nacional de Energia Geotérmica (CE-Progeo)",
+        # "MS/" antes da barra é Ministério da Saúde
+        "Portaria Interministerial MS/MEC nº 421/2010",
     ])
-    def test_sigla_solta(self, alias):
-        assert C.is_bare_sigla_alias(alias) is True
+    def test_palavra_comum_nao_e_uf(self, name):
+        assert C._merge_places(name) == frozenset()
+
+    @pytest.mark.parametrize("name,ufs", [
+        ("Belém do Pará", {"para"}),
+        ("Universidade Federal do Pará (UFPA)", {"para"}),
+        ("Superintendência do Incra no Pará", {"para"}),
+        ("Governo do Estado do Pará", {"para"}),
+        ("Pará", {"para"}),
+        ("Belém (Pará)", {"para"}),
+        ("Superintendência do Ibama no Estado do Rio de Janeiro (Supes/RJ)", {"rio de janeiro"}),
+        ("Sebrae-AM", {"amazonas"}),
+        ("Caxias (MA)", {"maranhao"}),
+        ("Belém, PA", {"para"}),
+        ("BR-386/RS", {"rio grande do sul"}),
+        ("Arco Metropolitano (BR-493/RJ-109)", {"rio de janeiro"}),
+        ("Distrito Sanitário Especial Indígena (Dsei-AL/SE)", {"alagoas", "sergipe"}),
+        ("Partido Socialista Brasileiro - Seção Pernambuco (PSB-PE)", {"pernambuco"}),
+        ("SC", {"santa catarina"}),
+        ("Santa Catarina (SC)", {"santa catarina"}),
+        # "Pará" com acento no original é a UF
+        ("Partido dos Trabalhadores (PT) - Seção Pará", {"para"}),
+        ("Equatorial Pará Distribuidora de Energia S.A.", {"para"}),
+        # sigla de UF entre parênteses que só coincide com o começo de uma palavra
+        ("Prefeitura Municipal de Faxinal (PR)", {"parana"}),
+        ("Aparecida de Goiânia (GO)", {"goias"}),
+        ("Igreja de São Benedito (Antonina, PR)", {"parana"}),
+        # rodovia estadual
+        ("Rodovia MS-040", {"mato grosso do sul"}),
+        ("CE-025", {"ceara"}),
+    ])
+    def test_uf_real(self, name, ufs):
+        assert C._merge_places(name) == frozenset(ufs)
+
+
+class TestIsSiglaAlias:
+    """"Sigla" (alias sem espaço): todas as letras maiúsculas; ou maioria maiúscula com
+    >= 2 maiúsculas; ou toda minúscula com menos de 40% de vogais."""
 
     @pytest.mark.parametrize("alias", [
-        "Toulouse School of Economics", "Toulouse School of Economics (TSE)",
-        "Conselho Nacional de Saúde", "Eletronuclear S.A.", "Superintendência", "",
+        "TSE", "tse", "PIS", "pis", "SC", "sc", "MAP", "ABCD", "IRBr", "CNPq", "MPor",
+        "IRBr/MRE", "BR-116", "ELETRONUCLEAR", "pndr", "PSTU",
     ])
-    def test_nao_e_sigla_solta(self, alias):
-        assert C.is_bare_sigla_alias(alias) is False
+    def test_sigla(self, alias):
+        assert C.is_sigla_alias(alias) is True
+
+    @pytest.mark.parametrize("alias", [
+        "Copacabana", "Correios", "Pé-de-Meia", "Florianópolis", "Anvisa", "Senacon",
+        "Palmares", "Itamaraty", "mei", "G20", "Toulouse School of Economics",
+        "Toulouse School of Economics (TSE)", "Eletronuclear S.A.", "",
+    ])
+    def test_nao_e_sigla(self, alias):
+        assert C.is_sigla_alias(alias) is False
+
+
+class TestSiglaCoherentWithName:
+    """Sigla coerente: as letras saem, em ordem, de prefixos (iniciais ou sílabas) das
+    palavras do nome; >= 2 letras; os números da sigla estão no nome."""
+
+    @pytest.mark.parametrize("sigla,name", [
+        ("PNDR", "Política Nacional de Desenvolvimento Regional (PNDR)"),
+        ("pndr", "Política Nacional de Desenvolvimento Regional"),
+        ("IBS", "Imposto sobre Bens e Serviços"),
+        ("CBS", "Contribuição sobre Bens e Serviços"),
+        ("PSTU", "Partido Socialista dos Trabalhadores Unificado"),
+        ("SENACON", "Secretaria Nacional do Consumidor"),
+        ("ANVISA", "Agência Nacional de Vigilância Sanitária"),
+        ("IRBr", "Instituto Rio Branco"),
+        ("MPT-RJ", "Ministério Público do Trabalho no Rio de Janeiro"),
+        ("COP30", "30ª Conferência das Nações Unidas sobre Mudança do Clima (COP30)"),
+        ("BR-116", "Rodovia BR-116"),
+        # coerentes e ambíguas: a guarda de fusão é que impede juntar entidades
+        ("TSE", "Toulouse School of Economics"),
+        ("MAP", "MAP Linhas Aéreas"),
+        ("MAP", "Ministério da Agricultura e Pecuária (MAPA)"),
+    ])
+    def test_coerente(self, sigla, name):
+        assert C.sigla_coherent_with_name(sigla, name) is True
+
+    @pytest.mark.parametrize("sigla,name", [
+        ("PIS", "Contribuição para o Financiamento da Seguridade Social (Cofins)"),
+        ("SC", "Carolina do Sul"),
+        ("BSB", "Aeroporto Internacional Presidente Juscelino Kubitschek"),
+        ("MRE", "Instituto Rio Branco"),
+        ("IRBr/MRE", "Instituto Rio Branco"),
+        ("Sebrae-RJ", "Serviço Brasileiro de Apoio às Micro e Pequenas Empresas (Sebrae)"),
+        ("COP29", "Conferência das Nações Unidas sobre Mudanças Climáticas (COP)"),
+        ("SGT-5", "Subgrupo de Trabalho nº 8 do MERCOSUL (SGT-8)"),
+        ("A", "Agência"),
+        ("TSE", ""),
+        ("", "Tribunal Superior Eleitoral"),
+    ])
+    def test_incoerente(self, sigla, name):
+        assert C.sigla_coherent_with_name(sigla, name) is False

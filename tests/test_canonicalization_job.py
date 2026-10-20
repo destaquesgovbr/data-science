@@ -1394,15 +1394,81 @@ class TestAliasesSugeridosPeloLlm:
             model_id="m",
         )
 
-    def test_sigla_solta_do_llm_nao_vira_alias(self):
+    def test_sigla_coerente_e_palavra_do_llm_viram_alias(self):
+        """TSE é acrônimo coerente de Toulouse School of Economics e entra; "Toulouse" não
+        é sigla e segue a regra anterior. A colisão com o Tribunal fica com a guarda de
+        fusão (teste seguinte)."""
         db = FakeDB()
         decision = self._resolve_toulouse(db)
         assert decision["action"] == "link"
         assert db.alias[("toulouse school of economics", "ORG")] == "Q3532921"
         assert db.alias[("ecole d'economie de toulouse", "ORG")] == "Q3532921"
         assert db.alias[("toulouse school of economics (tse)", "ORG")] == "Q3532921"
-        assert ("tse", "ORG") not in db.alias
-        assert ("toulouse", "ORG") not in db.alias
+        assert db.alias[("tse", "ORG")] == "Q3532921"
+        assert db.alias[("toulouse", "ORG")] == "Q3532921"
+
+    def _resolve(self, db, form, type_, qid, canonical_name, aliases):
+        db.content["uid"] = f"Texto sobre {canonical_name}."
+        bedrock = make_bedrock(canon_json(
+            canonical_name=canonical_name, type=type_, confidence=0.95, aliases=aliases,
+        ))
+        return J.resolve_form(
+            db.conn(), form, type_, "uid", 0, bedrock_client=bedrock,
+            wikidata_client=_wikidata_unico(qid, canonical_name, "Q155"), model_id="m",
+        )
+
+    def test_sigla_incoerente_do_llm_nao_vira_alias(self):
+        """Caso 'pis' → Cofins: PIS não é acrônimo de Contribuição para o Financiamento da
+        Seguridade Social; nenhuma grafia de 'pis' entra. O resto entra."""
+        db = FakeDB()
+        self._resolve(
+            db, "contribuicao para o financiamento da seguridade social (cofins)", "POLICY",
+            "Q18481381", "Contribuição para o Financiamento da Seguridade Social (Cofins)",
+            ["Cofins", "COFINS", "PIS", "pis",
+             "Contribuição para o Financiamento da Seguridade Social"],
+        )
+        assert ("pis", "POLICY") not in db.alias
+        assert db.alias[("cofins", "POLICY")] == "Q18481381"
+        assert db.alias[("contribuicao para o financiamento da seguridade social", "POLICY")] == (
+            "Q18481381"
+        )
+
+    def test_sigla_de_outra_entidade_nao_vira_alias(self):
+        """Caso 'sc' → Carolina do Sul: SC (Santa Catarina) não sai de "Carolina do Sul"."""
+        db = FakeDB()
+        self._resolve(db, "carolina do sul", "LOC", "Q1456", "Carolina do Sul",
+                      ["SC", "sc", "South Carolina", "Carolina do Sul"])
+        assert ("sc", "LOC") not in db.alias
+        assert db.alias[("south carolina", "LOC")] == "Q1456"
+
+    def test_siglas_coerentes_do_llm_viram_alias(self):
+        db = FakeDB()
+        self._resolve(
+            db, "politica nacional de desenvolvimento regional", "POLICY", "Q_PNDR",
+            "Política Nacional de Desenvolvimento Regional (PNDR)", ["PNDR", "pndr"],
+        )
+        self._resolve(db, "imposto sobre bens e servicos", "POLICY", "Q_IBS",
+                      "Imposto sobre Bens e Serviços", ["IBS"])
+        self._resolve(db, "agencia nacional de vigilancia sanitaria", "ORG", "Q_ANVISA",
+                      "Agência Nacional de Vigilância Sanitária", ["ANVISA", "Anvisa"])
+        assert db.alias[("pndr", "POLICY")] == "Q_PNDR"
+        assert db.alias[("ibs", "POLICY")] == "Q_IBS"
+        assert db.alias[("anvisa", "ORG")] == "Q_ANVISA"
+
+    def test_palavra_que_nao_e_sigla_segue_regra_anterior(self):
+        """Nomes de uma palavra que não são sigla entram como em main, mesmo sem relação
+        de acrônimo com o nome canônico."""
+        db = FakeDB()
+        self._resolve(db, "praia de copacabana", "LOC", "Q_COPA", "Praia de Copacabana",
+                      ["Copacabana"])
+        self._resolve(db, "empresa brasileira de correios e telegrafos", "ORG", "Q_ECT",
+                      "Empresa Brasileira de Correios e Telégrafos (ECT)", ["Correios", "ECT"])
+        self._resolve(db, "programa pe-de-meia", "POLICY", "Q_PDM", "Programa Pé-de-Meia",
+                      ["Pé-de-Meia"])
+        assert db.alias[("copacabana", "LOC")] == "Q_COPA"
+        assert db.alias[("correios", "ORG")] == "Q_ECT"
+        assert db.alias[("ect", "ORG")] == "Q_ECT"
+        assert db.alias[("pe-de-meia", "POLICY")] == "Q_PDM"
 
     def test_sigla_do_llm_nao_funde_a_entidade_interna_que_ja_tem_a_sigla(self):
         """Caso TSE: 'tse' (menção real) já aponta para o Tribunal; a Toulouse não o absorve."""
