@@ -132,6 +132,32 @@ PYTHONPATH=src .venv/bin/python scripts/reenrich_combined_window.py \
   depois do UPDATE de tema): a seleção é por tema `NULL` ou resumo `[MOCK]`. O
   `null-summary` (abaixo) também não gera sentimento; só conta os artigos sem ele.
 
+### No Cloud Run Job (DAG `enrichment_backfill`)
+
+A imagem do Job `destaquesgovbr-ner-backfill` (`docker/ner-backfill-job/`) também
+roda este script. O entrypoint escolhe o script pela env `BACKFILL_SCRIPT`:
+
+| `BACKFILL_SCRIPT` | Script executado |
+|---|---|
+| ausente ou vazia (default) | `scripts/backfill_ner_corpus.py` (DAG `ner_backfill`) |
+| `backfill_ner_corpus.py` | `scripts/backfill_ner_corpus.py` |
+| `reenrich_combined_window.py` | `scripts/reenrich_combined_window.py` |
+| qualquer outro valor | nada executa; sai com 64 |
+
+O DAG `enrichment_backfill` (data-platform) passa por container override as envs
+`BACKFILL_SCRIPT`, `ENRICHMENT_MODEL_ID`, `BEDROCK_DAILY_TOKEN_QUOTA` (JSON com a
+chave do modelo) e `BACKFILL_QUOTA_FRACTION`, e os argumentos deste script em
+`args`. `DATABASE_URL` e `AWS_BEDROCK_CONNECTION_URI` vêm dos secrets do Job.
+
+Códigos de saída (o que o DAG enxerga):
+
+| Código | Quando |
+|---|---|
+| 0 | `selecionados=0` (`nada pendente`), `--dry-run`, run completo **e** parada graciosa por `budget_exhausted`. Falhas por artigo (`classification_failed`, inclusive `ThrottlingException` depois dos retries, `update_failed`, `missing`, `error:*`) não mudam o código: aparecem só no `FIM: {...}` do log |
+| 1 | modelo indisponível (aborta o run), `DATABASE_URL` ou `ENRICHMENT_MODEL_ID` ausente, janela inválida, classificador com modelo diferente do esperado, exceção não tratada (ex.: Postgres fora) |
+| 2 | argumentos inválidos (argparse) |
+| 64 | `BACKFILL_SCRIPT` fora da allowlist (entrypoint) |
+
 ### Só o resumo: `--select null-summary` (DS-2)
 
 Desde 02/06/2026, o re-scrape do scraper (`_update_existing_articles`, que casa por

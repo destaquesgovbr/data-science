@@ -14,6 +14,7 @@ on:
     paths:
       - 'src/news_enrichment/**'
       - 'scripts/backfill_ner_corpus.py'
+      - 'scripts/reenrich_combined_window.py'
       - 'docker/ner-backfill-job/**'
       - 'pyproject.toml'
       - 'poetry.lock'
