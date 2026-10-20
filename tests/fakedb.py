@@ -352,9 +352,26 @@ class FakeCursor:
             self._result = list(self.db.gather_rows)
             return
 
-        # backfill select
+        # backfill select (Step C). features_rows = os artigos da janela. Emula a
+        # paginação por keyset quando o SQL a pede (`nf.unique_id > %s ... ORDER BY
+        # nf.unique_id LIMIT %s`, os 2 últimos params) e a projeção
+        # `nf.features->'entities'` (devolve só o array, como o Postgres). Registra
+        # os params e quantas linhas cada SELECT devolveu (o cursor padrão do
+        # psycopg2 traz o resultado inteiro para a memória no execute).
         if low.startswith("select nf.unique_id, nf.features"):
-            self._result = list(self.db.features_rows)
+            rows = list(self.db.features_rows)
+            if (
+                "nf.unique_id > %s" in low
+                and "order by nf.unique_id" in low
+                and "limit %s" in low
+            ):
+                after, limit = params[-2], params[-1]
+                rows = sorted((r for r in rows if r[0] > after), key=lambda r: r[0])[:limit]
+            if "nf.features->'entities'" in low:
+                rows = [(uid, (feats or {}).get("entities")) for uid, feats in rows]
+            self.db.backfill_selects.append(tuple(params))
+            self.db.backfill_page_sizes.append(len(rows))
+            self._result = rows
             return
 
         # merge_entities: SELECT artigos cujas menções referenciam um canonical_id
@@ -376,6 +393,8 @@ class FakeCursor:
         # news_features jsonb_set update (backfill Step C e merge rewrite)
         if "update news_features set features = jsonb_set" in low:
             new_json, uid = params[0], params[1]
+            if uid in self.db.fail_update_uids:
+                raise Exception(f"falha simulada no UPDATE de {uid}")
             self.db.backfilled[uid] = new_json
             # se o artigo está no store mutável, aplica a reescrita do array entities
             if uid in self.db.news_features:
@@ -515,6 +534,9 @@ class FakeDB:
         self.gather_rows = []  # (surface, type, sample_uid)
         self.features_rows = []  # (unique_id, features dict)
         self.backfilled = {}   # unique_id -> new entities json str
+        self.backfill_selects = []     # params de cada SELECT do Step C
+        self.backfill_page_sizes = []  # linhas devolvidas por cada SELECT do Step C
+        self.fail_update_uids = set()  # unique_ids cujo UPDATE jsonb_set falha
         self.news_features = {}  # unique_id -> features dict (mutável; menções)
         self.ledger = {}       # model_id -> {input_tokens, output_tokens}
         self.features_upserts = []  # (unique_id, features dict) por INSERT em news_features
