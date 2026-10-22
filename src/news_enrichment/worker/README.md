@@ -287,54 +287,76 @@ resumo, sentimento, NER, `content_embedding` nem evento), com guarda e auditoria
 `news_theme_changes` (criada pela migração 034 do data-platform). Ordem do D0/D1:
 034 → redeploy do worker (seção acima) → este script.
 
+As seleções de tema implicam o modo só-tema e a campanha `tema26-llm-d1`. As flags
+são as do contrato do DAG `enrichment_backfill` (22/10): `--select theme-code
+--theme-code <c>` ou `--select theme26-candidates`, `--date-from` obrigatório,
+`--date-to` opcional, `--limit`, `--workers`, `[--dry-run]` e, no
+`theme26-candidates`, `--term-fields`. `--theme-only` e `--campaign` continuam
+aceitos (o DAG do DP-2 os passa); `--campaign` só aceita `tema26-llm-*`.
+
 ```bash
 ENRICHMENT_MODEL_ID=us.anthropic.claude-haiku-4-5-20251001-v1:0 \
 BEDROCK_DAILY_TOKEN_QUOTA='{"us.anthropic.claude-haiku-4-5-20251001-v1:0": <cota AWS real>}' \
 PYTHONPATH=src .venv/bin/python scripts/reenrich_combined_window.py \
-    --select theme26-candidates --date-from 2018-01-01 \
-    --theme-only --campaign tema26-llm-d1 \
+    --select theme26-candidates --term-fields title-content --date-from 2018-01-01 \
     --dry-run   # depois --limit 10, depois completo
 ```
 
-- **Seleções** (só com `--theme-only` e `--campaign`):
+- **Seleções:**
   - `--select theme-code --theme-code 19`: qualquer nível de tema (l1/l2/l3/mais
     específico) na subárvore. É o escopo mínimo do plano.
   - `--select theme26-candidates`: `((subárvore do 19) OR (04 / 05.02.01 / 15.02.03
-    AND (MDR OR termo-chave))) AND NOT EXISTS (campanha) AND janela`. Termos:
-    "defesa civil", "calamidade", "situação/estado de emergência" (com e sem acento:
-    não há `unaccent`) e "desastre", por `ILIKE`.
-  - `--term-fields title` (padrão) ou `title-content`. No conteúdo, "calamidade" pega
-    "calamidade fiscal" e "desastre" pega usos figurados.
+    AND (MDR OR termo-chave))) AND NOT EXISTS (auditado ativo na campanha) AND
+    janela`. Termos: "defesa civil", "calamidade", "situação/estado de emergência"
+    (com e sem acento: não há `unaccent`) e "desastre", por `ILIKE`.
+  - `--term-fields title` (padrão) ou `title-content` (escopo da D1, decidido em
+    22/10). No conteúdo, "calamidade" pega "calamidade fiscal" e "desastre" pega usos
+    figurados: a guarda do 26 (abaixo) impede que esses extras mudem de tema.
   - `--extra-codes 04,05.02.01,15.02.03` (padrão); `--extra-codes ''` deixa só o 19.
-  - Contagens em produção (21/10, antes da 034, SQL real do script): `theme-code 19`
-    = 485; `theme26-candidates` = 1.155 só no título e 1.586 com o conteúdo; só com o
-    extra `04` = 1.071. Depois da 034, os 209 de 19.03/19.04 já estão no 26 e saem.
+  - Contagens em produção (21–22/10, antes da 034, SQL real do script):
+    `theme-code 19` = 485; `theme26-candidates` = 1.155 só no título e 1.586 com o
+    conteúdo; só com o extra `04` = 1.071. Depois da 034, os 209 de 19.03/19.04 já
+    estão no 26 e saem do bloco do 19 (≈1.377 com o conteúdo).
   - `--date-to` é opcional e sem teto de hoje: só entram artigos com tema, e o worker
     ao vivo devolve `skipped` para eles.
+- **Guarda do tema 26:** o artigo do bloco do 19 (algum dos 4 níveis na subárvore do
+  19) sempre recebe a nova classificação. O de fora (04 / 05.02.01 / 15.02.03) só tem
+  o tema gravado se o novo L1 for o 26; senão é `kept`: mantém o tema e audita
+  old = new, com a sugestão do LLM na `note` (`kept: o LLM sugeriu 05 > 05.02 >
+  05.02.01; ...`).
 - **Escrita**, numa transação por artigo:
   `UPDATE news SET theme_l1_id, theme_l2_id, theme_l3_id, most_specific_theme_id,
   updated_at … WHERE unique_id = … AND <cada coluna> IS NOT DISTINCT FROM <lido antes
   da chamada>`, seguido do `INSERT` em `news_theme_changes` (códigos, não ids;
-  `source = 'llm:<model_id>'`). Se a auditoria falhar (ex.: UNIQUE violado por um run
-  concorrente), o UPDATE é desfeito.
+  `campaign = 'tema26-llm-d1'`, `source = 'llm:<model_id>'`, `note`) com
+  `ON CONFLICT (campaign, unique_id) DO UPDATE … WHERE news_theme_changes.reverted_at
+  IS NOT NULL RETURNING 1`. Sem linha devolvida (um run concorrente já auditou o
+  artigo), o UPDATE é desfeito (`already_audited`).
+- **Idempotência:** o artigo auditado na campanha e **não revertido** sai da seleção
+  (inclusive os que continuam no 19 e os `kept`). O revertido pelo rollback da 034
+  (`reverted_at`) volta a ser candidato, e a nova gravação reaproveita a linha dele.
 - **Cadeia de tema** (`resolve_theme_chain`): vale o código válido mais profundo da
-  resposta, com l1/l2 tirados da taxonomia; ele pode estar no máximo **um nível**
-  acima do mais profundo que o LLM pediu (`MAX_LEVEL_DROP`). Pediu 26.01.09
-  (inexistente) → 26.01; pediu 19.03.03 e só o 19 existe → `invalid_theme`.
+  resposta, ou do prefixo dela um nível acima, com l1/l2 tirados da taxonomia; ele
+  pode estar no máximo **um nível** acima do mais profundo que o LLM pediu
+  (`MAX_LEVEL_DROP`). Pediu 26.01.09 (inexistente) → 26.01, mesmo sem o campo do L2;
+  pediu 19.03.03 e só o 19 existe → `invalid_theme`.
 - **Status**: `ok`, `unchanged` (auditado sem UPDATE, depois de conferir a linha com
-  `FOR UPDATE`), `theme_changed` (outro processo mudou o tema: nada gravado),
-  `invalid_theme`, `no_theme` (o artigo perdeu o tema: é do worker), `unknown_old_theme`,
-  `missing`, `classification_failed`, `model_unavailable` (aborta), `error:*`. Só `ok`
-  e `unchanged` auditam; todo artigo auditado na campanha sai da seleção (idempotente
-  e retomável, inclusive para os que continuam no 19).
+  `FOR UPDATE`), `kept` (idem, pela guarda do 26), `theme_changed` (outro processo
+  mudou o tema: nada gravado), `already_audited`, `invalid_theme`, `no_theme` (o
+  artigo perdeu o tema: é do worker), `unknown_old_theme`, `missing`,
+  `classification_failed`, `model_unavailable` (aborta), `error:*`. Só `ok`,
+  `unchanged` e `kept` auditam.
 - **Preflight** (também no `--dry-run`, antes da seleção; sai com 1): a tabela existe,
-  tem as colunas do contrato e `UNIQUE (campaign, unique_id)` sem predicado (colunas
-  a mais são aceitas), e a campanha não tem registros de fonte que não seja `llm:*`
-  (a campanha da 034 não pode ser reusada). `theme26-candidates` exige 26/26.01/26.02
-  no banco e na taxonomia do classificador.
+  tem as 12 colunas do contrato (`campaign`, `unique_id`, os 8 códigos, `source`,
+  `changed_at`) e `UNIQUE (campaign, unique_id)` sem predicado, e a campanha não tem
+  registros de fonte que não seja `llm:*` (a campanha da 034 não pode ser reusada).
+  Colunas a mais são aceitas; `note` e `reverted_at` são usadas quando existem (a 034
+  cria as duas). `theme26-candidates` exige 26/26.01/26.02 no banco e na taxonomia do
+  classificador.
 - Mesmo modelo, ledger e governador de cota dos outros modos. A chamada é a
   combinada (~19k tokens de entrada); resumo e sentimento da resposta são descartados.
-- Depois: sync do Typesense (por data) e `MERGE` do BigQuery a partir da auditoria.
+- Depois: sync do Typesense (por data, desde 2025-09-01) e `MERGE` do BigQuery a
+  partir da auditoria (campanhas `tema26-*`).
 
 ## Pendências fora deste código
 
