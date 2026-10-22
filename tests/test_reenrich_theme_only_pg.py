@@ -278,7 +278,7 @@ DENTRO = "2026-10-05 12:00:00+00"
 
 
 def _seed_selection_corpus(c):
-    # Entram (título, padrão):
+    # Entram (título; com --term-fields title também):
     _seed(c, "19-l3", DENTRO, ("19", "19.05", "19.05.01"), agency="defesa")
     _seed(c, "19-l1-sem-termo", DENTRO, ("19",), agency="defesa")
     _seed(c, "19-inconsistente", DENTRO, ("15", "15.02", "19.01.01"), agency="mds")
@@ -301,7 +301,7 @@ def _seed_selection_corpus(c):
     )
     _seed(c, "auditado-em-outra", DENTRO, ("19",), agency="defesa")
     _seed(c, "borda-inicio", "2026-10-01 03:00:00+00", ("19",), agency="defesa")
-    # Só com --term-fields title-content:
+    # Só com termos no conteúdo (title-content, o padrão):
     _seed(
         c,
         "termo-so-no-conteudo",
@@ -351,14 +351,30 @@ SELECIONADOS_TITULO = {
 
 
 def test_theme26_candidates_sql_real(rec, pg):
+    # Padrão: termos no título E no conteúdo (o DAG do DP-2 não passa --term-fields).
     _seed_selection_corpus(pg)
 
     uids = rec.get_window_uids(
         "theme26-candidates", "2026-10-01", "2026-11-01", 100, campaign=CAMPAIGN
     )
 
-    assert set(uids) == SELECIONADOS_TITULO
+    assert set(uids) == SELECIONADOS_TITULO | {"termo-so-no-conteudo"}
     assert len(uids) == len(set(uids))  # EXISTS, não JOIN: sem duplicatas
+
+
+def test_theme26_candidates_so_titulo_sql_real(rec, pg):
+    _seed_selection_corpus(pg)
+
+    uids = rec.get_window_uids(
+        "theme26-candidates",
+        "2026-10-01",
+        "2026-11-01",
+        100,
+        campaign=CAMPAIGN,
+        term_fields="title",
+    )
+
+    assert set(uids) == SELECIONADOS_TITULO
 
 
 def test_theme26_candidates_titulo_e_conteudo_sql_real(rec, pg):

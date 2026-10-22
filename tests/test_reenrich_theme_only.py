@@ -291,7 +291,18 @@ class TestSelectSqlTema:
         )
 
     def test_theme26_candidates_estrutura_completa_do_where(self, rec):
+        # Padrão (decisão de 22/10, escopo da D1): termos no título E no conteúdo.
         sql = _norm(rec.build_select_sql("theme26-candidates", with_date_to=True))
+        assert sql == self._expected_theme26(
+            "n.agency_key = any(%(agency_keys)s::text[]) "
+            "or n.title ilike any(%(term_patterns)s::text[]) "
+            "or n.content ilike any(%(term_patterns)s::text[])"
+        )
+
+    def test_theme26_termos_so_no_titulo(self, rec):
+        sql = _norm(
+            rec.build_select_sql("theme26-candidates", with_date_to=True, term_fields="title")
+        )
         assert sql == self._expected_theme26(
             "n.agency_key = any(%(agency_keys)s::text[]) "
             "or n.title ilike any(%(term_patterns)s::text[])"
@@ -309,10 +320,13 @@ class TestSelectSqlTema:
             "or n.content ilike any(%(term_patterns)s::text[])"
         )
 
-    def test_campo_de_busca_padrao_e_so_o_titulo(self, rec):
-        assert rec.DEFAULT_TERM_FIELDS == "title"
+    def test_campo_de_busca_padrao_e_titulo_e_conteudo(self, rec):
+        # O DAG enrichment_backfill (DP-2) não passa --term-fields: o padrão tem de ser
+        # o escopo decidido para a D1 (título + conteúdo, 1.586 candidatos em 22/10).
+        assert rec.DEFAULT_TERM_FIELDS == "title-content"
         sql = _norm(rec.build_select_sql("theme26-candidates", with_date_to=False))
-        assert "n.content" not in sql
+        assert "n.title ilike" in sql
+        assert "n.content ilike" in sql
 
     def test_campo_de_busca_invalido(self, rec):
         with pytest.raises(ValueError, match="term_fields"):
@@ -468,13 +482,29 @@ class TestSelecao:
             {"campaign": CAMPAIGN, "unique_id": "auditado-mdr-04"},
         ]
 
-    def test_theme26_candidates_termo_so_no_titulo_por_padrao(self, rec, env):
+    def test_theme26_candidates_termo_so_no_titulo(self, rec, env):
+        self._seed_theme26_corpus(env.db)
+
+        uids = rec.get_window_uids(
+            "theme26-candidates", "2023-01-01", None, 100, campaign=CAMPAIGN, term_fields="title"
+        )
+
+        # "maiusculas-04" e "conteudo-15" têm o termo só no conteúdo: ficam de fora.
+        assert uids == ["desastres-04", "titulo-05", "mdr-04", "l1-19"]
+
+    def test_theme26_candidates_termo_no_titulo_e_no_conteudo_por_padrao(self, rec, env):
         self._seed_theme26_corpus(env.db)
 
         uids = rec.get_window_uids("theme26-candidates", "2023-01-01", None, 100, campaign=CAMPAIGN)
 
-        # "maiusculas-04" e "conteudo-15" têm o termo só no conteúdo: ficam de fora.
-        assert uids == ["desastres-04", "titulo-05", "mdr-04", "l1-19"]
+        assert uids == [
+            "desastres-04",
+            "maiusculas-04",
+            "conteudo-15",
+            "titulo-05",
+            "mdr-04",
+            "l1-19",
+        ]
 
     def test_theme26_candidates_termo_no_titulo_e_no_conteudo(self, rec, env):
         self._seed_theme26_corpus(env.db)
@@ -1454,11 +1484,30 @@ class TestMainThemeOnly:
             **_ids("04", "04.03"),
         )
 
-        assert rec.main(self._argv("--dry-run")) == 0  # padrão: só o título
-        assert "so-conteudo" not in capsys.readouterr().out
+        # --term-fields title: só o título.
+        assert rec.main(self._argv("--term-fields", "title", "--dry-run")) == 0
+        out = capsys.readouterr().out
+        assert "so-conteudo" not in out
+        assert "term_fields=title " in out
 
         assert rec.main(self._argv("--term-fields", "title-content")) == 0
         assert "so-conteudo" in {r["unique_id"] for r in env.db.theme_changes}
+
+    def test_term_fields_padrao_sem_flag_e_titulo_e_conteudo(self, rec, env, capsys):
+        # O que o DAG do DP-2 manda: --select theme26-candidates sem --term-fields.
+        self._seed(env.db)
+        env.db.seed_news(
+            "so-conteudo",
+            "2026-10-04",
+            agency_key="mj",
+            content="decretou estado de calamidade",
+            **_ids("04", "04.03"),
+        )
+
+        assert rec.main(self._argv("--dry-run")) == 0
+        out = capsys.readouterr().out
+        assert "so-conteudo" in out
+        assert "term_fields=title-content" in out
 
     def test_extra_codes_pela_cli(self, rec, env):
         self._seed(env.db)
