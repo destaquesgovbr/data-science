@@ -37,18 +37,43 @@ WINDOW = ["--date-from", "2023-01-01"]
 
 # Taxonomia do banco depois da 034 (19.03/19.04 viraram 26.01/26.02).
 CODE_TO_ID = {
-    "01": 30, "01.02": 31, "01.02.03": 32,
-    "04": 1, "04.03": 2, "04.03.01": 3,
-    "05": 4, "05.02": 5, "05.02.01": 6, "05.02.02": 25,
-    "15": 7, "15.02": 8, "15.02.03": 9,
-    "19": 10, "19.01": 11, "19.01.01": 12, "19.05": 13, "19.05.01": 14,
-    "26": 20, "26.01": 21, "26.01.03": 22, "26.02": 23, "26.02.01": 24,
+    "01": 30,
+    "01.02": 31,
+    "01.02.03": 32,
+    "04": 1,
+    "04.03": 2,
+    "04.03.01": 3,
+    "05": 4,
+    "05.02": 5,
+    "05.02.01": 6,
+    "05.02.02": 25,
+    "15": 7,
+    "15.02": 8,
+    "15.02.03": 9,
+    "19": 10,
+    "19.01": 11,
+    "19.01.01": 12,
+    "19.05": 13,
+    "19.05.01": 14,
+    "26": 20,
+    "26.01": 21,
+    "26.01.03": 22,
+    "26.02": 23,
+    "26.02.01": 24,
 }
 AUDIT_COLUMNS = {
-    "campaign", "unique_id",
-    "old_l1_code", "old_l2_code", "old_l3_code", "old_most_specific_code",
-    "new_l1_code", "new_l2_code", "new_l3_code", "new_most_specific_code",
-    "source", "changed_at",
+    "campaign",
+    "unique_id",
+    "old_l1_code",
+    "old_l2_code",
+    "old_l3_code",
+    "old_most_specific_code",
+    "new_l1_code",
+    "new_l2_code",
+    "new_l3_code",
+    "new_most_specific_code",
+    "source",
+    "changed_at",
 }
 EOL_ERROR = (
     "ResourceNotFoundException: This model version has reached the end of its life. "
@@ -91,7 +116,9 @@ def _result(l1, l2, l3, most_specific=None, **extra):
         "theme_1_level_2_label": f"L {l2}" if l2 else None,
         "theme_1_level_3_code": l3,
         "theme_1_level_3_label": f"L {l3}" if l3 else None,
-        "most_specific_theme_code": most_specific if most_specific is not None else (l3 or l2 or l1),
+        "most_specific_theme_code": most_specific
+        if most_specific is not None
+        else (l3 or l2 or l1),
         "most_specific_theme_label": "x",
         "summary": "Resumo NOVO que nunca deve ser gravado.",
         "sentiment": {"label": "negative", "score": -0.4},
@@ -388,9 +415,14 @@ class TestSelecao:
         )
         # Fora:
         db.seed_news("04-sem-termo", "2026-10-07", agency_key="mj", **_ids("04", "04.03"))
-        db.seed_news("mdr-05-irmao", "2026-10-08", agency_key="mdr", **_ids("05", "05.02", "05.02.02"))
         db.seed_news(
-            "termo-fora", "2026-10-09", title="Desastre ambiental", **_ids("01", "01.02", "01.02.03")
+            "mdr-05-irmao", "2026-10-08", agency_key="mdr", **_ids("05", "05.02", "05.02.02")
+        )
+        db.seed_news(
+            "termo-fora",
+            "2026-10-09",
+            title="Desastre ambiental",
+            **_ids("01", "01.02", "01.02.03"),
         )
         db.seed_news("ja-26", "2026-10-10", agency_key="mdr", **_ids("26", "26.01", "26.01.03"))
         db.seed_news("sem-tema", "2026-10-11", agency_key="mdr", title="Defesa Civil")
@@ -960,8 +992,15 @@ class TestMainThemeOnly:
     def test_theme_only_so_com_selecoes_de_tema(self, rec, env, select):
         code = rec.main(
             [
-                "--select", select, "--date-from", "2026-09-25", "--date-to", "2026-10-06",
-                "--theme-only", "--campaign", CAMPAIGN,
+                "--select",
+                select,
+                "--date-from",
+                "2026-09-25",
+                "--date-to",
+                "2026-10-06",
+                "--theme-only",
+                "--campaign",
+                CAMPAIGN,
             ]
         )
 
@@ -985,8 +1024,16 @@ class TestMainThemeOnly:
 
     def test_campanha_sem_theme_only(self, rec, env):
         code = rec.main(
-            ["--select", "null-theme", "--date-from", "2026-09-25", "--date-to", "2026-10-06",
-             "--campaign", CAMPAIGN]
+            [
+                "--select",
+                "null-theme",
+                "--date-from",
+                "2026-09-25",
+                "--date-to",
+                "2026-10-06",
+                "--campaign",
+                CAMPAIGN,
+            ]
         )
 
         assert code == 1
@@ -1008,8 +1055,16 @@ class TestMainThemeOnly:
     def test_theme_code_formato_invalido(self, rec, value):
         with pytest.raises(SystemExit):
             rec.build_arg_parser().parse_args(
-                ["--select", "theme-code", *WINDOW, "--theme-only", "--campaign", CAMPAIGN,
-                 "--theme-code", value]
+                [
+                    "--select",
+                    "theme-code",
+                    *WINDOW,
+                    "--theme-only",
+                    "--campaign",
+                    CAMPAIGN,
+                    "--theme-code",
+                    value,
+                ]
             )
 
     def test_term_fields_titulo_e_conteudo_pela_cli(self, rec, env, capsys):
@@ -1038,13 +1093,19 @@ class TestMainThemeOnly:
     def test_extra_codes_formato_invalido(self, rec, value):
         with pytest.raises(SystemExit):
             rec.build_arg_parser().parse_args(
-                ["--select", "theme26-candidates", *WINDOW, "--theme-only",
-                 "--campaign", CAMPAIGN, "--extra-codes", value]
+                [
+                    "--select",
+                    "theme26-candidates",
+                    *WINDOW,
+                    "--theme-only",
+                    "--campaign",
+                    CAMPAIGN,
+                    "--extra-codes",
+                    value,
+                ]
             )
 
-    @pytest.mark.parametrize(
-        "extra", [["--term-fields", "title-content"], ["--extra-codes", "04"]]
-    )
+    @pytest.mark.parametrize("extra", [["--term-fields", "title-content"], ["--extra-codes", "04"]])
     def test_opcoes_do_theme26_so_com_theme26(self, rec, env, extra):
         code = rec.main(self._argv("--theme-code", "19", *extra, select="theme-code"))
 

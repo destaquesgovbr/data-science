@@ -251,22 +251,46 @@ def _seed_selection_corpus(c):
     _seed(c, "19-l1-sem-termo", DENTRO, ("19",), agency="defesa")
     _seed(c, "19-inconsistente", DENTRO, ("15", "15.02", "19.01.01"), agency="mds")
     _seed(c, "mdr-04", DENTRO, ("04", "04.03", "04.03.01"), agency="mdr")
-    _seed(c, "titulo-maiusculo-acento", DENTRO, ("05", "05.02", "05.02.01"), agency="mma",
-          title="Município decreta SITUAÇÃO DE EMERGÊNCIA")
-    _seed(c, "titulo-sem-acento", DENTRO, ("15", "15.02", "15.02.03"), agency="mds",
-          title="Prefeitura declara situacao de emergencia")
+    _seed(
+        c,
+        "titulo-maiusculo-acento",
+        DENTRO,
+        ("05", "05.02", "05.02.01"),
+        agency="mma",
+        title="Município decreta SITUAÇÃO DE EMERGÊNCIA",
+    )
+    _seed(
+        c,
+        "titulo-sem-acento",
+        DENTRO,
+        ("15", "15.02", "15.02.03"),
+        agency="mds",
+        title="Prefeitura declara situacao de emergencia",
+    )
     _seed(c, "auditado-em-outra", DENTRO, ("19",), agency="defesa")
     _seed(c, "borda-inicio", "2026-10-01 03:00:00+00", ("19",), agency="defesa")
     # Só com --term-fields title-content:
-    _seed(c, "termo-so-no-conteudo", DENTRO, ("04", "04.03"), agency="mj",
-          content="O governador decretou estado de calamidade.")
+    _seed(
+        c,
+        "termo-so-no-conteudo",
+        DENTRO,
+        ("04", "04.03"),
+        agency="mj",
+        content="O governador decretou estado de calamidade.",
+    )
     # Ficam de fora:
     _seed(c, "auditado-19", DENTRO, ("19", "19.05"), agency="defesa")
     _seed(c, "auditado-mdr-04", DENTRO, ("04",), agency="mdr")
     _seed(c, "04-sem-mdr-nem-termo", DENTRO, ("04", "04.03"), agency="mj")
     _seed(c, "irmao-05.02.02-mdr", DENTRO, ("05", "05.02", "05.02.02"), agency="mdr")
-    _seed(c, "termo-fora-dos-temas", DENTRO, ("01", "01.02", "01.02.03"), agency="mdr",
-          title="Defesa Civil e desastre")
+    _seed(
+        c,
+        "termo-fora-dos-temas",
+        DENTRO,
+        ("01", "01.02", "01.02.03"),
+        agency="mdr",
+        title="Defesa Civil e desastre",
+    )
     _seed(c, "ja-26", DENTRO, ("26", "26.01", "26.01.03"), agency="mdr")
     _seed(c, "sem-tema", DENTRO, (), agency="mdr", title="Defesa Civil")
     _seed(c, "borda-antes-19", "2026-10-01 02:59:59+00", ("19",), agency="defesa")
@@ -356,8 +380,14 @@ def test_theme_code_sql_real(rec, pg):
 
 def _argv(*extra):
     return [
-        "--select", "theme26-candidates", "--date-from", "2026-10-01", "--theme-only",
-        "--campaign", CAMPAIGN, *extra,
+        "--select",
+        "theme26-candidates",
+        "--date-from",
+        "2026-10-01",
+        "--theme-only",
+        "--campaign",
+        CAMPAIGN,
+        *extra,
     ]
 
 
@@ -389,11 +419,31 @@ def test_fluxo_completo_e_idempotente(rec, pg, classifier, capsys):
     )
     src = f"llm:{HAIKU45}"
     assert audit == [
-        ("fica-19", "19", "19.05", "19.05.01", "19.05.01",
-         "19", "19.05", "19.05.01", "19.05.01", src),
+        (
+            "fica-19",
+            "19",
+            "19.05",
+            "19.05.01",
+            "19.05.01",
+            "19",
+            "19.05",
+            "19.05.01",
+            "19.05.01",
+            src,
+        ),
         ("mdr-04", "04", "04.03", None, "04.03", "26", "26.02", "26.02.01", "26.02.01", src),
-        ("vai-26", "19", "19.05", "19.05.01", "19.05.01",
-         "26", "26.01", "26.01.03", "26.01.03", src),
+        (
+            "vai-26",
+            "19",
+            "19.05",
+            "19.05.01",
+            "19.05.01",
+            "26",
+            "26.01",
+            "26.01.03",
+            "26.01.03",
+            src,
+        ),
     ]
 
     capsys.readouterr()

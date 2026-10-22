@@ -264,16 +264,12 @@ class FakeCursor:
         if low.startswith("select distinct source from news_theme_changes where campaign"):
             campaign, pattern = params[0], params[1]
             prefix = pattern.rstrip("%")
-            self._result = [
-                (src,)
-                for src in sorted(
-                    {
-                        r.get("source")
-                        for r in self.db.theme_changes
-                        if r["campaign"] == campaign and not (r.get("source") or "").startswith(prefix)
-                    }
-                )
-            ]
+            sources = {
+                r.get("source") or ""
+                for r in self.db.theme_changes
+                if r["campaign"] == campaign
+            }
+            self._result = [(src,) for src in sorted(sources) if not src.startswith(prefix)]
             return
 
         # --theme-only sem mudança: confere (FOR UPDATE) que o tema ainda é o lido.
