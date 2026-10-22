@@ -66,8 +66,12 @@ tokens de entrada). Por artigo:
   - Mesma regra do null-theme para a janela: --date-to obrigatório, ≤ hoje BRT.
 
 Modo --theme-only (DS-1, tema 26 "Defesa Civil e Gestão de Desastres"): a mesma
-chamada combinada, mas grava SÓ os ids de tema. Seleções (sempre com --theme-only
-e --campaign <id>):
+chamada combinada, mas grava SÓ os ids de tema. As seleções de tema implicam o modo
+(--theme-only é opcional, aceito por compatibilidade) e a campanha da auditoria
+`tema26-llm-d1` (--campaign aceita outra `tema26-llm-*`). Flags do contrato do DAG
+enrichment_backfill (22/10): --select theme-code --theme-code <c> | --select
+theme26-candidates, --date-from obrigatório, --date-to opcional, --limit, --workers,
+[--dry-run] e, no theme26-candidates, --term-fields. Seleções:
   - `--select theme-code --theme-code <código>`: artigos com qualquer nível de tema
     (l1/l2/l3/mais específico) na subárvore do código. Escopo mínimo do plano:
     `--theme-code 19`.
@@ -75,34 +79,45 @@ e --campaign <id>):
     (--extra-codes) do MDR ou com termo-chave ("defesa civil", "calamidade",
     "situação de emergência", "estado de emergência", "desastre", com e sem acento:
     não há `unaccent` no banco). O termo é buscado só no TÍTULO por padrão;
-    `--term-fields title-content` inclui o conteúdo (pega "calamidade fiscal" e
-    "desastre" figurado: mais custo e falsos positivos). `--extra-codes ''` deixa só
-    o bloco do 19.
+    `--term-fields title-content` inclui o conteúdo (escopo da D1, decidido em 22/10:
+    1.586 candidatos antes da 034). `--extra-codes ''` deixa só o bloco do 19.
 Por artigo:
     old = ids de tema atuais (lidos ANTES da chamada)
     result = classifier.classify_single(article)        # modelo = ENRICHMENT_MODEL_ID
     chain = resolve_theme_chain(result, parents)         # cadeia coerente l1→l2→l3
+    guarda do 26: artigo fora da subárvore do 19 só muda se chain.l1 == '26' (kept)
     numa transação:
       UPDATE news SET theme_* = novo WHERE unique_id = … AND theme_* IS NOT DISTINCT
         FROM old                                         # guarda: 0 linhas → theme_changed
       INSERT INTO news_theme_changes (campaign, unique_id, old_*_code, new_*_code,
-        source = 'llm:<model_id>')                       # UNIQUE (campaign, unique_id)
+        source = 'llm:<model_id>', note) ON CONFLICT (campaign, unique_id) DO UPDATE
+        … WHERE reverted_at IS NOT NULL RETURNING 1     # sem linha → already_audited
     quota_governor.record_usage(...)
   - NUNCA grava resumo, sentimento (news_features), NER, content_embedding nem
     publica evento. O resumo e o sentimento da resposta são descartados.
   - Cadeia de tema: vale o código VÁLIDO (existente na taxonomia do banco) mais
-    profundo da resposta, com l1/l2 derivados dele; ele pode estar no máximo
-    MAX_LEVEL_DROP (1) nível acima do mais profundo que o LLM pediu. Ex.: pediu
-    26.01.09 (inexistente) → 26.01; pediu 19.03.03 e só o 19 existe → resposta
-    inválida (`invalid_theme`: não grava nem audita; o artigo volta no próximo run).
-  - Sem mudança (`unchanged`): sem UPDATE, mas audita (old = new), depois de
-    conferir com SELECT … FOR UPDATE que o tema ainda é o lido. Todo artigo auditado
-    na campanha sai da seleção: o run é idempotente e retomável, inclusive para os
-    artigos que continuam no 19.
+    profundo da resposta ou do prefixo dela um nível acima, com l1/l2 derivados dele;
+    ele pode estar no máximo MAX_LEVEL_DROP (1) nível acima do mais profundo que o
+    LLM pediu. Ex.: pediu 26.01.09 (inexistente) → 26.01, mesmo sem o campo do L2;
+    pediu 19.03.03 e só o 19 existe → resposta inválida (`invalid_theme`: não grava
+    nem audita; o artigo volta no próximo run).
+  - Guarda do tema 26: o artigo do bloco do 19 (algum dos 4 níveis na subárvore do
+    19) sempre recebe a nova classificação. O de fora (04 / 05.02.01 / 15.02.03) só
+    tem o tema gravado se o novo L1 for o 26; senão `kept`: sem UPDATE, audita
+    old = new com a sugestão do LLM na note ("kept: o LLM sugeriu …").
+  - Sem mudança (`unchanged`) e `kept`: sem UPDATE, mas audita (old = new), depois de
+    conferir com SELECT … FOR UPDATE que o tema ainda é o lido.
+  - Idempotência: todo artigo auditado na campanha e NÃO revertido sai da seleção (o
+    run é idempotente e retomável, inclusive para os que continuam no 19 e os kept).
+    O revertido pelo rollback da 034 (reverted_at) volta a ser candidato, e a nova
+    gravação reaproveita a linha dele (UNIQUE (campaign, unique_id)). Um run
+    concorrente que já auditou o artigo faz este desfazer o UPDATE (`already_audited`).
   - Preflight (também no --dry-run): a tabela news_theme_changes (migração 034 do
-    data-platform) tem de existir com as colunas do contrato e UNIQUE (campaign,
-    unique_id), e a campanha não pode ter registros de fonte que não seja `llm:*`
-    (ex.: a campanha da própria 034). Sem isso, o script sai com 1 e mensagem clara.
+    data-platform) tem de existir com as 12 colunas do contrato (campaign, unique_id,
+    os 8 códigos, source, changed_at) e UNIQUE (campaign, unique_id) sem predicado, e
+    a campanha não pode ter registros de fonte que não seja `llm:*` (ex.: a campanha
+    da própria 034). Colunas a mais são aceitas; note e reverted_at são usadas quando
+    existem. Sem isso, o script sai com 1 e mensagem clara.
   - `theme26-candidates` exige 26/26.01/26.02 no banco e na taxonomia do classificador.
   - --date-to é opcional e sem teto: só entram artigos que JÁ têm tema, e o worker
     ao vivo devolve `skipped` para eles. Artigo que perdeu o tema no meio do run
@@ -125,12 +140,10 @@ Uso (sempre --dry-run → --limit 10 → completo, cada etapa com OK):
         [--limit 500] [--workers 1] [--dry-run]
     # DS-2 (depois do deploy do SC-1):
     ... --select null-summary --date-from 2026-06-01 --date-to <hoje BRT> [...]
-    # DS-1 (D1, depois da 034 e do redeploy do worker):
-    ... --select theme26-candidates --date-from 2018-01-01 --theme-only \\
-        --campaign tema26-llm-d1 [--term-fields title|title-content] \\
-        [--extra-codes 04,05.02.01,15.02.03] [--limit 10] [--dry-run]
-    ... --select theme-code --theme-code 19 --date-from 2018-01-01 --theme-only \\
-        --campaign tema26-llm-d1 [...]
+    # DS-1 (D1, depois da 034 e do redeploy do worker; campanha tema26-llm-d1):
+    ... --select theme26-candidates --term-fields title-content \\
+        --date-from 2018-01-01 [--limit 10] [--workers 2] [--dry-run]
+    ... --select theme-code --theme-code 19 --date-from 2018-01-01 [...]
 """
 import argparse
 import datetime
@@ -139,6 +152,7 @@ import re
 import sys
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from dataclasses import dataclass
 from zoneinfo import ZoneInfo
 
 import psycopg2
@@ -232,7 +246,9 @@ DEFAULT_TERM_FIELDS = "title"
 MAX_LEVEL_DROP = 1
 
 AUDIT_TABLE = "news_theme_changes"
-# Contrato do plano (22/10), igual ao da migração 034 do data-platform.
+# Contrato do plano (22/10), o da migração 034 do data-platform: o preflight exige estas
+# 12 colunas; as demais da 034 (id, note, reverted_at) são aceitas e, quando existem,
+# usadas (note na gravação; reverted_at na idempotência e no reaproveitamento da linha).
 AUDIT_REQUIRED_COLUMNS = (
     "campaign",
     "unique_id",
@@ -248,9 +264,44 @@ AUDIT_REQUIRED_COLUMNS = (
     "changed_at",
 )
 LLM_SOURCE_PREFIX = "llm:"
+_AUDIT_CODE_COLUMNS = AUDIT_REQUIRED_COLUMNS[2:10]  # old_*_code, new_*_code
 
+# Campanha da reclassificação por LLM (contrato de 22/10). As seleções de tema a usam
+# por padrão; --campaign aceita outra tema26-llm-* (ex.: tema26-llm-d1b), porque o
+# rollback da 034 e o MERGE do BigQuery só leem tema26-* e tema26-034/tema26-rollback
+# são da própria migração. Até 50 caracteres (VARCHAR(50) na 034).
+DEFAULT_THEME_CAMPAIGN = "tema26-llm-d1"
+LLM_CAMPAIGN_PREFIX = "tema26-llm-"
 _CODE_RE = re.compile(r"^\d{2}(?:\.\d{2}){0,2}$")
-_CAMPAIGN_RE = re.compile(r"^[a-z0-9][a-z0-9._-]{0,49}$")
+_CAMPAIGN_RE = re.compile(r"^tema26-llm-[a-z0-9][a-z0-9._-]{0,38}$")
+
+# Guarda do tema 26: artigo fora da subárvore do 19 (em nenhum dos 4 níveis) só tem o
+# tema gravado se o novo L1 for o 26; senão é auditado como 'kept' e mantém o tema.
+THEME26_CODE = THEME26_TARGET_CODES[0]
+NOTE_OK = "ok: reclassificado pelo LLM"
+NOTE_UNCHANGED = "unchanged: o LLM manteve o tema"
+
+
+@dataclass(frozen=True)
+class AuditSchema:
+    """Colunas opcionais da auditoria presentes no banco (o preflight as detecta).
+
+    has_note: grava a `note` (ok / unchanged / kept: <sugestão>).
+    has_reverted_at: só a linha NÃO revertida tira o artigo da seleção, e a gravação
+    reaproveita a linha revertida pelo rollback da 034 (UNIQUE (campaign, unique_id)).
+    Sem reverted_at, nenhuma linha é revertida: todo auditado sai da seleção.
+    """
+
+    has_note: bool = True
+    has_reverted_at: bool = True
+
+    @classmethod
+    def from_columns(cls, columns) -> "AuditSchema":
+        columns = set(columns)
+        return cls(has_note="note" in columns, has_reverted_at="reverted_at" in columns)
+
+
+CONTRACT_AUDIT = AuditSchema()
 
 _THEME_ID_COLUMNS = ("theme_l1_id", "theme_l2_id", "theme_l3_id", "most_specific_theme_id")
 _OLD_KEYS = ("old_l1", "old_l2", "old_l3", "old_most_specific")
@@ -262,10 +313,17 @@ _THEMES_OF_ARTICLE = (
     "            WHERE t.id IN (n.theme_l1_id, n.theme_l2_id, n.theme_l3_id,"
     " n.most_specific_theme_id)"
 )
-_NOT_AUDITED = """NOT EXISTS (
+
+
+def _not_audited_sql(has_reverted_at: bool) -> str:
+    """Idempotência: sai da seleção o artigo já auditado na campanha e NÃO revertido
+    (o rollback da 034 marca reverted_at; o revertido volta a ser candidato)."""
+    active = " AND c.reverted_at IS NULL" if has_reverted_at else ""
+    return f"""NOT EXISTS (
             SELECT 1 FROM news_theme_changes c
-            WHERE c.campaign = %(campaign)s AND c.unique_id = n.unique_id
+            WHERE c.campaign = %(campaign)s AND c.unique_id = n.unique_id{active}
         )"""
+
 
 READ_THEME_IDS_SQL = """
     SELECT theme_l1_id, theme_l2_id, theme_l3_id, most_specific_theme_id
@@ -298,14 +356,38 @@ LOCK_UNCHANGED_SQL = f"""
     FOR UPDATE
 """
 
-INSERT_AUDIT_SQL = """
-    INSERT INTO news_theme_changes (
-        campaign, unique_id,
-        old_l1_code, old_l2_code, old_l3_code, old_most_specific_code,
-        new_l1_code, new_l2_code, new_l3_code, new_most_specific_code,
-        source
-    ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+
+def build_insert_audit_sql(audit: AuditSchema = CONTRACT_AUDIT) -> str:
+    """INSERT de uma linha na auditoria, com RETURNING 1.
+
+    UNIQUE (campaign, unique_id): uma linha por artigo na campanha.
+      - Com reverted_at: ON CONFLICT DO UPDATE só sobre a linha REVERTIDA (o rollback
+        da 034 a marcou): reaproveita a linha com os códigos novos e reverted_at = NULL.
+      - Sem reverted_at: ON CONFLICT DO NOTHING.
+    Conflito com linha ativa (run concorrente já auditou) não devolve linha: quem
+    chama desfaz o UPDATE (already_audited).
+    """
+    columns = ["campaign", "unique_id", *_AUDIT_CODE_COLUMNS, "source"]
+    if audit.has_note:
+        columns.append("note")
+    if audit.has_reverted_at:
+        sets = [f"{col} = EXCLUDED.{col}" for col in columns[2:]]
+        sets += ["changed_at = NOW()", "reverted_at = NULL"]
+        conflict = (
+            "ON CONFLICT (campaign, unique_id) DO UPDATE SET\n        "
+            + ",\n        ".join(sets)
+            + "\n    WHERE news_theme_changes.reverted_at IS NOT NULL"
+        )
+    else:
+        conflict = "ON CONFLICT (campaign, unique_id) DO NOTHING"
+    placeholders = ", ".join(["%s"] * len(columns))
+    return f"""
+    INSERT INTO news_theme_changes ({", ".join(columns)})
+    VALUES ({placeholders})
+    {conflict}
+    RETURNING 1
 """
+
 
 AUDIT_COLUMNS_SQL = """
     SELECT column_name FROM information_schema.columns
@@ -338,12 +420,15 @@ CAMPAIGN_FOREIGN_SOURCES_SQL = """
 """
 
 
-def _theme_select_sql(select: str, with_date_to: bool, term_fields: str) -> str:
+def _theme_select_sql(
+    select: str, with_date_to: bool, term_fields: str, has_reverted_at: bool = True
+) -> str:
     """WHERE das seleções de tema (theme-code | theme26-candidates).
 
     theme-code:          (subárvore) AND NOT EXISTS(campanha) AND janela
     theme26-candidates:  ((subárvore do 19) OR (extra AND (MDR OR termos)))
                          AND NOT EXISTS(campanha) AND janela
+    NOT EXISTS(campanha): auditado na campanha e não revertido (ver _not_audited_sql).
     """
     if term_fields not in TERM_FIELDS:
         raise ValueError(f"term_fields inválido: {term_fields!r} (use {', '.join(TERM_FIELDS)})")
@@ -375,7 +460,7 @@ def _theme_select_sql(select: str, with_date_to: bool, term_fields: str) -> str:
         SELECT n.unique_id
         FROM news n
         WHERE {predicate}
-          AND {_NOT_AUDITED}
+          AND {_not_audited_sql(has_reverted_at)}
           AND n.published_at >= {_BRT_DAY_START.format(param='date_from')}
           {upper}
         ORDER BY n.published_at DESC
@@ -384,7 +469,10 @@ def _theme_select_sql(select: str, with_date_to: bool, term_fields: str) -> str:
 
 
 def build_select_sql(
-    select: str, with_date_to: bool, term_fields: str = DEFAULT_TERM_FIELDS
+    select: str,
+    with_date_to: bool,
+    term_fields: str = DEFAULT_TERM_FIELDS,
+    audit_has_reverted_at: bool = True,
 ) -> str:
     """SELECT da janela: `null-theme` (tema NULL), `mock` (summary '[MOCK]%'),
     `null-summary` (tema gravado e summary NULL), `theme-code` (subárvore de um
@@ -392,12 +480,13 @@ def build_select_sql(
 
     Parâmetros nomeados (ver build_select_params). Ordem: mais recentes primeiro.
     `null-theme`/`null-summary` sem teto (with_date_to=False) são recusados: ver o
-    docstring do módulo. `term_fields` só vale para o theme26-candidates.
+    docstring do módulo. `term_fields` e `audit_has_reverted_at` (a auditoria tem a
+    coluna reverted_at) só valem para as seleções de tema.
     """
     if select in SELECTS_REQUIRING_DATE_TO and not with_date_to:
         raise ValueError(f"--select {select} exige --date-to (teto da janela)")
     if select in THEME_SELECTS:
-        return _theme_select_sql(select, with_date_to, term_fields)
+        return _theme_select_sql(select, with_date_to, term_fields, audit_has_reverted_at)
     if select == "null-theme":
         predicate = "n.most_specific_theme_id IS NULL"
     elif select == "mock":
@@ -472,8 +561,14 @@ def get_window_uids(
     campaign=None,
     term_fields: str = DEFAULT_TERM_FIELDS,
     extra_codes=DEFAULT_EXTRA_CODES,
+    audit_has_reverted_at: bool = True,
 ) -> list:
-    sql = build_select_sql(select, with_date_to=bool(date_to), term_fields=term_fields)
+    sql = build_select_sql(
+        select,
+        with_date_to=bool(date_to),
+        term_fields=term_fields,
+        audit_has_reverted_at=audit_has_reverted_at,
+    )
     params = build_select_params(
         select,
         date_from,
@@ -639,10 +734,14 @@ def resolve_theme_chain(result: dict, parents: dict):
 
     Regra (MAX_LEVEL_DROP = 1):
       1. Considera os códigos bem formados dos campos l3, mais específico, l2 e l1
-         (texto que não é código, como um rótulo, é ignorado).
+         (texto que não é código, como um rótulo, é ignorado) e, depois deles, o
+         prefixo de cada um até MAX_LEVEL_DROP nível acima (26.01.09 → 26.01): o nível
+         válido acima de um código inexistente, mesmo que o LLM não tenha preenchido
+         o campo desse nível.
       2. Vale o código VÁLIDO (presente em `parents`, i.e. na taxonomia do banco)
-         mais profundo; no empate, a ordem acima. l1/l2 vêm da taxonomia, não da
-         resposta (ex.: l1 '04' com l3 '26.01.03' vira 26 → 26.01 → 26.01.03).
+         mais profundo; no empate, a ordem acima (o código explícito vence o
+         prefixo). l1/l2 vêm da taxonomia, não da resposta (ex.: l1 '04' com l3
+         '26.01.03' vira 26 → 26.01 → 26.01.03).
       3. Ele pode estar no máximo MAX_LEVEL_DROP nível acima do código mais profundo
          que o LLM pediu. Pediu 26.01.09 (inexistente) → 26.01; pediu 26.07
          (inexistente) → 26. Mas pediu 19.03.03 e só o 19 existe → None: rebaixar
@@ -657,7 +756,14 @@ def resolve_theme_chain(result: dict, parents: dict):
         value = (result or {}).get(field)
         if isinstance(value, str) and _CODE_RE.match(value.strip()):
             codes.append(value.strip())
-    valid = [code for code in codes if code in parents]
+    candidates = list(codes)
+    for code in codes:
+        for _ in range(MAX_LEVEL_DROP):
+            if "." not in code:
+                break
+            code = code.rsplit(".", 1)[0]
+            candidates.append(code)
+    valid = [code for code in candidates if code in parents]
     if not valid:
         return None
     requested = max(_code_depth(code) for code in codes)
@@ -673,12 +779,13 @@ def resolve_theme_chain(result: dict, parents: dict):
 
 
 def check_audit_table(campaign: str):
-    """Preflight da auditoria. Devolve a mensagem de erro, ou None se está tudo ok.
+    """Preflight da auditoria. Devolve (erro, AuditSchema): erro None se está ok.
 
-    Exige a tabela da migração 034 com as colunas do contrato, UNIQUE (campaign,
-    unique_id) sem predicado e a campanha sem registros de fonte que não seja
-    `llm:*` (reusar a campanha da 034 tiraria da seleção os artigos que ela auditou
-    e que continuam no 19). Colunas a mais são aceitas.
+    Exige a tabela da migração 034 com as 12 colunas do contrato
+    (AUDIT_REQUIRED_COLUMNS), UNIQUE (campaign, unique_id) sem predicado e a campanha
+    sem registros de fonte que não seja `llm:*` (reusar a campanha da 034 tiraria da
+    seleção os artigos que ela auditou e que continuam no 19). Colunas a mais são
+    aceitas; id, note e reverted_at, se existirem, entram no AuditSchema.
     """
     conn = _get_conn()
     try:
@@ -688,17 +795,22 @@ def check_audit_table(campaign: str):
         if not columns:
             return (
                 f"tabela {AUDIT_TABLE} ausente: rode antes a migração 034 do "
-                "data-platform (tema 26), que a cria"
+                "data-platform (tema 26), que a cria",
+                None,
             )
         missing = [col for col in AUDIT_REQUIRED_COLUMNS if col not in columns]
         if missing:
-            return f"{AUDIT_TABLE} sem as colunas {', '.join(missing)} (contrato da migração 034)"
+            return (
+                f"{AUDIT_TABLE} sem as colunas {', '.join(missing)} (contrato da migração 034)",
+                None,
+            )
         cur.execute(AUDIT_UNIQUE_SQL, (AUDIT_TABLE,))
         row = cur.fetchone()
         if not (row and row[0]):
             return (
                 f"{AUDIT_TABLE} sem UNIQUE (campaign, unique_id) (contrato da migração "
-                "034): sem ele a idempotência por campanha não é segura"
+                "034): sem ele a idempotência por campanha não é segura",
+                None,
             )
         cur.execute(CAMPAIGN_FOREIGN_SOURCES_SQL, (campaign, f"{LLM_SOURCE_PREFIX}%"))
         foreign = [row[0] for row in cur.fetchall()]
@@ -706,9 +818,10 @@ def check_audit_table(campaign: str):
             return (
                 f"a campanha {campaign!r} já tem registros de outra fonte "
                 f"({', '.join(foreign)}): use uma campanha própria do LLM "
-                "(ex.: tema26-llm-d1)"
+                f"(ex.: {DEFAULT_THEME_CAMPAIGN})",
+                None,
             )
-        return None
+        return None, AuditSchema.from_columns(columns)
     finally:
         conn.close()
 
@@ -725,17 +838,34 @@ def _read_theme_ids(uid: str):
         conn.close()
 
 
-def _write_theme_change(uid, campaign, source, old_ids, new_ids, id_to_code) -> str:
+def _write_theme_change(
+    uid,
+    campaign,
+    source,
+    old_ids,
+    new_ids,
+    id_to_code,
+    *,
+    status: str,
+    note: str,
+    audit: AuditSchema = CONTRACT_AUDIT,
+) -> str:
     """UPDATE guardado + INSERT na auditoria, na MESMA transação.
 
-    Devolve ok | unchanged | theme_changed. Exceção (ex.: UNIQUE da auditoria
-    violado por um run concorrente) desfaz tudo e sobe para quem chama.
+    new_ids == old_ids (unchanged / kept): sem UPDATE; confere com SELECT … FOR UPDATE
+    que o tema ainda é o lido e audita old = new. Senão, UPDATE com a guarda do tema
+    lido. Devolve `status` se gravou; theme_changed se outro processo mudou o tema;
+    already_audited se a campanha já tem linha ativa do artigo (run concorrente): nos
+    dois casos desfaz tudo. Exceção desfaz tudo e sobe para quem chama.
     """
     params = {"unique_id": uid}
     params.update(zip(_OLD_KEYS, old_ids))
     params.update(zip(_NEW_KEYS, new_ids))
     old_codes = [id_to_code.get(i) if i is not None else None for i in old_ids]
     new_codes = [id_to_code.get(i) if i is not None else None for i in new_ids]
+    values = (campaign, uid, *old_codes, *new_codes, source)
+    if audit.has_note:
+        values += (note,)
 
     conn = _get_conn()
     try:
@@ -745,14 +875,15 @@ def _write_theme_change(uid, campaign, source, old_ids, new_ids, id_to_code) -> 
             if cur.fetchone() is None:
                 conn.rollback()
                 return "theme_changed"
-            status = "unchanged"
         else:
             cur.execute(UPDATE_THEME_SQL, params)
             if cur.rowcount != 1:
                 conn.rollback()
                 return "theme_changed"
-            status = "ok"
-        cur.execute(INSERT_AUDIT_SQL, (campaign, uid, *old_codes, *new_codes, source))
+        cur.execute(build_insert_audit_sql(audit), values)
+        if cur.fetchone() is None:
+            conn.rollback()
+            return "already_audited"
         conn.commit()
         return status
     except Exception:
@@ -762,12 +893,38 @@ def _write_theme_change(uid, campaign, source, old_ids, new_ids, id_to_code) -> 
         conn.close()
 
 
-def make_theme_only_process(*, campaign: str, source: str, code_to_id: dict, parents: dict):
+def _in_theme26_base(codes) -> bool:
+    """O artigo tem algum dos 4 níveis na subárvore do 19 (o bloco do 19)?"""
+    prefix = f"{THEME26_BASE_CODE}."
+    return any(code == THEME26_BASE_CODE or code.startswith(prefix) for code in codes if code)
+
+
+def _kept_note(chain) -> str:
+    suggested = " > ".join(code for code in chain[:3] if code)
+    return (
+        f"kept: o LLM sugeriu {suggested}; artigo fora do {THEME26_BASE_CODE} só muda "
+        f"para o {THEME26_CODE}"
+    )
+
+
+def make_theme_only_process(
+    *,
+    campaign: str,
+    source: str,
+    code_to_id: dict,
+    parents: dict,
+    audit: AuditSchema = CONTRACT_AUDIT,
+):
     """Fábrica do `process(uid) -> (uid, status, usage)` do --theme-only.
 
-    status: ok | unchanged | theme_changed | invalid_theme | no_theme |
-    unknown_old_theme | missing | classification_failed | model_unavailable |
-    error:<Exceção>. Só ok/unchanged gravam auditoria (e saem da seleção).
+    status: ok | unchanged | kept | theme_changed | already_audited | invalid_theme |
+    no_theme | unknown_old_theme | missing | classification_failed |
+    model_unavailable | error:<Exceção>. Só ok/unchanged/kept gravam auditoria (e saem
+    da seleção).
+    Guarda do tema 26: artigo fora da subárvore do 19 (nenhum dos 4 níveis no 19) só
+    tem o tema gravado se o novo L1 for o 26; senão é `kept`: mantém o tema e audita
+    old = new, com a sugestão do LLM na note. O artigo do 19 sempre recebe a nova
+    classificação.
     NUNCA grava resumo, sentimento, NER nem publica evento.
     """
     id_to_code = {theme_id: code for code, theme_id in code_to_id.items()}
@@ -811,9 +968,27 @@ def make_theme_only_process(*, campaign: str, source: str, code_to_id: dict, par
             print(f"  {uid}: invalid_theme ({answer})")
             return uid, "invalid_theme", usage
         new_ids = tuple(code_to_id[code] if code else None for code in chain)
+        old_codes = [id_to_code.get(i) if i is not None else None for i in old_ids]
+
+        if new_ids == tuple(old_ids):
+            status, note, target = "unchanged", NOTE_UNCHANGED, new_ids
+        elif not _in_theme26_base(old_codes) and chain[0] != THEME26_CODE:
+            status, note, target = "kept", _kept_note(chain), tuple(old_ids)
+        else:
+            status, note, target = "ok", NOTE_OK, new_ids
 
         try:
-            status = _write_theme_change(uid, campaign, source, old_ids, new_ids, id_to_code)
+            status = _write_theme_change(
+                uid,
+                campaign,
+                source,
+                old_ids,
+                target,
+                id_to_code,
+                status=status,
+                note=note,
+                audit=audit,
+            )
         except Exception as e:  # noqa: BLE001 — tokens já gastos: devolve o usage
             print(f"  {uid}: error ({type(e).__name__}: {e})")
             return uid, f"error:{type(e).__name__}", usage
@@ -986,7 +1161,7 @@ def build_arg_parser() -> argparse.ArgumentParser:
         help="null-theme: tema NULL na janela; mock: summary LIKE '[MOCK]%%' na janela; "
         "null-summary: tema gravado e summary NULL na janela (só o resumo, prompt enxuto); "
         "theme-code: subárvore de --theme-code; theme26-candidates: candidatos ao tema 26 "
-        "(as duas últimas só com --theme-only e --campaign)",
+        f"(as duas últimas gravam só o tema, na campanha {DEFAULT_THEME_CAMPAIGN} por padrão)",
     )
     ap.add_argument(
         "--theme-code",
@@ -997,14 +1172,16 @@ def build_arg_parser() -> argparse.ArgumentParser:
     ap.add_argument(
         "--theme-only",
         action="store_true",
-        help="grava SÓ os ids de tema, com guarda e auditoria em news_theme_changes "
-        "(obrigatório nas seleções de tema; proibido nas demais)",
+        help="grava SÓ os ids de tema, com guarda e auditoria em news_theme_changes. "
+        "Implícito nas seleções de tema (aceito por compatibilidade com o DAG); proibido "
+        "nas demais",
     )
     ap.add_argument(
         "--campaign",
         default=None,
-        help="campanha da auditoria (obrigatória com --theme-only), ex.: tema26-llm-d1; "
-        "[a-z0-9._-], até 50 caracteres; os já auditados nela saem da seleção",
+        help=f"campanha da auditoria nas seleções de tema (padrão {DEFAULT_THEME_CAMPAIGN}); "
+        f"só {LLM_CAMPAIGN_PREFIX}* ([a-z0-9._-], até 50 caracteres); os auditados nela e "
+        "não revertidos saem da seleção",
     )
     ap.add_argument(
         "--term-fields",
@@ -1040,26 +1217,38 @@ def build_arg_parser() -> argparse.ArgumentParser:
     return ap
 
 
+def _theme_campaign(args) -> str | None:
+    """Campanha da auditoria: a de --campaign ou a padrão, só nas seleções de tema."""
+    if args.select not in THEME_SELECTS:
+        return None
+    return DEFAULT_THEME_CAMPAIGN if args.campaign is None else args.campaign
+
+
 def _theme_args_error(args) -> str | None:
-    """Combinações de argumentos do --theme-only (checadas antes de tocar o banco)."""
+    """Combinações de argumentos das seleções de tema (checadas antes de tocar o banco).
+
+    As seleções de tema implicam o modo só-tema (--theme-only é opcional) e a campanha
+    padrão: o DAG enrichment_backfill passa só --select/--theme-code/--term-fields,
+    --date-from/--date-to, --limit/--workers/[--dry-run].
+    """
     theme_select = args.select in THEME_SELECTS
-    if theme_select and not args.theme_only:
-        return f"--select {args.select} exige --theme-only (grava só o tema)"
     if args.theme_only and not theme_select:
         return (
             f"--theme-only só vale com --select {' ou '.join(sorted(THEME_SELECTS))} "
             f"(não com {args.select})"
         )
-    if args.campaign is not None and not args.theme_only:
-        return "--campaign só vale com --theme-only"
-    if args.theme_only:
-        if args.campaign is None:
-            return "--theme-only exige --campaign (ex.: tema26-llm-d1)"
-        if not _CAMPAIGN_RE.match(args.campaign):
-            return (
-                f"--campaign inválida {args.campaign!r}: use [a-z0-9._-], começando por "
-                "letra ou dígito, até 50 caracteres (ex.: tema26-llm-d1)"
-            )
+    if args.campaign is not None and not theme_select:
+        return (
+            f"--campaign só vale com --select {' ou '.join(sorted(THEME_SELECTS))} "
+            f"(não com {args.select})"
+        )
+    campaign = _theme_campaign(args)
+    if campaign is not None and not _CAMPAIGN_RE.match(campaign):
+        return (
+            f"--campaign inválida {campaign!r}: use {LLM_CAMPAIGN_PREFIX}<id> ([a-z0-9._-], "
+            "até 50 caracteres; ex.: tema26-llm-d1). O rollback da 034 e o MERGE do "
+            "BigQuery só leem tema26-*, e tema26-034/tema26-rollback são da migração"
+        )
     if args.select == "theme-code" and not args.theme_code:
         return "--select theme-code exige --theme-code (ex.: 19)"
     if args.theme_code and args.select != "theme-code":
@@ -1098,7 +1287,10 @@ def main(argv=None) -> int:
     if theme_error:
         print(f"ERRO: {theme_error}", file=sys.stderr)
         return 1
-    theme_only = args.theme_only
+    # As seleções de tema implicam o modo só-tema e a campanha (padrão tema26-llm-d1).
+    theme_only = args.select in THEME_SELECTS
+    campaign = _theme_campaign(args)
+    audit = CONTRACT_AUDIT
     term_fields = args.term_fields or DEFAULT_TERM_FIELDS
     extra_codes = DEFAULT_EXTRA_CODES if args.extra_codes is None else args.extra_codes
 
@@ -1150,7 +1342,7 @@ def main(argv=None) -> int:
     if theme_only:
         # Preflight ANTES da seleção (também no --dry-run): a seleção depende da
         # tabela de auditoria, e a escrita, do contrato dela.
-        audit_error = check_audit_table(args.campaign)
+        audit_error, audit = check_audit_table(campaign)
         if audit_error:
             print(f"ERRO: {audit_error}", file=sys.stderr)
             return 1
@@ -1159,7 +1351,10 @@ def main(argv=None) -> int:
         if taxonomy_error:
             print(f"ERRO: {taxonomy_error}", file=sys.stderr)
             return 1
-        detail = f"  campanha={args.campaign}"
+        detail = (
+            f"  campanha={campaign}  auditoria: note={'sim' if audit.has_note else 'não'}"
+            f" reverted_at={'sim' if audit.has_reverted_at else 'não'}"
+        )
         if args.select == "theme-code":
             detail += f"  theme_code={args.theme_code}"
         else:
@@ -1175,9 +1370,10 @@ def main(argv=None) -> int:
         args.date_to,
         args.limit,
         theme_code=args.theme_code,
-        campaign=args.campaign,
+        campaign=campaign,
         term_fields=term_fields,
         extra_codes=extra_codes,
+        audit_has_reverted_at=audit.has_reverted_at,
     )
     print(f"selecionados={len(uids)} (limit={args.limit})")
     if not uids:
@@ -1219,10 +1415,11 @@ def main(argv=None) -> int:
                 )
                 return 1
         process = make_theme_only_process(
-            campaign=args.campaign,
+            campaign=campaign,
             source=f"{LLM_SOURCE_PREFIX}{model_id}",
             code_to_id=code_to_id,
             parents=parents,
+            audit=audit,
         )
     elif summary_only:
         process = process_one_summary
@@ -1243,7 +1440,7 @@ def main(argv=None) -> int:
     if theme_only:
         print(
             "lembrete: sync do Typesense e MERGE do BigQuery a partir da auditoria "
-            f"(campanha {args.campaign})"
+            f"(campanha {campaign})"
         )
     return 1 if stats["model_unavailable"] else 0
 
