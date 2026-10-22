@@ -1318,6 +1318,24 @@ class TestMainThemeOnly:
         env.upsert.assert_not_called()
         env.update_enrichment.assert_not_called()
 
+    def test_source_maior_que_a_coluna_falha_antes_de_chamar_o_bedrock(
+        self, rec, env, monkeypatch, capsys
+    ):
+        # source VARCHAR(50) na 034: 'llm:' + um perfil global passaria do limite e cada
+        # INSERT falharia depois da chamada paga.
+        model = "global.anthropic.claude-haiku-4-5-20251001-v1:0"
+        assert len(f"llm:{model}") > 50
+        monkeypatch.setenv("ENRICHMENT_MODEL_ID", model)
+        env.clf.llm_client.model_id = model
+        self._seed(env.db)
+
+        code = rec.main(self._argv())
+
+        assert code == 1
+        assert "50" in capsys.readouterr().err
+        env.clf.classify_single.assert_not_called()
+        assert not any(sql.lower().startswith("select n.unique_id") for sql, _ in env.db.log)
+
     def test_campanha_padrao(self, rec):
         assert rec.DEFAULT_THEME_CAMPAIGN == "tema26-llm-d1"
 
