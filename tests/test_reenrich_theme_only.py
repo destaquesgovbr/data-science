@@ -75,6 +75,10 @@ AUDIT_COLUMNS = {
     "source",
     "changed_at",
 }
+# Tabela da 034 (contrato final de 22/10): as 12 colunas exigidas mais id, note e
+# reverted_at (aceitas como extras; usadas quando existem).
+CONTRACT_COLUMNS = AUDIT_COLUMNS | {"id", "note", "reverted_at"}
+SOURCE = f"llm:{HAIKU45}"
 EOL_ERROR = (
     "ResourceNotFoundException: This model version has reached the end of its life. "
     "Please refer to the AWS documentation for more details."
@@ -145,7 +149,7 @@ def rec():
 def env(monkeypatch, rec):
     db = FakeDB()
     db.seed_themes(CODE_TO_ID)
-    db.theme_changes_columns = set(AUDIT_COLUMNS)
+    db.theme_changes_columns = set(CONTRACT_COLUMNS)
     monkeypatch.setenv("DATABASE_URL", "postgresql://fake")
     monkeypatch.setenv("ENRICHMENT_MODEL_ID", HAIKU45)
     monkeypatch.delenv("BEDROCK_DAILY_TOKEN_QUOTA", raising=False)
@@ -173,19 +177,20 @@ def env(monkeypatch, rec):
     )
 
 
-def _process(rec, campaign=CAMPAIGN):
+def _process(rec, campaign=CAMPAIGN, audit_columns=CONTRACT_COLUMNS):
     return rec.make_theme_only_process(
         campaign=campaign,
-        source=f"llm:{HAIKU45}",
+        source=SOURCE,
         code_to_id=dict(CODE_TO_ID),
         parents=rec.build_theme_parents(TAXONOMY),
+        audit=rec.AuditSchema.from_columns(audit_columns),
     )
 
 
-def _run(rec, uids, campaign=CAMPAIGN, **kw):
+def _run(rec, uids, campaign=CAMPAIGN, audit_columns=CONTRACT_COLUMNS, **kw):
     params = dict(model_id=HAIKU45, daily_quota=None, quota_fraction=0.8, workers=1)
     params.update(kw)
-    return rec.run_reenrich(uids, process=_process(rec, campaign), **params)
+    return rec.run_reenrich(uids, process=_process(rec, campaign, audit_columns), **params)
 
 
 def _norm(sql):
@@ -212,10 +217,26 @@ class TestSelectSqlTema:
         "exists ( select 1 from themes t where t.id in "
         "(n.theme_l1_id, n.theme_l2_id, n.theme_l3_id, n.most_specific_theme_id)"
     )
+    # Idempotência: sai da seleção o artigo auditado na campanha e NÃO revertido (o
+    # rollback da 034 marca reverted_at; o artigo revertido volta a ser candidato).
     _NOT_AUDITED = (
+        "not exists ( select 1 from news_theme_changes c "
+        "where c.campaign = %(campaign)s and c.unique_id = n.unique_id "
+        "and c.reverted_at is null )"
+    )
+    _NOT_AUDITED_SEM_REVERTED_AT = (
         "not exists ( select 1 from news_theme_changes c "
         "where c.campaign = %(campaign)s and c.unique_id = n.unique_id )"
     )
+
+    def test_auditoria_sem_reverted_at_exclui_todo_auditado(self, rec):
+        # Tabela só com as 12 colunas exigidas: nenhuma linha é "revertida".
+        for select in ("theme-code", "theme26-candidates"):
+            sql = _norm(
+                rec.build_select_sql(select, with_date_to=False, audit_has_reverted_at=False)
+            )
+            assert self._NOT_AUDITED_SEM_REVERTED_AT in sql
+            assert "reverted_at" not in sql
 
     def test_theme_code(self, rec):
         sql = _norm(rec.build_select_sql("theme-code", with_date_to=False))
@@ -381,6 +402,20 @@ class TestSelecao:
 
         assert uids == ["pendente", "feito-em-outra"]
 
+    def test_auditado_e_revertido_volta_a_ser_candidato(self, rec, env):
+        env.db.seed_news("feito", "2026-10-01", **_ids("19"))
+        env.db.seed_news("revertido", "2026-10-02", **_ids("19"))
+        env.db.theme_changes += [
+            {"campaign": CAMPAIGN, "unique_id": "feito", "reverted_at": None},
+            {"campaign": CAMPAIGN, "unique_id": "revertido", "reverted_at": "2026-11-12"},
+        ]
+
+        uids = rec.get_window_uids(
+            "theme-code", "2023-01-01", None, 100, theme_code="19", campaign=CAMPAIGN
+        )
+
+        assert uids == ["revertido"]
+
     @staticmethod
     def _seed_theme26_corpus(db):
         db.seed_news("l1-19", "2026-10-01", agency_key="defesa", **_ids("19", "19.05", "19.05.01"))
@@ -513,12 +548,23 @@ class TestCadeiaDeTema:
             # L3 pedido, só o L1 válido: cairia dois níveis → inválida.
             (("19", "19.03", "19.03.03"), None),
             (("26", "26.07", "26.07.01"), None),
-            # Só o L3 informado, inexistente, e nada acima válido.
-            ((None, None, "26.01.09"), None),
+            # O nível acima de um código inexistente é o prefixo dele, mesmo quando o
+            # LLM não preencheu o campo do L2.
+            ((None, None, "26.01.09"), ("26", "26.01", None, "26.01")),
+            (("26", None, "26.01.09"), ("26", "26.01", None, "26.01")),
+            ((None, "26.07", None), ("26", None, None, "26")),
+            # Prefixo também inexistente: cairia dois níveis → inválida.
+            ((None, None, "26.07.01"), None),
         ],
     )
     def test_cai_no_maximo_um_nivel(self, rec, parents, resposta, esperado):
         assert rec.resolve_theme_chain(_result(*resposta), parents) == esperado
+
+    def test_codigo_valido_explicito_vence_o_prefixo_no_empate(self, rec, parents):
+        # L2 válido escolhido pelo LLM (04.03) e L3 inexistente de outro ramo
+        # (26.01.09 → 26.01): mesma profundidade, vale o código explícito.
+        result = _result("04", "04.03", "26.01.09")
+        assert rec.resolve_theme_chain(result, parents) == ("04", "04.03", None, "04.03")
 
     def test_codigo_mal_formado_e_ignorado(self, rec, parents):
         result = _result("26", "Defesa Civil", "26.01.03")
@@ -586,8 +632,24 @@ class TestFluxoThemeOnly:
             "new_l2_code": "26.01",
             "new_l3_code": "26.01.03",
             "new_most_specific_code": "26.01.03",
-            "source": f"llm:{HAIKU45}",
+            "source": SOURCE,
+            "note": "ok: reclassificado pelo LLM",
         }
+
+    def test_insert_da_auditoria_com_upsert_so_sobre_linha_revertida(self, rec, env):
+        self._seed_19(env.db, "u1")
+
+        _run(rec, ["u1"])
+
+        [insert] = [
+            _norm(sql)
+            for sql, _ in env.db.log
+            if sql.lower().startswith("insert into news_theme_changes")
+        ]
+        assert "on conflict (campaign, unique_id) do update set" in insert
+        assert "reverted_at = null" in insert
+        assert "where news_theme_changes.reverted_at is not null" in insert
+        assert insert.endswith("returning 1")
 
     def test_update_com_guarda_do_tema_antigo_e_sem_resumo(self, rec, env):
         self._seed_19(env.db, "u1")
@@ -672,6 +734,7 @@ class TestFluxoThemeOnly:
         assert _news_updates(env.db) == []
         row = _audit(env.db, "u1")
         assert row["old_most_specific_code"] == row["new_most_specific_code"] == "26.01.03"
+        assert row["note"] == "unchanged: o LLM manteve o tema"
 
     def test_sem_mudanca_confere_o_tema_atual_antes_de_auditar(self, rec, env):
         env.db.seed_news("u1", "2026-10-01", **_ids("26", "26.01", "26.01.03"))
@@ -756,16 +819,166 @@ class TestFluxoThemeOnly:
         assert stats["model_unavailable"] is True
         assert env.clf.classify_single.call_count == 1
 
-    def test_falha_na_auditoria_desfaz_o_update(self, rec, env):
-        # Mesma campanha já registrada por um run concorrente (UNIQUE).
+    def test_ja_auditado_por_run_concorrente_desfaz_o_update(self, rec, env):
+        # Mesma campanha já registrada (não revertida) por um run concorrente: o
+        # ON CONFLICT não devolve linha e o UPDATE é desfeito.
         self._seed_19(env.db, "u1")
-        env.db.theme_changes.append({"campaign": CAMPAIGN, "unique_id": "u1"})
+        env.db.theme_changes.append(
+            {"campaign": CAMPAIGN, "unique_id": "u1", "source": SOURCE, "reverted_at": None}
+        )
+
+        stats = _run(rec, ["u1"])
+
+        assert stats["already_audited"] == 1
+        assert "ok" not in stats
+        assert env.db.news["u1"]["theme_l1_id"] == 10  # UPDATE desfeito (rollback)
+        assert env.db.rollbacks >= 1
+        assert env.db.theme_changes == [
+            {"campaign": CAMPAIGN, "unique_id": "u1", "source": SOURCE, "reverted_at": None}
+        ]
+        assert env.db.ledger[HAIKU45] == USAGE  # tokens gastos contam
+
+    def test_falha_na_auditoria_desfaz_o_update(self, rec, env):
+        # Tabela removida no meio do run: o INSERT falha e o UPDATE é desfeito.
+        self._seed_19(env.db, "u1")
+        env.db.theme_changes_columns = None
 
         stats = _run(rec, ["u1"])
 
         assert stats["error"] == 1
         assert env.db.news["u1"]["theme_l1_id"] == 10  # UPDATE desfeito (rollback)
         assert env.db.rollbacks >= 1
+
+    def test_linha_revertida_e_reaproveitada(self, rec, env):
+        # Rollback da 034 marcou reverted_at: o artigo volta à seleção e a nova
+        # gravação reaproveita a linha (UNIQUE (campaign, unique_id)).
+        self._seed_19(env.db, "u1")
+        env.db.theme_changes.append(
+            {
+                "campaign": CAMPAIGN,
+                "unique_id": "u1",
+                "old_l1_code": "04",
+                "new_l1_code": "26",
+                "source": SOURCE,
+                "note": "ok: reclassificado pelo LLM",
+                "reverted_at": "2026-11-12T10:00:00Z",
+            }
+        )
+
+        stats = _run(rec, ["u1"])
+
+        assert stats["ok"] == 1
+        row = _audit(env.db, "u1")
+        assert row["reverted_at"] is None
+        assert (row["old_l1_code"], row["new_l1_code"]) == ("19", "26")
+        assert env.db.news["u1"]["theme_l1_id"] == 20
+
+    def test_auditoria_so_com_as_12_colunas(self, rec, env):
+        # Sem note nem reverted_at: grava sem note e ON CONFLICT DO NOTHING.
+        self._seed_19(env.db, "u1", "u2")
+        env.db.theme_changes_columns = set(AUDIT_COLUMNS)
+        env.db.theme_changes.append({"campaign": CAMPAIGN, "unique_id": "u2", "source": SOURCE})
+
+        stats = _run(rec, ["u1", "u2"], audit_columns=AUDIT_COLUMNS)
+
+        assert stats["ok"] == 1 and stats["already_audited"] == 1
+        assert "note" not in _audit(env.db, "u1")
+        inserts = [
+            _norm(sql)
+            for sql, _ in env.db.log
+            if sql.lower().startswith("insert into news_theme_changes")
+        ]
+        assert all("on conflict (campaign, unique_id) do nothing returning 1" in i for i in inserts)
+        assert env.db.news["u2"]["theme_l1_id"] == 10
+
+    # ------------------------------------------------------------------ #
+    # Guarda: artigo fora do 19 só muda se o novo L1 for 26               #
+    # ------------------------------------------------------------------ #
+
+    def test_fora_do_19_e_novo_l1_nao_26_mantem_o_tema(self, rec, env):
+        env.db.seed_news("mdr-04", "2026-10-01", agency_key="mdr", **_ids("04", "04.03"))
+        env.clf.classify_single.side_effect = lambda a, return_format="dict": _result(
+            "05", "05.02", "05.02.01"
+        )
+
+        stats = _run(rec, ["mdr-04"])
+
+        assert stats["kept"] == 1
+        assert "ok" not in stats
+        assert _news_updates(env.db) == []
+        assert env.db.news["mdr-04"]["theme_l1_id"] == 1
+        row = _audit(env.db, "mdr-04")
+        old = [row[f"old_{k}_code"] for k in ("l1", "l2", "l3", "most_specific")]
+        new = [row[f"new_{k}_code"] for k in ("l1", "l2", "l3", "most_specific")]
+        assert old == new == ["04", "04.03", None, "04.03"]
+        assert row["note"].startswith("kept: ")
+        assert "05.02.01" in row["note"]
+        assert env.db.ledger[HAIKU45] == USAGE
+
+    def test_fora_do_19_kept_confere_o_tema_atual(self, rec, env):
+        env.db.seed_news("mdr-04", "2026-10-01", agency_key="mdr", **_ids("04", "04.03"))
+
+        def _classify_and_race(article, return_format="dict"):
+            env.db.news["mdr-04"].update(_ids("01", "01.02", "01.02.03"))
+            return _result("05", "05.02", "05.02.01")
+
+        env.clf.classify_single.side_effect = _classify_and_race
+
+        stats = _run(rec, ["mdr-04"])
+
+        assert stats["theme_changed"] == 1
+        assert env.db.theme_changes == []
+
+    def test_fora_do_19_e_novo_l1_26_grava(self, rec, env):
+        env.db.seed_news("titulo-05", "2026-10-01", **_ids("05", "05.02", "05.02.01"))
+
+        stats = _run(rec, ["titulo-05"])
+
+        assert stats["ok"] == 1
+        assert env.db.news["titulo-05"]["most_specific_theme_id"] == 22
+        assert _audit(env.db, "titulo-05")["new_l1_code"] == "26"
+
+    def test_fora_do_19_sem_mudanca_e_unchanged(self, rec, env):
+        env.db.seed_news("u1", "2026-10-01", **_ids("15", "15.02", "15.02.03"))
+        env.clf.classify_single.side_effect = lambda a, return_format="dict": _result(
+            "15", "15.02", "15.02.03"
+        )
+
+        stats = _run(rec, ["u1"])
+
+        assert stats["unchanged"] == 1
+
+    @pytest.mark.parametrize(
+        "codes",
+        [
+            ("19", "19.05", "19.05.01"),
+            ("19",),
+            # Hierarquia incoerente com o 19 em algum nível: é do bloco do 19.
+            ("15", "15.02", "19.01.01"),
+        ],
+    )
+    def test_artigo_do_19_sempre_recebe_a_nova_classificacao(self, rec, env, codes):
+        env.db.seed_news("u1", "2026-10-01", **_ids(*codes))
+        env.clf.classify_single.side_effect = lambda a, return_format="dict": _result(
+            "05", "05.02", "05.02.01"
+        )
+
+        stats = _run(rec, ["u1"])
+
+        assert stats["ok"] == 1
+        assert env.db.news["u1"]["most_specific_theme_id"] == 6
+
+    def test_kept_sem_coluna_note(self, rec, env):
+        env.db.theme_changes_columns = set(AUDIT_COLUMNS)
+        env.db.seed_news("mdr-04", "2026-10-01", agency_key="mdr", **_ids("04"))
+        env.clf.classify_single.side_effect = lambda a, return_format="dict": _result(
+            "01", "01.02", "01.02.03"
+        )
+
+        stats = _run(rec, ["mdr-04"], audit_columns=AUDIT_COLUMNS)
+
+        assert stats["kept"] == 1
+        assert "note" not in _audit(env.db, "mdr-04")
 
     def test_excecao_no_classificador_nao_derruba_o_run(self, rec, env):
         self._seed_19(env.db, "u1", "u2")
@@ -822,11 +1035,14 @@ class TestMainThemeOnly:
         # Continuam no 19 depois do run: sem a exclusão pela auditoria, voltariam.
         env.db.seed_news("fica-19", "2026-10-04", summary="R4", **_ids("19", "19.05", "19.05.01"))
         env.db.seed_news("19-para-19x", "2026-10-05", summary="R5", **_ids("19"))
+        # Extra (MDR em 04) que o LLM manda para fora do 26: a guarda mantém o tema.
+        env.db.seed_news("mdr-fica-04", "2026-10-06", agency_key="mdr", **_ids("04", "04.03"))
         respostas = {
             "u1": TO_26,
             "u2": TO_26,
             "fica-19": _result("19", "19.05", "19.05.01"),  # unchanged
             "19-para-19x": _result("19", "19.01", "19.01.01"),  # muda, mas fica no 19
+            "mdr-fica-04": _result("05", "05.02", "05.02.01"),  # kept
         }
         env.clf.classify_single.side_effect = lambda a, return_format="dict": dict(
             respostas[a["unique_id"]]
@@ -838,27 +1054,121 @@ class TestMainThemeOnly:
         assert sorted(r["unique_id"] for r in env.db.theme_changes) == [
             "19-para-19x",
             "fica-19",
+            "mdr-fica-04",
             "u1",
             "u2",
         ]
+        assert {r["campaign"] for r in env.db.theme_changes} == {"tema26-llm-d1"}
+        assert {r["source"] for r in env.db.theme_changes} == {SOURCE}
         assert env.db.news["u1"]["most_specific_theme_id"] == 22
         assert env.db.news["u1"]["summary"] == "R1"
         assert env.db.news["fica-19"]["most_specific_theme_id"] == 14
         assert env.db.news["19-para-19x"]["most_specific_theme_id"] == 12
+        assert env.db.news["mdr-fica-04"]["most_specific_theme_id"] == 2
         assert env.db.news["fora"]["most_specific_theme_id"] == 32
         env.publish.assert_not_called()
-        assert env.clf.classify_single.call_count == 4
+        assert env.clf.classify_single.call_count == 5
 
         capsys.readouterr()
         assert rec.main(self._argv()) == 0  # segundo run: nada pendente
         assert "selecionados=0" in capsys.readouterr().out
-        assert env.clf.classify_single.call_count == 4  # ninguém foi reclassificado
+        assert env.clf.classify_single.call_count == 5  # ninguém foi reclassificado
 
-        # Sem a campanha, os dois que ficaram no 19 voltariam a ser candidatos.
+        # Sem a campanha, os que não mudaram de tema voltariam a ser candidatos.
         uids = rec.get_window_uids(
             "theme26-candidates", "2023-01-01", None, 100, campaign="outra-campanha"
         )
-        assert set(uids) == {"fica-19", "19-para-19x"}
+        assert set(uids) == {"fica-19", "19-para-19x", "mdr-fica-04"}
+
+    def test_revertido_pelo_rollback_e_reclassificado_de_novo(self, rec, env):
+        self._seed(env.db)
+        env.db.theme_changes += [
+            {"campaign": CAMPAIGN, "unique_id": "u1", "source": SOURCE, "reverted_at": "x"},
+            {"campaign": CAMPAIGN, "unique_id": "u2", "source": SOURCE, "reverted_at": None},
+        ]
+
+        assert rec.main(self._argv()) == 0
+
+        assert env.clf.classify_single.call_count == 1  # só o u1
+        assert _audit(env.db, "u1")["reverted_at"] is None
+        assert env.db.news["u1"]["most_specific_theme_id"] == 22
+
+    # Flags do DAG enrichment_backfill (contrato de 22/10): --select theme-code
+    # --theme-code <c> | --select theme26-candidates, --date-from obrigatório,
+    # --date-to opcional, --limit/--workers/[--dry-run], e --term-fields. Sem
+    # --theme-only nem --campaign: as seleções de tema implicam o modo e a campanha
+    # padrão tema26-llm-d1.
+    @pytest.mark.parametrize(
+        "argv",
+        [
+            ["--select", "theme-code", "--theme-code", "19", "--date-from", "2023-01-01"],
+            ["--select", "theme26-candidates", "--date-from", "2023-01-01"],
+            [
+                "--select",
+                "theme26-candidates",
+                "--term-fields",
+                "title-content",
+                "--date-from",
+                "2023-01-01",
+                "--date-to",
+                "2026-12-31",
+                "--limit",
+                "400",
+                "--workers",
+                "2",
+            ],
+            # O que o DAG do DP-2 (build_overrides) monta hoje.
+            [
+                "--select",
+                "theme26-candidates",
+                "--theme-only",
+                "--campaign",
+                "tema26-llm-d1",
+                "--term-fields",
+                "title-content",
+                "--date-from",
+                "2023-01-01",
+                "--limit",
+                "400",
+                "--workers",
+                "2",
+            ],
+        ],
+    )
+    def test_flags_do_contrato_do_dag(self, rec, env, argv):
+        self._seed(env.db)
+
+        assert rec.main(argv) == 0
+
+        assert "u1" in {r["unique_id"] for r in env.db.theme_changes}
+        assert {r["campaign"] for r in env.db.theme_changes} == {"tema26-llm-d1"}
+        assert {r["source"] for r in env.db.theme_changes} == {SOURCE}
+
+    def test_flags_do_contrato_com_dry_run(self, rec, env, capsys):
+        self._seed(env.db)
+
+        code = rec.main(
+            [
+                "--select",
+                "theme-code",
+                "--theme-code",
+                "19",
+                "--date-from",
+                "2023-01-01",
+                "--limit",
+                "10",
+                "--workers",
+                "1",
+                "--dry-run",
+            ]
+        )
+
+        assert code == 0
+        out = capsys.readouterr().out
+        assert "campanha=tema26-llm-d1" in out
+        assert "u1" in out
+        env.clf.classify_single.assert_not_called()
+        assert env.db.theme_changes == []
 
     def test_theme_code(self, rec, env):
         self._seed(env.db)
@@ -917,11 +1227,25 @@ class TestMainThemeOnly:
         env.clf.classify_single.assert_not_called()
 
     def test_colunas_extras_na_auditoria_sao_aceitas(self, rec, env):
+        # O env já usa a tabela da 034 (12 colunas + id, note, reverted_at).
         self._seed(env.db)
-        env.db.theme_changes_columns = set(AUDIT_COLUMNS) | {"id", "note", "reverted_at"}
+        env.db.theme_changes_columns = set(CONTRACT_COLUMNS) | {"outra_coluna"}
 
         assert rec.main(self._argv()) == 0
         assert len(env.db.theme_changes) == 2
+        assert all(r["note"] for r in env.db.theme_changes)
+
+    def test_preflight_exige_so_as_12_colunas(self, rec, env):
+        self._seed(env.db)
+        env.db.theme_changes_columns = set(AUDIT_COLUMNS)
+
+        assert rec.main(self._argv()) == 0
+        assert len(env.db.theme_changes) == 2
+        assert not any("note" in r for r in env.db.theme_changes)
+
+    def test_preflight_lista_as_12_colunas_do_contrato(self, rec):
+        assert set(rec.AUDIT_REQUIRED_COLUMNS) == AUDIT_COLUMNS
+        assert len(rec.AUDIT_REQUIRED_COLUMNS) == 12
 
     def test_campanha_ja_usada_por_outra_fonte(self, rec, env, capsys):
         # Ex.: a campanha da migração 034. Reusá-la tiraria da seleção os artigos que a
@@ -981,12 +1305,21 @@ class TestMainThemeOnly:
         env.clf.classify_single.assert_not_called()
 
     @pytest.mark.parametrize("select", ["theme-code", "theme26-candidates"])
-    def test_selecoes_de_tema_exigem_theme_only(self, rec, env, select):
+    def test_selecoes_de_tema_implicam_theme_only(self, rec, env, select):
+        self._seed(env.db)
         extra = ["--theme-code", "19"] if select == "theme-code" else []
-        code = rec.main(["--select", select, *WINDOW, "--campaign", CAMPAIGN, *extra])
 
-        assert code == 1
-        assert env.db.log == []
+        code = rec.main(["--select", select, *WINDOW, *extra])
+
+        assert code == 0
+        row = _audit(env.db, "u1")
+        assert (row["campaign"], row["source"]) == ("tema26-llm-d1", SOURCE)
+        assert env.db.news["u1"]["summary"] == "R1"  # só o tema
+        env.upsert.assert_not_called()
+        env.update_enrichment.assert_not_called()
+
+    def test_campanha_padrao(self, rec):
+        assert rec.DEFAULT_THEME_CAMPAIGN == "tema26-llm-d1"
 
     @pytest.mark.parametrize("select", ["null-theme", "mock", "null-summary"])
     def test_theme_only_so_com_selecoes_de_tema(self, rec, env, select):
@@ -1007,13 +1340,39 @@ class TestMainThemeOnly:
         assert code == 1
         assert env.db.log == []
 
-    def test_theme_only_exige_campanha(self, rec, env):
+    def test_theme_only_sem_campanha_usa_a_padrao(self, rec, env):
+        self._seed(env.db)
+
         code = rec.main(["--select", "theme26-candidates", *WINDOW, "--theme-only"])
 
-        assert code == 1
-        assert env.db.log == []
+        assert code == 0
+        assert {r["campaign"] for r in env.db.theme_changes} == {"tema26-llm-d1"}
 
-    @pytest.mark.parametrize("campaign", ["", "Tema 26", "../x", "a" * 80])
+    def test_outra_campanha_do_llm_do_tema26(self, rec, env):
+        self._seed(env.db)
+
+        code = rec.main(["--select", "theme26-candidates", *WINDOW, "--campaign", "tema26-llm-d1b"])
+
+        assert code == 0
+        assert {r["campaign"] for r in env.db.theme_changes} == {"tema26-llm-d1b"}
+
+    # A campanha tem de ser tema26-llm-*: o rollback da 034 e o MERGE do BigQuery só
+    # leem tema26-*, e tema26-034/tema26-rollback são da própria migração.
+    @pytest.mark.parametrize(
+        "campaign",
+        [
+            "",
+            "Tema 26",
+            "../x",
+            "a" * 80,
+            "outra-campanha",
+            "tema26-034",
+            "tema26-rollback",
+            "tema26-d1",
+            "tema26-llm-",
+            "tema26-llm-" + "a" * 40,
+        ],
+    )
     def test_campanha_invalida(self, rec, env, campaign):
         code = rec.main(
             ["--select", "theme26-candidates", *WINDOW, "--theme-only", "--campaign", campaign]

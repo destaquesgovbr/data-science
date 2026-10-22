@@ -292,11 +292,13 @@ class FakeCursor:
             and isinstance(params, dict)
         ):
             search_content = "n.content ilike" in low
+            # Com a coluna reverted_at, só as linhas NÃO revertidas excluem o artigo.
+            audited = self.db.audited(active_only="c.reverted_at is null" in low)
             rows = []
             for uid, n in self.db.news.items():
                 if not self._theme_candidate(n, params, search_content):
                     continue
-                if (params["campaign"], uid) in self.db.audited():
+                if (params["campaign"], uid) in audited:
                     continue
                 day = n["published_date"]
                 if day < params["date_from"]:
@@ -342,20 +344,48 @@ class FakeCursor:
             self.conn.pending.append(lambda n=n, values=values: n.update(values))
             return
 
-        # --theme-only: INSERT na auditoria; UNIQUE (campaign, unique_id).
+        # --theme-only: INSERT na auditoria; UNIQUE (campaign, unique_id). Emula
+        #   - ON CONFLICT (campaign, unique_id) DO NOTHING ... RETURNING;
+        #   - ON CONFLICT ... DO UPDATE ... WHERE news_theme_changes.reverted_at IS NOT
+        #     NULL ... RETURNING: reaproveita só a linha revertida (reverted_at = NULL);
+        #   - sem ON CONFLICT: UniqueViolation.
+        # Coluna inexistente na tabela (ex.: note num contrato sem ela) falha.
         if low.startswith("insert into news_theme_changes"):
             if self.db.theme_changes_columns is None:
                 raise FakeUndefinedTable('relation "news_theme_changes" does not exist')
             cols = [c.strip() for c in s[s.index("(") + 1 : s.index(")")].split(",")]
+            unknown = [c for c in cols if c not in self.db.theme_changes_columns]
+            if unknown:
+                raise FakeUndefinedColumn(
+                    f'column "{unknown[0]}" of relation "news_theme_changes" does not exist'
+                )
             row = dict(zip(cols, params))
             key = (row["campaign"], row["unique_id"])
+            existing = [r for r in self.db.theme_changes if (r["campaign"], r["unique_id"]) == key]
             pending_keys = {(r["campaign"], r["unique_id"]) for r in self.conn.pending_audit}
-            if key in self.db.audited() or key in pending_keys:
-                raise FakeUniqueViolation(
-                    "duplicate key value violates unique constraint "
-                    '"news_theme_changes_campaign_unique_id_key"'
+            returning = [(1,)] if "returning" in low else []
+            if existing or key in pending_keys:
+                if "on conflict (campaign, unique_id)" not in low:
+                    raise FakeUniqueViolation(
+                        "duplicate key value violates unique constraint "
+                        '"uq_news_theme_changes_campaign_uid"'
+                    )
+                reuse_reverted = (
+                    "do update" in low
+                    and "news_theme_changes.reverted_at is not null" in low
+                    and existing
+                    and existing[0].get("reverted_at") is not None
                 )
+                if not reuse_reverted:
+                    self._result = []  # DO NOTHING / WHERE falso: nenhuma linha
+                    return
+                target = existing[0]
+                values = dict(row, reverted_at=None)
+                self.conn.pending.append(lambda t=target, v=values: t.update(v))
+                self._result = returning
+                return
             self.conn.pending_audit.append(row)
+            self._result = returning
             return
 
         # reenrich_combined_window: SELECT da janela (null-theme | mock | null-summary),
@@ -654,6 +684,10 @@ class FakeUndefinedTable(Exception):
     """Simula psycopg2.errors.UndefinedTable."""
 
 
+class FakeUndefinedColumn(Exception):
+    """Simula psycopg2.errors.UndefinedColumn."""
+
+
 class FakeConn:
     """Conexão fake. As escritas do --theme-only (UPDATE de tema e INSERT na
     auditoria) ficam pendentes até o commit; o rollback as descarta. Os demais
@@ -720,9 +754,14 @@ class FakeDB:
     def conn(self):
         return FakeConn(self)
 
-    def audited(self):
-        """Pares (campaign, unique_id) já gravados na auditoria."""
-        return {(r["campaign"], r["unique_id"]) for r in self.theme_changes}
+    def audited(self, active_only=False):
+        """Pares (campaign, unique_id) já gravados na auditoria (active_only: só as
+        linhas não revertidas, reverted_at ausente/None)."""
+        return {
+            (r["campaign"], r["unique_id"])
+            for r in self.theme_changes
+            if not (active_only and r.get("reverted_at") is not None)
+        }
 
     def seed_themes(self, code_to_id):
         self.themes = {theme_id: code for code, theme_id in code_to_id.items()}

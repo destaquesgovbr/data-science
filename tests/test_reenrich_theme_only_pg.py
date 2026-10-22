@@ -68,8 +68,33 @@ THEMES = [
     ("26.02.01", "Resgate e Salvamento", 3, "26.02"),
 ]
 
-# Contrato do plano (22/10): códigos, não ids; UNIQUE (campaign, unique_id).
+# Contrato final (22/10), igual ao CREATE_AUDIT_SQL da migração 034 do data-platform
+# (DP-2): códigos, não ids; id, note e reverted_at; índice UNIQUE (campaign, unique_id).
 AUDIT_DDL = """
+CREATE TABLE news_theme_changes (
+    id                      BIGSERIAL PRIMARY KEY,
+    campaign                VARCHAR(50)  NOT NULL,
+    unique_id               VARCHAR(120) NOT NULL,
+    old_l1_code             VARCHAR(20),
+    old_l2_code             VARCHAR(20),
+    old_l3_code             VARCHAR(20),
+    old_most_specific_code  VARCHAR(20),
+    new_l1_code             VARCHAR(20),
+    new_l2_code             VARCHAR(20),
+    new_l3_code             VARCHAR(20),
+    new_most_specific_code  VARCHAR(20),
+    source                  VARCHAR(50)  NOT NULL,
+    note                    TEXT,
+    changed_at              TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+    reverted_at             TIMESTAMPTZ
+);
+CREATE UNIQUE INDEX uq_news_theme_changes_campaign_uid
+    ON news_theme_changes (campaign, unique_id);
+"""
+
+# Só as 12 colunas exigidas pelo preflight (sem id, note e reverted_at).
+AUDIT_DDL_12 = """
+DROP TABLE news_theme_changes;
 CREATE TABLE news_theme_changes (
     campaign                TEXT NOT NULL,
     unique_id               TEXT NOT NULL,
@@ -84,7 +109,7 @@ CREATE TABLE news_theme_changes (
     source                  TEXT NOT NULL,
     changed_at              TIMESTAMPTZ NOT NULL DEFAULT now(),
     CONSTRAINT news_theme_changes_campaign_unique_id_key UNIQUE (campaign, unique_id)
-)
+);
 """
 
 SCHEMA_DDL = """
@@ -182,12 +207,19 @@ def _seed(code_to_id, uid, published_at, codes=(), agency="x", title="Título", 
     )
 
 
-def _audit_row(uid, campaign=CAMPAIGN, source="migration-034"):
+def _audit_row(uid, campaign=CAMPAIGN, source="migration-034", reverted=False):
     _sql(
         "INSERT INTO news_theme_changes (campaign, unique_id, source) VALUES (%s, %s, %s)",
         (campaign, uid, source),
         fetch=False,
     )
+    if reverted:
+        _sql(
+            "UPDATE news_theme_changes SET reverted_at = now() "
+            "WHERE campaign = %s AND unique_id = %s",
+            (campaign, uid),
+            fetch=False,
+        )
 
 
 def _themes_of(uid):
@@ -300,6 +332,9 @@ def _seed_selection_corpus(c):
     _audit_row("auditado-19")
     _audit_row("auditado-mdr-04")
     _audit_row("auditado-em-outra", campaign="outra-campanha")
+    # Auditado na campanha, mas revertido pelo rollback da 034: volta a ser candidato.
+    _seed(c, "revertido-19", DENTRO, ("19", "19.05"), agency="defesa")
+    _audit_row("revertido-19", source=f"llm:{HAIKU45}", reverted=True)
 
 
 SELECIONADOS_TITULO = {
@@ -310,6 +345,7 @@ SELECIONADOS_TITULO = {
     "titulo-maiusculo-acento",
     "titulo-sem-acento",
     "auditado-em-outra",
+    "revertido-19",
     "borda-inicio",
 }
 
@@ -352,6 +388,7 @@ def test_theme26_candidates_sem_extras_sql_real(rec, pg):
         "19-l1-sem-termo",
         "19-inconsistente",
         "auditado-em-outra",
+        "revertido-19",
         "borda-inicio",
     }
 
@@ -368,6 +405,7 @@ def test_theme_code_sql_real(rec, pg):
         "19-l1-sem-termo",
         "19-inconsistente",
         "auditado-em-outra",
+        "revertido-19",
         "borda-inicio",
         "borda-fim-19",  # sem --date-to
     }
@@ -391,65 +429,92 @@ def _argv(*extra):
     ]
 
 
-def test_fluxo_completo_e_idempotente(rec, pg, classifier, capsys):
+# Flags do contrato do DAG enrichment_backfill: sem --theme-only nem --campaign.
+CONTRACT_ARGV = [
+    "--select",
+    "theme26-candidates",
+    "--term-fields",
+    "title-content",
+    "--date-from",
+    "2026-10-01",
+    "--limit",
+    "100",
+    "--workers",
+    "2",
+]
+
+
+@pytest.mark.parametrize("argv", [_argv(), CONTRACT_ARGV], ids=["dag-dp2", "contrato"])
+def test_fluxo_completo_e_idempotente(rec, pg, classifier, capsys, argv):
     _seed(pg, "vai-26", DENTRO, ("19", "19.05", "19.05.01"))
     _seed(pg, "fica-19", DENTRO, ("19", "19.05", "19.05.01"))
     _seed(pg, "mdr-04", DENTRO, ("04", "04.03"), agency="mdr")
+    # Extra que o LLM manda para fora do 26: a guarda mantém o tema e audita 'kept'.
+    _seed(pg, "mdr-fica-04", DENTRO, ("04", "04.03", "04.03.01"), agency="mdr")
     respostas = {
         "vai-26": _result("26", "26.01", "26.01.03"),
         "fica-19": _result("19", "19.05", "19.05.01"),
         "mdr-04": _result("04", "26.02", "26.02.01"),  # L1 incoerente: segue o L3
+        "mdr-fica-04": _result("05", "05.02", "05.02.01"),
     }
     classifier.classify_single.side_effect = lambda a, return_format="dict": respostas[
         a["unique_id"]
     ]
 
-    assert rec.main(_argv()) == 0
+    assert rec.main(argv) == 0
 
     assert _themes_of("vai-26") == ("26", "26.01", "26.01.03", "26.01.03", "Resumo antigo.")
     assert _themes_of("fica-19") == ("19", "19.05", "19.05.01", "19.05.01", "Resumo antigo.")
     assert _themes_of("mdr-04") == ("26", "26.02", "26.02.01", "26.02.01", "Resumo antigo.")
+    assert _themes_of("mdr-fica-04") == (
+        "04",
+        "04.03",
+        "04.03.01",
+        "04.03.01",
+        "Resumo antigo.",
+    )
     audit = _sql(
         """
         SELECT unique_id, old_l1_code, old_l2_code, old_l3_code, old_most_specific_code,
-               new_l1_code, new_l2_code, new_l3_code, new_most_specific_code, source
-        FROM news_theme_changes WHERE campaign = %s ORDER BY unique_id
+               new_l1_code, new_l2_code, new_l3_code, new_most_specific_code, source,
+               split_part(note, ':', 1), reverted_at IS NULL, campaign
+        FROM news_theme_changes ORDER BY unique_id
         """,
-        (CAMPAIGN,),
     )
     src = f"llm:{HAIKU45}"
+    c = CAMPAIGN
     assert audit == [
-        (
-            "fica-19",
-            "19",
-            "19.05",
-            "19.05.01",
-            "19.05.01",
-            "19",
-            "19.05",
-            "19.05.01",
-            "19.05.01",
-            src,
-        ),
-        ("mdr-04", "04", "04.03", None, "04.03", "26", "26.02", "26.02.01", "26.02.01", src),
-        (
-            "vai-26",
-            "19",
-            "19.05",
-            "19.05.01",
-            "19.05.01",
-            "26",
-            "26.01",
-            "26.01.03",
-            "26.01.03",
-            src,
-        ),
+        ("fica-19", *("19", "19.05", "19.05.01", "19.05.01") * 2, src, "unchanged", True, c),
+        ("mdr-04", "04", "04.03", None, "04.03", "26", "26.02", "26.02.01", "26.02.01")
+        + (src, "ok", True, c),
+        ("mdr-fica-04", *("04", "04.03", "04.03.01", "04.03.01") * 2, src, "kept", True, c),
+        ("vai-26", "19", "19.05", "19.05.01", "19.05.01", "26", "26.01", "26.01.03", "26.01.03")
+        + (src, "ok", True, c),
     ]
+    [(note,)] = _sql(
+        "SELECT note FROM news_theme_changes WHERE unique_id = 'mdr-fica-04'",
+    )
+    assert "05.02.01" in note
 
     capsys.readouterr()
-    assert rec.main(_argv()) == 0
+    assert rec.main(argv) == 0
     assert "selecionados=0" in capsys.readouterr().out
-    assert classifier.classify_single.call_count == 3
+    assert classifier.classify_single.call_count == 4
+
+
+def test_revertido_volta_e_reaproveita_a_linha_sql_real(rec, pg, classifier):
+    _seed(pg, "u1", DENTRO, ("19", "19.05", "19.05.01"))
+    _audit_row("u1", source=f"llm:{HAIKU45}", reverted=True)
+
+    assert rec.main(_argv()) == 0
+
+    assert _themes_of("u1")[:4] == ("26", "26.01", "26.01.03", "26.01.03")
+    rows = _sql(
+        "SELECT old_l1_code, new_l1_code, reverted_at IS NULL, note FROM news_theme_changes "
+        "WHERE campaign = %s AND unique_id = 'u1'",
+        (CAMPAIGN,),
+    )
+    assert rows == [("19", "26", True, "ok: reclassificado pelo LLM")]
 
 
 def test_guarda_do_tema_antigo_sql_real(rec, pg, classifier):
@@ -472,7 +537,7 @@ def test_guarda_do_tema_antigo_sql_real(rec, pg, classifier):
     assert _sql("SELECT count(*) FROM news_theme_changes") == [(0,)]
 
 
-def test_unique_da_auditoria_desfaz_o_update_sql_real(rec, pg, classifier):
+def test_unique_da_auditoria_desfaz_o_update_sql_real(rec, pg, classifier, capsys):
     _seed(pg, "u1", DENTRO, ("19", "19.05", "19.05.01"))
 
     def _classify_and_race(article, return_format="dict"):
@@ -485,15 +550,13 @@ def test_unique_da_auditoria_desfaz_o_update_sql_real(rec, pg, classifier):
     assert rec.main(_argv()) == 0
 
     assert _themes_of("u1")[:4] == ("19", "19.05", "19.05.01", "19.05.01")  # rollback
-    assert _sql("SELECT count(*) FROM news_theme_changes") == [(1,)]
+    assert _sql("SELECT count(*), max(note) FROM news_theme_changes") == [(1, None)]
+    assert "already_audited" in capsys.readouterr().out
 
 
 def test_preflight_sem_unique_sql_real(rec, pg, classifier, capsys):
     _seed(pg, "u1", DENTRO, ("19",))
-    _sql(
-        "ALTER TABLE news_theme_changes DROP CONSTRAINT news_theme_changes_campaign_unique_id_key",
-        fetch=False,
-    )
+    _sql("DROP INDEX uq_news_theme_changes_campaign_uid", fetch=False)
     # Um índice comum (não UNIQUE) não basta.
     _sql("CREATE INDEX idx_ntc ON news_theme_changes (campaign, unique_id)", fetch=False)
 
@@ -503,11 +566,7 @@ def test_preflight_sem_unique_sql_real(rec, pg, classifier, capsys):
 
 
 def test_preflight_unique_parcial_nao_basta_sql_real(rec, pg, classifier):
-    _sql(
-        "ALTER TABLE news_theme_changes DROP CONSTRAINT news_theme_changes_campaign_unique_id_key",
-        fetch=False,
-    )
-    _sql("ALTER TABLE news_theme_changes ADD COLUMN reverted_at TIMESTAMPTZ", fetch=False)
+    _sql("DROP INDEX uq_news_theme_changes_campaign_uid", fetch=False)
     _sql(
         "CREATE UNIQUE INDEX uq_ntc ON news_theme_changes (campaign, unique_id) "
         "WHERE reverted_at IS NULL",
@@ -517,21 +576,49 @@ def test_preflight_unique_parcial_nao_basta_sql_real(rec, pg, classifier):
     assert rec.main(_argv("--dry-run")) == 1
 
 
-def test_preflight_aceita_unique_index_e_colunas_extras_sql_real(rec, pg, classifier):
+def test_preflight_aceita_unique_index_em_outra_ordem_sql_real(rec, pg, classifier):
     _seed(pg, "u1", DENTRO, ("19",))
-    _sql(
-        "ALTER TABLE news_theme_changes DROP CONSTRAINT news_theme_changes_campaign_unique_id_key",
-        fetch=False,
-    )
-    _sql(
-        "ALTER TABLE news_theme_changes ADD COLUMN id BIGSERIAL, ADD COLUMN note TEXT, "
-        "ADD COLUMN reverted_at TIMESTAMPTZ",
-        fetch=False,
-    )
+    _sql("DROP INDEX uq_news_theme_changes_campaign_uid", fetch=False)
     _sql("CREATE UNIQUE INDEX uq_ntc ON news_theme_changes (unique_id, campaign)", fetch=False)
 
     assert rec.main(_argv()) == 0
     assert _themes_of("u1")[0] == "26"
+
+
+def test_auditoria_so_com_as_12_colunas_sql_real(rec, pg, classifier, capsys):
+    # Sem id, note e reverted_at: o preflight aceita; grava sem note, ON CONFLICT DO
+    # NOTHING, e todo auditado sai da seleção.
+    _sql(AUDIT_DDL_12, fetch=False)
+    _seed(pg, "u1", DENTRO, ("19", "19.05", "19.05.01"))
+    _seed(pg, "u2", DENTRO, ("19",))
+    _audit_row("u2", source=f"llm:{HAIKU45}")
+
+    assert rec.main(CONTRACT_ARGV) == 0
+
+    assert _themes_of("u1")[:4] == ("26", "26.01", "26.01.03", "26.01.03")
+    assert _themes_of("u2")[:4] == ("19", None, None, "19")
+    assert classifier.classify_single.call_count == 1
+    assert _sql("SELECT count(*) FROM news_theme_changes") == [(2,)]
+
+
+def test_kept_com_tema_alterado_no_meio_do_run_sql_real(rec, pg, classifier):
+    _seed(pg, "mdr-04", DENTRO, ("04", "04.03"), agency="mdr")
+
+    def _classify_and_race(article, return_format="dict"):
+        _sql(
+            "UPDATE news SET theme_l1_id = %s, theme_l2_id = NULL, theme_l3_id = NULL, "
+            "most_specific_theme_id = %s WHERE unique_id = 'mdr-04'",
+            (pg["01"], pg["01"]),
+            fetch=False,
+        )
+        return _result("05", "05.02", "05.02.01")
+
+    classifier.classify_single.side_effect = _classify_and_race
+
+    assert rec.main(_argv()) == 0
+
+    assert _themes_of("mdr-04")[:4] == ("01", None, None, "01")
+    assert _sql("SELECT count(*) FROM news_theme_changes") == [(0,)]
 
 
 def test_preflight_tabela_ausente_sql_real(rec, pg, classifier, capsys):
