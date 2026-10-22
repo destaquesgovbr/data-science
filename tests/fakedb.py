@@ -243,6 +243,151 @@ class FakeCursor:
             self.db.features_upserts.append((uid, dict(new)))
             return
 
+        # reenrich_combined_window --theme-only: colunas da tabela de auditoria
+        # (information_schema). Tabela ausente = nenhuma linha.
+        if low.startswith("select column_name from information_schema.columns"):
+            cols = self.db.theme_changes_columns if params[0] == "news_theme_changes" else None
+            self._result = [(c,) for c in (cols or ())]
+            return
+
+        # --theme-only: UNIQUE (campaign, unique_id) na auditoria (pg_index).
+        if low.startswith("select exists ( select 1 from pg_index i"):
+            ok = (
+                params[0] == "news_theme_changes"
+                and self.db.theme_changes_columns is not None
+                and self.db.theme_changes_unique
+            )
+            self._result = [(ok,)]
+            return
+
+        # --theme-only: fontes de outra natureza já gravadas na campanha.
+        if low.startswith("select distinct source from news_theme_changes where campaign"):
+            campaign, pattern = params[0], params[1]
+            prefix = pattern.rstrip("%")
+            sources = {
+                r.get("source") or ""
+                for r in self.db.theme_changes
+                if r["campaign"] == campaign
+            }
+            self._result = [(src,) for src in sorted(sources) if not src.startswith(prefix)]
+            return
+
+        # --theme-only sem mudança: confere (FOR UPDATE) que o tema ainda é o lido.
+        if low.startswith("select 1 from news where unique_id = %(unique_id)s"):
+            n = self.db.news.get(params["unique_id"])
+            fields = ("theme_l1_id", "theme_l2_id", "theme_l3_id", "most_specific_theme_id")
+            old = ("old_l1", "old_l2", "old_l3", "old_most_specific")
+            if n is not None and all(n.get(f) == params[o] for f, o in zip(fields, old)):
+                self._result = [(1,)]
+            return
+
+        # reenrich_combined_window --select theme-code | theme26-candidates: SELECT
+        # da janela com a exclusão dos uids já auditados na campanha (params dict).
+        # Emula a semântica pelos params e pelos campos de busca presentes no SQL
+        # (título ou título e conteúdo). A estrutura do WHERE é coberta por um teste
+        # de SQL exato e pelo teste de integração com Postgres real.
+        if (
+            low.startswith("select n.unique_id from news n")
+            and "from news_theme_changes c" in low
+            and isinstance(params, dict)
+        ):
+            search_content = "n.content ilike" in low
+            # Com a coluna reverted_at, só as linhas NÃO revertidas excluem o artigo.
+            audited = self.db.audited(active_only="c.reverted_at is null" in low)
+            rows = []
+            for uid, n in self.db.news.items():
+                if not self._theme_candidate(n, params, search_content):
+                    continue
+                if (params["campaign"], uid) in audited:
+                    continue
+                day = n["published_date"]
+                if day < params["date_from"]:
+                    continue
+                if params.get("date_to") and day >= params["date_to"]:
+                    continue
+                rows.append((day, uid))
+            rows.sort(reverse=True)
+            self._result = [(uid,) for _, uid in rows[: params["limit"]]]
+            return
+
+        # --theme-only: ids de tema atuais do artigo (o "tema antigo esperado").
+        if low.startswith(
+            "select theme_l1_id, theme_l2_id, theme_l3_id, most_specific_theme_id from news"
+        ):
+            n = self.db.news.get(params[0])
+            if n is not None:
+                self._result = [
+                    (
+                        n.get("theme_l1_id"),
+                        n.get("theme_l2_id"),
+                        n.get("theme_l3_id"),
+                        n.get("most_specific_theme_id"),
+                    )
+                ]
+            return
+
+        # --theme-only: UPDATE só dos ids de tema, com a guarda do tema antigo
+        # (IS NOT DISTINCT FROM). Transacional: aplica só no commit.
+        if low.startswith("update news set theme_l1_id"):
+            n = self.db.news.get(params["unique_id"])
+            fields = ("theme_l1_id", "theme_l2_id", "theme_l3_id", "most_specific_theme_id")
+            old = ("old_l1", "old_l2", "old_l3", "old_most_specific")
+            new = ("new_l1", "new_l2", "new_l3", "new_most_specific")
+            guarded = all(f"{f} is not distinct from %({o})s" in low for f, o in zip(fields, old))
+            if n is None or (
+                guarded and any(n.get(f) != params[o] for f, o in zip(fields, old))
+            ):
+                self.rowcount = 0
+                return
+            self.rowcount = 1
+            values = {f: params[k] for f, k in zip(fields, new)}
+            self.conn.pending.append(lambda n=n, values=values: n.update(values))
+            return
+
+        # --theme-only: INSERT na auditoria; UNIQUE (campaign, unique_id). Emula
+        #   - ON CONFLICT (campaign, unique_id) DO NOTHING ... RETURNING;
+        #   - ON CONFLICT ... DO UPDATE ... WHERE news_theme_changes.reverted_at IS NOT
+        #     NULL ... RETURNING: reaproveita só a linha revertida (reverted_at = NULL);
+        #   - sem ON CONFLICT: UniqueViolation.
+        # Coluna inexistente na tabela (ex.: note num contrato sem ela) falha.
+        if low.startswith("insert into news_theme_changes"):
+            if self.db.theme_changes_columns is None:
+                raise FakeUndefinedTable('relation "news_theme_changes" does not exist')
+            cols = [c.strip() for c in s[s.index("(") + 1 : s.index(")")].split(",")]
+            unknown = [c for c in cols if c not in self.db.theme_changes_columns]
+            if unknown:
+                raise FakeUndefinedColumn(
+                    f'column "{unknown[0]}" of relation "news_theme_changes" does not exist'
+                )
+            row = dict(zip(cols, params))
+            key = (row["campaign"], row["unique_id"])
+            existing = [r for r in self.db.theme_changes if (r["campaign"], r["unique_id"]) == key]
+            pending_keys = {(r["campaign"], r["unique_id"]) for r in self.conn.pending_audit}
+            returning = [(1,)] if "returning" in low else []
+            if existing or key in pending_keys:
+                if "on conflict (campaign, unique_id)" not in low:
+                    raise FakeUniqueViolation(
+                        "duplicate key value violates unique constraint "
+                        '"uq_news_theme_changes_campaign_uid"'
+                    )
+                reuse_reverted = (
+                    "do update" in low
+                    and "news_theme_changes.reverted_at is not null" in low
+                    and existing
+                    and existing[0].get("reverted_at") is not None
+                )
+                if not reuse_reverted:
+                    self._result = []  # DO NOTHING / WHERE falso: nenhuma linha
+                    return
+                target = existing[0]
+                values = dict(row, reverted_at=None)
+                self.conn.pending.append(lambda t=target, v=values: t.update(v))
+                self._result = returning
+                return
+            self.conn.pending_audit.append(row)
+            self._result = returning
+            return
+
         # reenrich_combined_window: SELECT da janela (null-theme | mock | null-summary),
         # params dict.
         if low.startswith("select n.unique_id from news n") and isinstance(params, dict):
@@ -465,6 +610,35 @@ class FakeCursor:
         # default: no-op
         return
 
+    def _theme_candidate(self, n, params, search_content):
+        """Semântica das seleções theme-code / theme26-candidates sobre uma linha."""
+        ids = (
+            n.get("theme_l1_id"),
+            n.get("theme_l2_id"),
+            n.get("theme_l3_id"),
+            n.get("most_specific_theme_id"),
+        )
+        codes = {self.db.themes[i] for i in ids if i is not None}
+
+        def _in(exact, prefixes):
+            return any(
+                c in exact or any(c.startswith(p.rstrip("%")) for p in prefixes) for c in codes
+            )
+
+        if _in({params["theme_code"]}, [params["theme_prefix"]]):
+            return True
+        if "extra_codes" not in params:  # theme-code
+            return False
+        if not _in(set(params["extra_codes"]), params["extra_prefixes"]):
+            return False
+        if n.get("agency_key") in params["agency_keys"]:
+            return True
+        text = [(n.get("title") or "").lower()]
+        if search_content:
+            text.append((n.get("content") or "").lower())
+        terms = [p.strip("%").lower() for p in params["term_patterns"]]
+        return any(t in field for t in terms for field in text)
+
     def _upsert_registry(self, params):
         (
             entity_id, canonical_name, etype, aliases, wikidata_id, wikidata_url,
@@ -502,20 +676,45 @@ class FakeCursor:
         pass
 
 
+class FakeUniqueViolation(Exception):
+    """Simula psycopg2.errors.UniqueViolation (UNIQUE da auditoria)."""
+
+
+class FakeUndefinedTable(Exception):
+    """Simula psycopg2.errors.UndefinedTable."""
+
+
+class FakeUndefinedColumn(Exception):
+    """Simula psycopg2.errors.UndefinedColumn."""
+
+
 class FakeConn:
+    """Conexão fake. As escritas do --theme-only (UPDATE de tema e INSERT na
+    auditoria) ficam pendentes até o commit; o rollback as descarta. Os demais
+    comandos aplicam na hora (comportamento antigo)."""
+
     def __init__(self, db):
         self.db = db
         self.committed = 0
         self.rolled_back = 0
+        self.pending = []  # callables aplicados no commit
+        self.pending_audit = []  # linhas da auditoria aplicadas no commit
 
     def cursor(self):
         return FakeCursor(self.db, self)
 
     def commit(self):
+        for apply in self.pending:
+            apply()
+        self.db.theme_changes.extend(self.pending_audit)
+        self.pending, self.pending_audit = [], []
         self.committed += 1
+        self.db.commits += 1
 
     def rollback(self):
+        self.pending, self.pending_audit = [], []
         self.rolled_back += 1
+        self.db.rollbacks += 1
 
     def close(self):
         pass
@@ -540,12 +739,32 @@ class FakeDB:
         self.news_features = {}  # unique_id -> features dict (mutável; menções)
         self.ledger = {}       # model_id -> {input_tokens, output_tokens}
         self.features_upserts = []  # (unique_id, features dict) por INSERT em news_features
-        # unique_id -> {published_date, most_specific_theme_id, summary, content_embedding}
+        # unique_id -> {published_date, most_specific_theme_id, summary, content_embedding,
+        #               theme_l1_id, theme_l2_id, theme_l3_id, agency_key, title, content}
         self.news = {}
         self.log = []          # (sql, params)
+        self.themes = {}       # theme id -> code (tabela themes)
+        # news_theme_changes: None = tabela ausente; senão, as colunas existentes.
+        self.theme_changes_columns = None
+        self.theme_changes_unique = True  # UNIQUE (campaign, unique_id) presente
+        self.theme_changes = []  # linhas (dict coluna -> valor) da auditoria
+        self.commits = 0
+        self.rollbacks = 0
 
     def conn(self):
         return FakeConn(self)
+
+    def audited(self, active_only=False):
+        """Pares (campaign, unique_id) já gravados na auditoria (active_only: só as
+        linhas não revertidas, reverted_at ausente/None)."""
+        return {
+            (r["campaign"], r["unique_id"])
+            for r in self.theme_changes
+            if not (active_only and r.get("reverted_at") is not None)
+        }
+
+    def seed_themes(self, code_to_id):
+        self.themes = {theme_id: code for code, theme_id in code_to_id.items()}
 
     def seed_news(
         self,
@@ -555,6 +774,12 @@ class FakeDB:
         summary=None,
         content_embedding=None,
         published_at=None,
+        theme_l1_id=None,
+        theme_l2_id=None,
+        theme_l3_id=None,
+        agency_key=None,
+        title=None,
+        content=None,
     ):
         """Semeia uma linha de news (published_date = dia BRT 'YYYY-MM-DD';
         published_at = timestamptz, usado pela prioridade da fila do canon)."""
@@ -564,6 +789,12 @@ class FakeDB:
             "summary": summary,
             "content_embedding": content_embedding,
             "published_at": published_at,
+            "theme_l1_id": theme_l1_id,
+            "theme_l2_id": theme_l2_id,
+            "theme_l3_id": theme_l3_id,
+            "agency_key": agency_key,
+            "title": title,
+            "content": content,
         }
 
     def seed_seen(

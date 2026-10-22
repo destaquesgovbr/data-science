@@ -253,6 +253,113 @@ PYTHONPATH=src .venv/bin/python scripts/reenrich_combined_window.py \
 6. **`incremental-sync` do Typesense (B4):** workflow `typesense-maintenance-sync`
    do `data-platform`, cobrindo a janela.
 
+## Cache da taxonomia (por instância, sem TTL)
+
+O `handler` carrega a taxonomia (`load_taxonomy_from_postgres`, usada no prompt) e
+o mapa código→id (`build_theme_code_to_id_map`, usado no UPDATE) na **primeira
+requisição de cada instância** (`_get_classifier` / `_get_code_to_id`) e os reutiliza
+até a instância morrer. Não há TTL nem recarga (`tests/test_worker_taxonomy_cache.py`
+trava esse contrato).
+
+Consequência: depois de qualquer mudança na tabela `themes` (ex.: a migração 034 do
+data-platform, que cria o tema 26 e remove 19.03*/19.04*), as instâncias quentes
+seguem com a taxonomia e os ids antigos. O LLM continua vendo 19.03/19.04 e o UPDATE
+grava ids que não existem mais: viola a FK e o artigo fica sem tema. **Só uma revisão
+nova limpa o cache.**
+
+- Logo depois da migração, dispare o redeploy **explicitamente**: workflow
+  `Deploy Enrichment Worker` (`.github/workflows/enrichment-worker-deploy.yaml`, aba
+  Actions → Run workflow, ou `gh workflow run enrichment-worker-deploy.yaml --ref
+  main -R destaquesgovbr/data-science`). Confira que a revisão nova está servindo
+  100% do tráfego antes de seguir.
+- Não conte com o merge de um PR para isso: o workflow só dispara com mudanças em
+  `src/news_enrichment/**`, `docker/enrichment-worker/**`, `pyproject.toml`,
+  `poetry.lock` ou nele mesmo. Um PR que só muda `scripts/` ou `tests/` redeploya só
+  o Job `destaquesgovbr-ner-backfill`, não o worker. E o merge pode não cair na
+  ordem certa em relação à migração.
+- Os scripts (`scripts/reenrich_combined_window.py` etc.) leem a taxonomia do banco
+  ao iniciar: cada execução já começa com a taxonomia atual.
+
+## Reclassificação só de tema: `--theme-only` (DS-1, tema 26)
+
+Reclassifica artigos que **já têm tema** e grava **só** os ids de tema (nunca
+resumo, sentimento, NER, `content_embedding` nem evento), com guarda e auditoria em
+`news_theme_changes` (criada pela migração 034 do data-platform). Ordem do D0/D1:
+034 → redeploy do worker (seção acima) → este script.
+
+As seleções de tema implicam o modo só-tema e a campanha `tema26-llm-d1`. As flags
+são as do contrato do DAG `enrichment_backfill` (22/10): `--select theme-code
+--theme-code <c>` ou `--select theme26-candidates`, `--date-from` obrigatório,
+`--date-to` opcional, `--limit`, `--workers`, `[--dry-run]` e, no
+`theme26-candidates`, `--term-fields` (padrão `title-content`). `--theme-only` e
+`--campaign` continuam aceitos por compatibilidade (o DAG do DP-2 não os passa);
+`--campaign` só aceita `tema26-llm-*`.
+
+```bash
+ENRICHMENT_MODEL_ID=us.anthropic.claude-haiku-4-5-20251001-v1:0 \
+BEDROCK_DAILY_TOKEN_QUOTA='{"us.anthropic.claude-haiku-4-5-20251001-v1:0": <cota AWS real>}' \
+PYTHONPATH=src .venv/bin/python scripts/reenrich_combined_window.py \
+    --select theme26-candidates --term-fields title-content --date-from 2018-01-01 \
+    --dry-run   # depois --limit 10, depois completo
+```
+
+- **Seleções:**
+  - `--select theme-code --theme-code 19`: qualquer nível de tema (l1/l2/l3/mais
+    específico) na subárvore. É o escopo mínimo do plano.
+  - `--select theme26-candidates`: `((subárvore do 19) OR (04 / 05.02.01 / 15.02.03
+    AND (MDR OR termo-chave))) AND NOT EXISTS (auditado ativo na campanha) AND
+    janela`. Termos: "defesa civil", "calamidade", "situação/estado de emergência"
+    (com e sem acento: não há `unaccent`) e "desastre", por `ILIKE`.
+  - `--term-fields title-content` (padrão: escopo da D1, decidido em 22/10; o DAG
+    `enrichment_backfill` não passa `--term-fields`) ou `title` (só o título). No
+    conteúdo, "calamidade" pega "calamidade fiscal" e "desastre" pega usos figurados:
+    a guarda do 26 (abaixo) impede que esses extras mudem de tema.
+  - `--extra-codes 04,05.02.01,15.02.03` (padrão); `--extra-codes ''` deixa só o 19.
+  - Contagens em produção (21–22/10, antes da 034, SQL real do script):
+    `theme-code 19` = 485; `theme26-candidates` = 1.155 só no título e 1.586 com o
+    conteúdo; só com o extra `04` = 1.071. Depois da 034, os 209 de 19.03/19.04 já
+    estão no 26 e saem do bloco do 19 (≈1.377 com o conteúdo).
+  - `--date-to` é opcional e sem teto de hoje: só entram artigos com tema, e o worker
+    ao vivo devolve `skipped` para eles.
+- **Guarda do tema 26:** o artigo do bloco do 19 (algum dos 4 níveis na subárvore do
+  19) sempre recebe a nova classificação. O de fora (04 / 05.02.01 / 15.02.03) só tem
+  o tema gravado se o novo L1 for o 26; senão é `kept`: mantém o tema e audita
+  old = new, com a sugestão do LLM na `note` (`kept: o LLM sugeriu 05 > 05.02 >
+  05.02.01; ...`).
+- **Escrita**, numa transação por artigo:
+  `UPDATE news SET theme_l1_id, theme_l2_id, theme_l3_id, most_specific_theme_id,
+  updated_at … WHERE unique_id = … AND <cada coluna> IS NOT DISTINCT FROM <lido antes
+  da chamada>`, seguido do `INSERT` em `news_theme_changes` (códigos, não ids;
+  `campaign = 'tema26-llm-d1'`, `source = 'llm:<model_id>'`, `note`) com
+  `ON CONFLICT (campaign, unique_id) DO UPDATE … WHERE news_theme_changes.reverted_at
+  IS NOT NULL RETURNING 1`. Sem linha devolvida (um run concorrente já auditou o
+  artigo), o UPDATE é desfeito (`already_audited`).
+- **Idempotência:** o artigo auditado na campanha e **não revertido** sai da seleção
+  (inclusive os que continuam no 19 e os `kept`). O revertido pelo rollback da 034
+  (`reverted_at`) volta a ser candidato, e a nova gravação reaproveita a linha dele.
+- **Cadeia de tema** (`resolve_theme_chain`): vale o código válido mais profundo da
+  resposta, ou do prefixo dela um nível acima, com l1/l2 tirados da taxonomia; ele
+  pode estar no máximo **um nível** acima do mais profundo que o LLM pediu
+  (`MAX_LEVEL_DROP`). Pediu 26.01.09 (inexistente) → 26.01, mesmo sem o campo do L2;
+  pediu 19.03.03 e só o 19 existe → `invalid_theme`.
+- **Status**: `ok`, `unchanged` (auditado sem UPDATE, depois de conferir a linha com
+  `FOR UPDATE`), `kept` (idem, pela guarda do 26), `theme_changed` (outro processo
+  mudou o tema: nada gravado), `already_audited`, `invalid_theme`, `no_theme` (o
+  artigo perdeu o tema: é do worker), `unknown_old_theme`, `missing`,
+  `classification_failed`, `model_unavailable` (aborta), `error:*`. Só `ok`,
+  `unchanged` e `kept` auditam.
+- **Preflight** (também no `--dry-run`, antes da seleção; sai com 1): a tabela existe,
+  tem as 12 colunas do contrato (`campaign`, `unique_id`, os 8 códigos, `source`,
+  `changed_at`) e `UNIQUE (campaign, unique_id)` sem predicado, e a campanha não tem
+  registros de fonte que não seja `llm:*` (a campanha da 034 não pode ser reusada).
+  Colunas a mais são aceitas; `note` e `reverted_at` são usadas quando existem (a 034
+  cria as duas). `theme26-candidates` exige 26/26.01/26.02 no banco e na taxonomia do
+  classificador.
+- Mesmo modelo, ledger e governador de cota dos outros modos. A chamada é a
+  combinada (~19k tokens de entrada); resumo e sentimento da resposta são descartados.
+- Depois: sync do Typesense (por data, desde 2025-09-01) e `MERGE` do BigQuery a
+  partir da auditoria (campanhas `tema26-*`).
+
 ## Pendências fora deste código
 
 - **B3 não versionado:** `embeddings/scripts/backfill_embeddings.py` existe só no
@@ -276,5 +383,21 @@ PYTHONPATH=src .venv/bin/python -m pytest tests -q -p no:cacheprovider
 ```
 
 Relevantes: `tests/test_enrichment_worker.py`, `tests/test_ner_handler.py`,
-`tests/test_enrichment.py` e `tests/test_reenrich_combined_window.py`. O Postgres é
-simulado por `tests/fakedb.py`.
+`tests/test_enrichment.py`, `tests/test_reenrich_combined_window.py`,
+`tests/test_reenrich_theme_only.py` e `tests/test_worker_taxonomy_cache.py`. O
+Postgres é simulado por `tests/fakedb.py`.
+
+O fake não interpreta o SQL. O `--theme-only` também tem um teste com Postgres real
+(`tests/test_reenrich_theme_only_pg.py`), pulado sem `REENRICH_PG_TEST_URL`. Ele
+apaga e recria `themes`, `news` e `news_theme_changes`, então só aceita banco cujo
+nome termina em `_test`:
+
+```bash
+docker run -d --name ds1-reclass-pg -p 55447:5432 \
+    -e POSTGRES_PASSWORD=ds1 -e POSTGRES_DB=reenrich_test postgres:15
+REENRICH_PG_TEST_URL=postgresql://postgres:ds1@localhost:55447/reenrich_test \
+PYTHONPATH=src .venv/bin/python -m pytest tests/test_reenrich_theme_only_pg.py -q
+```
+
+Num worktree, o venv compartilhado importa `news_enrichment` do checkout principal:
+use `PYTHONPATH=<worktree>/src:<worktree>`.
