@@ -264,6 +264,8 @@ AUDIT_REQUIRED_COLUMNS = (
     "changed_at",
 )
 LLM_SOURCE_PREFIX = "llm:"
+# source VARCHAR(50) na 034: 'llm:' + um perfil global (global.anthropic...) passaria.
+AUDIT_SOURCE_MAX_LEN = 50
 _AUDIT_CODE_COLUMNS = AUDIT_REQUIRED_COLUMNS[2:10]  # old_*_code, new_*_code
 
 # Campanha da reclassificação por LLM (contrato de 22/10). As seleções de tema a usam
@@ -1340,6 +1342,15 @@ def main(argv=None) -> int:
     )
 
     if theme_only:
+        source = f"{LLM_SOURCE_PREFIX}{model_id}"
+        if len(source) > AUDIT_SOURCE_MAX_LEN:
+            print(
+                f"ERRO: source da auditoria {source!r} tem {len(source)} caracteres; a "
+                f"coluna source da 034 é VARCHAR({AUDIT_SOURCE_MAX_LEN}). Use o id do "
+                "perfil regional (us.anthropic...)",
+                file=sys.stderr,
+            )
+            return 1
         # Preflight ANTES da seleção (também no --dry-run): a seleção depende da
         # tabela de auditoria, e a escrita, do contrato dela.
         audit_error, audit = check_audit_table(campaign)
@@ -1416,7 +1427,7 @@ def main(argv=None) -> int:
                 return 1
         process = make_theme_only_process(
             campaign=campaign,
-            source=f"{LLM_SOURCE_PREFIX}{model_id}",
+            source=source,
             code_to_id=code_to_id,
             parents=parents,
             audit=audit,
