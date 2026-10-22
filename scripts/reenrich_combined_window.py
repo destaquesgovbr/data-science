@@ -65,6 +65,54 @@ tokens de entrada). Por artigo:
     run não é sobrescrito (guarda IS NULL → `summary_present`).
   - Mesma regra do null-theme para a janela: --date-to obrigatório, ≤ hoje BRT.
 
+Modo --theme-only (DS-1, tema 26 "Defesa Civil e Gestão de Desastres"): a mesma
+chamada combinada, mas grava SÓ os ids de tema. Seleções (sempre com --theme-only
+e --campaign <id>):
+  - `--select theme-code --theme-code <código>`: artigos com qualquer nível de tema
+    (l1/l2/l3/mais específico) na subárvore do código. Escopo mínimo do plano:
+    `--theme-code 19`.
+  - `--select theme26-candidates`: L1 19, mais artigos em 04 / 05.02.01 / 15.02.03
+    (--extra-codes) do MDR ou com termo-chave ("defesa civil", "calamidade",
+    "situação de emergência", "estado de emergência", "desastre", com e sem acento:
+    não há `unaccent` no banco). O termo é buscado só no TÍTULO por padrão;
+    `--term-fields title-content` inclui o conteúdo (pega "calamidade fiscal" e
+    "desastre" figurado: mais custo e falsos positivos). `--extra-codes ''` deixa só
+    o bloco do 19.
+Por artigo:
+    old = ids de tema atuais (lidos ANTES da chamada)
+    result = classifier.classify_single(article)        # modelo = ENRICHMENT_MODEL_ID
+    chain = resolve_theme_chain(result, parents)         # cadeia coerente l1→l2→l3
+    numa transação:
+      UPDATE news SET theme_* = novo WHERE unique_id = … AND theme_* IS NOT DISTINCT
+        FROM old                                         # guarda: 0 linhas → theme_changed
+      INSERT INTO news_theme_changes (campaign, unique_id, old_*_code, new_*_code,
+        source = 'llm:<model_id>')                       # UNIQUE (campaign, unique_id)
+    quota_governor.record_usage(...)
+  - NUNCA grava resumo, sentimento (news_features), NER, content_embedding nem
+    publica evento. O resumo e o sentimento da resposta são descartados.
+  - Cadeia de tema: vale o código VÁLIDO (existente na taxonomia do banco) mais
+    profundo da resposta, com l1/l2 derivados dele; ele pode estar no máximo
+    MAX_LEVEL_DROP (1) nível acima do mais profundo que o LLM pediu. Ex.: pediu
+    26.01.09 (inexistente) → 26.01; pediu 19.03.03 e só o 19 existe → resposta
+    inválida (`invalid_theme`: não grava nem audita; o artigo volta no próximo run).
+  - Sem mudança (`unchanged`): sem UPDATE, mas audita (old = new), depois de
+    conferir com SELECT … FOR UPDATE que o tema ainda é o lido. Todo artigo auditado
+    na campanha sai da seleção: o run é idempotente e retomável, inclusive para os
+    artigos que continuam no 19.
+  - Preflight (também no --dry-run): a tabela news_theme_changes (migração 034 do
+    data-platform) tem de existir com as colunas do contrato e UNIQUE (campaign,
+    unique_id), e a campanha não pode ter registros de fonte que não seja `llm:*`
+    (ex.: a campanha da própria 034). Sem isso, o script sai com 1 e mensagem clara.
+  - `theme26-candidates` exige 26/26.01/26.02 no banco e na taxonomia do classificador.
+  - --date-to é opcional e sem teto: só entram artigos que JÁ têm tema, e o worker
+    ao vivo devolve `skipped` para eles. Artigo que perdeu o tema no meio do run
+    (`no_theme`) não é tocado.
+  - Depois do run: sync do Typesense e MERGE do BigQuery a partir da auditoria.
+  - Cache da taxonomia: este script lê a taxonomia do banco ao iniciar. O
+    enrichment-worker também, mas UMA VEZ POR INSTÂNCIA e sem TTL: depois da 034 só
+    uma revisão nova (redeploy, workflow_dispatch do "Deploy Enrichment Worker")
+    limpa o cache das instâncias quentes. Ver o README do worker.
+
 Env obrigatórias: DATABASE_URL, ENRICHMENT_MODEL_ID (sem fallback para o default
 legado nem para BEDROCK_MODEL_ID), creds AWS (AWS_BEDROCK_CONNECTION_URI ou
 AWS_ACCESS_KEY_ID/SECRET). Opcionais: BEDROCK_DAILY_TOKEN_QUOTA (JSON
@@ -77,10 +125,17 @@ Uso (sempre --dry-run → --limit 10 → completo, cada etapa com OK):
         [--limit 500] [--workers 1] [--dry-run]
     # DS-2 (depois do deploy do SC-1):
     ... --select null-summary --date-from 2026-06-01 --date-to <hoje BRT> [...]
+    # DS-1 (D1, depois da 034 e do redeploy do worker):
+    ... --select theme26-candidates --date-from 2018-01-01 --theme-only \\
+        --campaign tema26-llm-d1 [--term-fields title|title-content] \\
+        [--extra-codes 04,05.02.01,15.02.03] [--limit 10] [--dry-run]
+    ... --select theme-code --theme-code 19 --date-from 2018-01-01 --theme-only \\
+        --campaign tema26-llm-d1 [...]
 """
 import argparse
 import datetime
 import os
+import re
 import sys
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -99,9 +154,11 @@ from news_enrichment.quota_governor import (  # noqa: E402
 )
 from news_enrichment.worker import handler  # noqa: E402
 
-SELECT_CHOICES = ("null-theme", "mock", "null-summary")
+SELECT_CHOICES = ("null-theme", "mock", "null-summary", "theme-code", "theme26-candidates")
 # Seleções que disputam artigos com o worker ao vivo: exigem --date-to <= hoje BRT.
 SELECTS_REQUIRING_DATE_TO = frozenset({"null-theme", "null-summary"})
+# Seleções de tema (DS-1): só com --theme-only e --campaign; --date-to opcional.
+THEME_SELECTS = frozenset({"theme-code", "theme26-candidates"})
 # Janela de exemplo por seleção (mensagem de erro sem --date-to).
 _EXAMPLE_WINDOW = {
     "null-theme": "no B2: --date-from 2026-09-25 --date-to 2026-10-06",
@@ -145,17 +202,202 @@ WITH_EMBEDDING_SQL = """
       AND n.content_embedding IS NOT NULL
 """
 
+# ---------------------------------------------------------------------------
+# --theme-only (DS-1, tema 26)
+# ---------------------------------------------------------------------------
 
-def build_select_sql(select: str, with_date_to: bool) -> str:
-    """SELECT da janela: `null-theme` (tema NULL), `mock` (summary '[MOCK]%') ou
-    `null-summary` (tema gravado e summary NULL).
+THEME26_BASE_CODE = "19"
+# Códigos que a migração 034 cria e que o theme26-candidates exige.
+THEME26_TARGET_CODES = ("26", "26.01", "26.02")
+# Bloco extra: só entra com MDR ou termo-chave. Configurável por --extra-codes.
+DEFAULT_EXTRA_CODES = ("04", "05.02.01", "15.02.03")
+THEME26_AGENCY_KEYS = ("mdr",)
+# Sem `unaccent` no banco: as grafias sem acento entram também. ILIKE: sem caixa.
+THEME26_TERMS = (
+    "defesa civil",
+    "calamidade",
+    "situação de emergência",
+    "situacao de emergencia",
+    "estado de emergência",
+    "estado de emergencia",
+    "desastre",
+)
+# Onde procurar os termos. Padrão: só o título (no conteúdo, "calamidade" pega
+# "calamidade fiscal" e "desastre" pega usos figurados; ~1,4x os candidatos).
+TERM_FIELDS = {"title": ("n.title",), "title-content": ("n.title", "n.content")}
+DEFAULT_TERM_FIELDS = "title"
+
+# Regra da cadeia de tema: o código válido mais profundo pode estar no máximo este
+# número de níveis acima do mais profundo que o LLM pediu (ver resolve_theme_chain).
+MAX_LEVEL_DROP = 1
+
+AUDIT_TABLE = "news_theme_changes"
+# Contrato do plano (22/10), igual ao da migração 034 do data-platform.
+AUDIT_REQUIRED_COLUMNS = (
+    "campaign",
+    "unique_id",
+    "old_l1_code",
+    "old_l2_code",
+    "old_l3_code",
+    "old_most_specific_code",
+    "new_l1_code",
+    "new_l2_code",
+    "new_l3_code",
+    "new_most_specific_code",
+    "source",
+    "changed_at",
+)
+LLM_SOURCE_PREFIX = "llm:"
+
+_CODE_RE = re.compile(r"^\d{2}(?:\.\d{2}){0,2}$")
+_CAMPAIGN_RE = re.compile(r"^[a-z0-9][a-z0-9._-]{0,49}$")
+
+_THEME_ID_COLUMNS = ("theme_l1_id", "theme_l2_id", "theme_l3_id", "most_specific_theme_id")
+_OLD_KEYS = ("old_l1", "old_l2", "old_l3", "old_most_specific")
+_NEW_KEYS = ("new_l1", "new_l2", "new_l3", "new_most_specific")
+
+# EXISTS (não JOIN): um artigo com vários níveis na subárvore sai uma vez só.
+_THEMES_OF_ARTICLE = (
+    "SELECT 1 FROM themes t\n"
+    "            WHERE t.id IN (n.theme_l1_id, n.theme_l2_id, n.theme_l3_id,"
+    " n.most_specific_theme_id)"
+)
+_NOT_AUDITED = """NOT EXISTS (
+            SELECT 1 FROM news_theme_changes c
+            WHERE c.campaign = %(campaign)s AND c.unique_id = n.unique_id
+        )"""
+
+READ_THEME_IDS_SQL = """
+    SELECT theme_l1_id, theme_l2_id, theme_l3_id, most_specific_theme_id
+    FROM news
+    WHERE unique_id = %s
+"""
+
+# Guarda: o tema atual ainda é o lido antes da chamada (NULL-safe).
+_OLD_THEME_GUARD = "\n      AND ".join(
+    f"{col} IS NOT DISTINCT FROM %({key})s" for col, key in zip(_THEME_ID_COLUMNS, _OLD_KEYS)
+)
+
+# Só os ids de tema: nunca summary, content_embedding nem news_features.
+UPDATE_THEME_SQL = f"""
+    UPDATE news
+    SET theme_l1_id = %(new_l1)s,
+        theme_l2_id = %(new_l2)s,
+        theme_l3_id = %(new_l3)s,
+        most_specific_theme_id = %(new_most_specific)s,
+        updated_at = NOW()
+    WHERE unique_id = %(unique_id)s
+      AND {_OLD_THEME_GUARD}
+"""
+
+# Sem mudança: confere e trava a linha antes de auditar (old = new).
+LOCK_UNCHANGED_SQL = f"""
+    SELECT 1 FROM news
+    WHERE unique_id = %(unique_id)s
+      AND {_OLD_THEME_GUARD}
+    FOR UPDATE
+"""
+
+INSERT_AUDIT_SQL = """
+    INSERT INTO news_theme_changes (
+        campaign, unique_id,
+        old_l1_code, old_l2_code, old_l3_code, old_most_specific_code,
+        new_l1_code, new_l2_code, new_l3_code, new_most_specific_code,
+        source
+    ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+"""
+
+AUDIT_COLUMNS_SQL = """
+    SELECT column_name FROM information_schema.columns
+    WHERE table_name = %s AND table_schema = current_schema()
+"""
+
+# UNIQUE (constraint ou índice) exatamente em (campaign, unique_id), sem predicado:
+# é o que torna a idempotência por campanha segura sob concorrência.
+AUDIT_UNIQUE_SQL = """
+    SELECT EXISTS (
+        SELECT 1 FROM pg_index i
+        WHERE i.indrelid = to_regclass(%s)
+          AND i.indisunique
+          AND i.indpred IS NULL
+          AND i.indnkeyatts = 2
+          AND (
+              SELECT array_agg(a.attname::text ORDER BY a.attname::text)
+              FROM pg_attribute a
+              WHERE a.attrelid = i.indrelid AND a.attnum = ANY (i.indkey::int2[])
+          ) = ARRAY['campaign', 'unique_id']
+    )
+"""
+
+# Fontes que não são do LLM já gravadas na campanha (ex.: a da migração 034).
+CAMPAIGN_FOREIGN_SOURCES_SQL = """
+    SELECT DISTINCT source FROM news_theme_changes
+    WHERE campaign = %s AND source NOT LIKE %s
+    ORDER BY source
+    LIMIT 5
+"""
+
+
+def _theme_select_sql(select: str, with_date_to: bool, term_fields: str) -> str:
+    """WHERE das seleções de tema (theme-code | theme26-candidates).
+
+    theme-code:          (subárvore) AND NOT EXISTS(campanha) AND janela
+    theme26-candidates:  ((subárvore do 19) OR (extra AND (MDR OR termos)))
+                         AND NOT EXISTS(campanha) AND janela
+    """
+    if term_fields not in TERM_FIELDS:
+        raise ValueError(f"term_fields inválido: {term_fields!r} (use {', '.join(TERM_FIELDS)})")
+    subtree = f"""EXISTS (
+            {_THEMES_OF_ARTICLE}
+              AND (t.code = %(theme_code)s OR t.code LIKE %(theme_prefix)s)
+        )"""
+    if select == "theme-code":
+        predicate = subtree
+    else:
+        terms = " OR ".join(
+            f"{field} ILIKE ANY(%(term_patterns)s::text[])" for field in TERM_FIELDS[term_fields]
+        )
+        predicate = f"""(
+        {subtree}
+        OR (
+            EXISTS (
+                {_THEMES_OF_ARTICLE}
+                  AND (t.code = ANY(%(extra_codes)s::text[])
+                       OR t.code LIKE ANY(%(extra_prefixes)s::text[]))
+            )
+            AND (n.agency_key = ANY(%(agency_keys)s::text[]) OR {terms})
+        )
+    )"""
+    upper = ""
+    if with_date_to:
+        upper = f"AND n.published_at < {_BRT_DAY_START.format(param='date_to')}"
+    return f"""
+        SELECT n.unique_id
+        FROM news n
+        WHERE {predicate}
+          AND {_NOT_AUDITED}
+          AND n.published_at >= {_BRT_DAY_START.format(param='date_from')}
+          {upper}
+        ORDER BY n.published_at DESC
+        LIMIT %(limit)s
+    """
+
+
+def build_select_sql(
+    select: str, with_date_to: bool, term_fields: str = DEFAULT_TERM_FIELDS
+) -> str:
+    """SELECT da janela: `null-theme` (tema NULL), `mock` (summary '[MOCK]%'),
+    `null-summary` (tema gravado e summary NULL), `theme-code` (subárvore de um
+    código) ou `theme26-candidates` (ver o docstring do módulo).
 
     Parâmetros nomeados (ver build_select_params). Ordem: mais recentes primeiro.
     `null-theme`/`null-summary` sem teto (with_date_to=False) são recusados: ver o
-    docstring do módulo.
+    docstring do módulo. `term_fields` só vale para o theme26-candidates.
     """
     if select in SELECTS_REQUIRING_DATE_TO and not with_date_to:
         raise ValueError(f"--select {select} exige --date-to (teto da janela)")
+    if select in THEME_SELECTS:
+        return _theme_select_sql(select, with_date_to, term_fields)
     if select == "null-theme":
         predicate = "n.most_specific_theme_id IS NULL"
     elif select == "mock":
@@ -179,12 +421,39 @@ def build_select_sql(select: str, with_date_to: bool) -> str:
     """
 
 
-def build_select_params(select: str, date_from: str, date_to, limit: int) -> dict:
+def build_select_params(
+    select: str,
+    date_from: str,
+    date_to,
+    limit: int,
+    *,
+    theme_code=None,
+    campaign=None,
+    extra_codes=DEFAULT_EXTRA_CODES,
+) -> dict:
+    """Parâmetros nomeados do SELECT. Seleções de tema exigem `campaign` (exclusão
+    dos já auditados); `theme-code` exige `theme_code`; `extra_codes` só vale para o
+    theme26-candidates (vazio = só o bloco do 19)."""
     params = {"date_from": date_from, "limit": limit}
     if date_to:
         params["date_to"] = date_to
     if select == "mock":
         params["mock_pattern"] = MOCK_SUMMARY_PATTERN
+    if select in THEME_SELECTS:
+        if not campaign:
+            raise ValueError(f"--select {select} exige a campanha (--campaign)")
+        if select == "theme-code" and not theme_code:
+            raise ValueError("--select theme-code exige o código (--theme-code)")
+        base = theme_code if select == "theme-code" else THEME26_BASE_CODE
+        params["theme_code"] = base
+        params["theme_prefix"] = f"{base}.%"
+        params["campaign"] = campaign
+        if select == "theme26-candidates":
+            extras = list(extra_codes or ())
+            params["extra_codes"] = extras
+            params["extra_prefixes"] = [f"{code}.%" for code in extras]
+            params["agency_keys"] = list(THEME26_AGENCY_KEYS)
+            params["term_patterns"] = [f"%{term}%" for term in THEME26_TERMS]
     return params
 
 
@@ -193,14 +462,31 @@ def _get_conn():
     return psycopg2.connect(handler._get_database_url())
 
 
-def get_window_uids(select: str, date_from: str, date_to, limit: int) -> list:
+def get_window_uids(
+    select: str,
+    date_from: str,
+    date_to,
+    limit: int,
+    *,
+    theme_code=None,
+    campaign=None,
+    term_fields: str = DEFAULT_TERM_FIELDS,
+    extra_codes=DEFAULT_EXTRA_CODES,
+) -> list:
+    sql = build_select_sql(select, with_date_to=bool(date_to), term_fields=term_fields)
+    params = build_select_params(
+        select,
+        date_from,
+        date_to,
+        limit,
+        theme_code=theme_code,
+        campaign=campaign,
+        extra_codes=extra_codes,
+    )
     conn = _get_conn()
     try:
         cur = conn.cursor()
-        cur.execute(
-            build_select_sql(select, with_date_to=bool(date_to)),
-            build_select_params(select, date_from, date_to, limit),
-        )
+        cur.execute(sql, params)
         return [row[0] for row in cur.fetchall()]
     finally:
         conn.close()
@@ -316,6 +602,224 @@ def process_one_summary(uid: str):
     except Exception as e:  # noqa: BLE001 — tokens já gastos: devolve o usage
         return uid, f"error:{type(e).__name__}", usage
     return uid, ("ok" if written else "summary_present"), usage
+
+
+# ---------------------------------------------------------------------------
+# --theme-only
+# ---------------------------------------------------------------------------
+
+# Campos da resposta, em ordem de preferência no empate de profundidade.
+_CHAIN_FIELDS = (
+    "theme_1_level_3_code",
+    "most_specific_theme_code",
+    "theme_1_level_2_code",
+    "theme_1_level_1_code",
+)
+
+
+def build_theme_parents(taxonomy: dict) -> dict:
+    """{código: código do pai} a partir da árvore de load_taxonomy_from_postgres
+    (L1 → None). Só os códigos existentes na taxonomia entram."""
+    parents: dict = {}
+    for l1, l1_data in (taxonomy or {}).items():
+        parents[l1] = None
+        for l2, l2_data in ((l1_data or {}).get("subcategories") or {}).items():
+            parents[l2] = l1
+            for l3 in (l2_data or {}).get("subcategories") or {}:
+                parents[l3] = l2
+    return parents
+
+
+def _code_depth(code: str) -> int:
+    return code.count(".") + 1
+
+
+def resolve_theme_chain(result: dict, parents: dict):
+    """Cadeia coerente (l1, l2, l3, mais específico) a partir da resposta, ou None.
+
+    Regra (MAX_LEVEL_DROP = 1):
+      1. Considera os códigos bem formados dos campos l3, mais específico, l2 e l1
+         (texto que não é código, como um rótulo, é ignorado).
+      2. Vale o código VÁLIDO (presente em `parents`, i.e. na taxonomia do banco)
+         mais profundo; no empate, a ordem acima. l1/l2 vêm da taxonomia, não da
+         resposta (ex.: l1 '04' com l3 '26.01.03' vira 26 → 26.01 → 26.01.03).
+      3. Ele pode estar no máximo MAX_LEVEL_DROP nível acima do código mais profundo
+         que o LLM pediu. Pediu 26.01.09 (inexistente) → 26.01; pediu 26.07
+         (inexistente) → 26. Mas pediu 19.03.03 e só o 19 existe → None: rebaixar
+         um artigo para só o L1 quando o LLM escolheu um L3 perde a informação e,
+         no tema 26, mandaria Defesa Civil para "Defesa e Forças Armadas".
+      4. Nenhum código válido → None.
+    None = resposta inválida: quem chama não grava nem audita (o artigo volta no
+    próximo run).
+    """
+    codes = []
+    for field in _CHAIN_FIELDS:
+        value = (result or {}).get(field)
+        if isinstance(value, str) and _CODE_RE.match(value.strip()):
+            codes.append(value.strip())
+    valid = [code for code in codes if code in parents]
+    if not valid:
+        return None
+    requested = max(_code_depth(code) for code in codes)
+    best = max(valid, key=_code_depth)  # o primeiro entre os mais profundos
+    chain = [best]
+    while parents.get(chain[-1]):
+        chain.append(parents[chain[-1]])
+    chain.reverse()
+    if len(chain) < requested - MAX_LEVEL_DROP:
+        return None
+    l1, l2, l3 = (chain + [None, None])[:3]
+    return (l1, l2, l3, best)
+
+
+def check_audit_table(campaign: str):
+    """Preflight da auditoria. Devolve a mensagem de erro, ou None se está tudo ok.
+
+    Exige a tabela da migração 034 com as colunas do contrato, UNIQUE (campaign,
+    unique_id) sem predicado e a campanha sem registros de fonte que não seja
+    `llm:*` (reusar a campanha da 034 tiraria da seleção os artigos que ela auditou
+    e que continuam no 19). Colunas a mais são aceitas.
+    """
+    conn = _get_conn()
+    try:
+        cur = conn.cursor()
+        cur.execute(AUDIT_COLUMNS_SQL, (AUDIT_TABLE,))
+        columns = {row[0] for row in cur.fetchall()}
+        if not columns:
+            return (
+                f"tabela {AUDIT_TABLE} ausente: rode antes a migração 034 do "
+                "data-platform (tema 26), que a cria"
+            )
+        missing = [col for col in AUDIT_REQUIRED_COLUMNS if col not in columns]
+        if missing:
+            return f"{AUDIT_TABLE} sem as colunas {', '.join(missing)} (contrato da migração 034)"
+        cur.execute(AUDIT_UNIQUE_SQL, (AUDIT_TABLE,))
+        row = cur.fetchone()
+        if not (row and row[0]):
+            return (
+                f"{AUDIT_TABLE} sem UNIQUE (campaign, unique_id) (contrato da migração "
+                "034): sem ele a idempotência por campanha não é segura"
+            )
+        cur.execute(CAMPAIGN_FOREIGN_SOURCES_SQL, (campaign, f"{LLM_SOURCE_PREFIX}%"))
+        foreign = [row[0] for row in cur.fetchall()]
+        if foreign:
+            return (
+                f"a campanha {campaign!r} já tem registros de outra fonte "
+                f"({', '.join(foreign)}): use uma campanha própria do LLM "
+                "(ex.: tema26-llm-d1)"
+            )
+        return None
+    finally:
+        conn.close()
+
+
+def _read_theme_ids(uid: str):
+    """(l1, l2, l3, mais específico) atuais do artigo, ou None se ele não existe."""
+    conn = _get_conn()
+    try:
+        cur = conn.cursor()
+        cur.execute(READ_THEME_IDS_SQL, (uid,))
+        row = cur.fetchone()
+        return tuple(row) if row else None
+    finally:
+        conn.close()
+
+
+def _write_theme_change(uid, campaign, source, old_ids, new_ids, id_to_code) -> str:
+    """UPDATE guardado + INSERT na auditoria, na MESMA transação.
+
+    Devolve ok | unchanged | theme_changed. Exceção (ex.: UNIQUE da auditoria
+    violado por um run concorrente) desfaz tudo e sobe para quem chama.
+    """
+    params = {"unique_id": uid}
+    params.update(zip(_OLD_KEYS, old_ids))
+    params.update(zip(_NEW_KEYS, new_ids))
+    old_codes = [id_to_code.get(i) if i is not None else None for i in old_ids]
+    new_codes = [id_to_code.get(i) if i is not None else None for i in new_ids]
+
+    conn = _get_conn()
+    try:
+        cur = conn.cursor()
+        if tuple(new_ids) == tuple(old_ids):
+            cur.execute(LOCK_UNCHANGED_SQL, params)
+            if cur.fetchone() is None:
+                conn.rollback()
+                return "theme_changed"
+            status = "unchanged"
+        else:
+            cur.execute(UPDATE_THEME_SQL, params)
+            if cur.rowcount != 1:
+                conn.rollback()
+                return "theme_changed"
+            status = "ok"
+        cur.execute(INSERT_AUDIT_SQL, (campaign, uid, *old_codes, *new_codes, source))
+        conn.commit()
+        return status
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        conn.close()
+
+
+def make_theme_only_process(*, campaign: str, source: str, code_to_id: dict, parents: dict):
+    """Fábrica do `process(uid) -> (uid, status, usage)` do --theme-only.
+
+    status: ok | unchanged | theme_changed | invalid_theme | no_theme |
+    unknown_old_theme | missing | classification_failed | model_unavailable |
+    error:<Exceção>. Só ok/unchanged gravam auditoria (e saem da seleção).
+    NUNCA grava resumo, sentimento, NER nem publica evento.
+    """
+    id_to_code = {theme_id: code for code, theme_id in code_to_id.items()}
+
+    def process(uid: str):
+        article = handler.fetch_article(uid)
+        if not article:
+            return uid, "missing", dict(_ZERO_USAGE)
+        # Lido ANTES da chamada: a guarda pega mudança feita durante ela.
+        try:
+            old_ids = _read_theme_ids(uid)
+        except Exception as e:  # noqa: BLE001
+            return uid, f"error:{type(e).__name__}", dict(_ZERO_USAGE)
+        if old_ids is None:
+            return uid, "missing", dict(_ZERO_USAGE)
+        if all(i is None for i in old_ids):
+            # Sem tema, o artigo é do worker ao vivo (NER + evento).
+            return uid, "no_theme", dict(_ZERO_USAGE)
+        if any(i is not None and i not in id_to_code for i in old_ids):
+            return uid, "unknown_old_theme", dict(_ZERO_USAGE)
+
+        try:
+            result = handler._get_classifier().classify_single(article, return_format="dict")
+        except Exception as e:  # noqa: BLE001 — um artigo ruim não derruba o run
+            return uid, f"error:{type(e).__name__}", dict(_ZERO_USAGE)
+
+        usage = (result or {}).get("_usage") or dict(_ZERO_USAGE)
+        if handler.is_combined_failure(result):
+            error = handler.combined_failure_error(result)
+            status = (
+                "model_unavailable"
+                if is_model_unavailable_error(error)
+                else "classification_failed"
+            )
+            print(f"  {uid}: {status} ({error})")
+            return uid, status, usage
+
+        chain = resolve_theme_chain(result, parents)
+        if chain is None or any(code is not None and code not in code_to_id for code in chain):
+            answer = " ".join(f"{field}={result.get(field)!r}" for field in _CHAIN_FIELDS)
+            print(f"  {uid}: invalid_theme ({answer})")
+            return uid, "invalid_theme", usage
+        new_ids = tuple(code_to_id[code] if code else None for code in chain)
+
+        try:
+            status = _write_theme_change(uid, campaign, source, old_ids, new_ids, id_to_code)
+        except Exception as e:  # noqa: BLE001 — tokens já gastos: devolve o usage
+            print(f"  {uid}: error ({type(e).__name__}: {e})")
+            return uid, f"error:{type(e).__name__}", usage
+        return uid, status, usage
+
+    return process
 
 
 def _record_usage_for(conn, model_id: str, usage: dict) -> None:
@@ -449,6 +953,28 @@ def _iso_date(value: str) -> str:
         raise argparse.ArgumentTypeError(f"data inválida {value!r} (use AAAA-MM-DD)") from e
 
 
+def _theme_code_arg(value: str) -> str:
+    if not _CODE_RE.match(value):
+        raise argparse.ArgumentTypeError(
+            f"código de tema inválido {value!r} (use NN, NN.NN ou NN.NN.NN)"
+        )
+    return value
+
+
+def _extra_codes_arg(value: str) -> tuple:
+    """Lista de códigos separados por vírgula; vazio = nenhum código extra."""
+    if not value.strip():
+        return ()
+    codes = tuple(part.strip() for part in value.split(","))
+    for code in codes:
+        if not _CODE_RE.match(code):
+            raise argparse.ArgumentTypeError(
+                f"--extra-codes: código inválido {code!r} (use NN, NN.NN ou NN.NN.NN, "
+                "separados por vírgula; vazio = nenhum)"
+            )
+    return codes
+
+
 def build_arg_parser() -> argparse.ArgumentParser:
     ap = argparse.ArgumentParser(
         description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
@@ -458,7 +984,41 @@ def build_arg_parser() -> argparse.ArgumentParser:
         choices=SELECT_CHOICES,
         required=True,
         help="null-theme: tema NULL na janela; mock: summary LIKE '[MOCK]%%' na janela; "
-        "null-summary: tema gravado e summary NULL na janela (só o resumo, prompt enxuto)",
+        "null-summary: tema gravado e summary NULL na janela (só o resumo, prompt enxuto); "
+        "theme-code: subárvore de --theme-code; theme26-candidates: candidatos ao tema 26 "
+        "(as duas últimas só com --theme-only e --campaign)",
+    )
+    ap.add_argument(
+        "--theme-code",
+        type=_theme_code_arg,
+        default=None,
+        help="código da subárvore (só com --select theme-code), ex.: 19",
+    )
+    ap.add_argument(
+        "--theme-only",
+        action="store_true",
+        help="grava SÓ os ids de tema, com guarda e auditoria em news_theme_changes "
+        "(obrigatório nas seleções de tema; proibido nas demais)",
+    )
+    ap.add_argument(
+        "--campaign",
+        default=None,
+        help="campanha da auditoria (obrigatória com --theme-only), ex.: tema26-llm-d1; "
+        "[a-z0-9._-], até 50 caracteres; os já auditados nela saem da seleção",
+    )
+    ap.add_argument(
+        "--term-fields",
+        choices=tuple(TERM_FIELDS),
+        default=None,
+        help=f"theme26-candidates: onde buscar os termos (padrão {DEFAULT_TERM_FIELDS}: "
+        "só o título; title-content inclui o conteúdo)",
+    )
+    ap.add_argument(
+        "--extra-codes",
+        type=_extra_codes_arg,
+        default=None,
+        help="theme26-candidates: códigos do bloco extra, separados por vírgula "
+        f"(padrão {','.join(DEFAULT_EXTRA_CODES)}; '' = nenhum, só o bloco do 19)",
     )
     ap.add_argument(
         "--date-from", type=_iso_date, required=True, help="dia BRT inicial (inclusivo)"
@@ -480,8 +1040,67 @@ def build_arg_parser() -> argparse.ArgumentParser:
     return ap
 
 
+def _theme_args_error(args) -> str | None:
+    """Combinações de argumentos do --theme-only (checadas antes de tocar o banco)."""
+    theme_select = args.select in THEME_SELECTS
+    if theme_select and not args.theme_only:
+        return f"--select {args.select} exige --theme-only (grava só o tema)"
+    if args.theme_only and not theme_select:
+        return (
+            f"--theme-only só vale com --select {' ou '.join(sorted(THEME_SELECTS))} "
+            f"(não com {args.select})"
+        )
+    if args.campaign is not None and not args.theme_only:
+        return "--campaign só vale com --theme-only"
+    if args.theme_only:
+        if args.campaign is None:
+            return "--theme-only exige --campaign (ex.: tema26-llm-d1)"
+        if not _CAMPAIGN_RE.match(args.campaign):
+            return (
+                f"--campaign inválida {args.campaign!r}: use [a-z0-9._-], começando por "
+                "letra ou dígito, até 50 caracteres (ex.: tema26-llm-d1)"
+            )
+    if args.select == "theme-code" and not args.theme_code:
+        return "--select theme-code exige --theme-code (ex.: 19)"
+    if args.theme_code and args.select != "theme-code":
+        return "--theme-code só vale com --select theme-code"
+    if args.select != "theme26-candidates":
+        for flag, value in (
+            ("--term-fields", args.term_fields),
+            ("--extra-codes", args.extra_codes),
+        ):
+            if value is not None:
+                return f"{flag} só vale com --select theme26-candidates"
+    return None
+
+
+def _theme_taxonomy_error(args, code_to_id: dict, extra_codes) -> str | None:
+    """Os códigos pedidos existem no banco (mapa código→id lido agora)?"""
+    if args.select == "theme-code" and args.theme_code not in code_to_id:
+        return f"--theme-code {args.theme_code} não existe na tabela themes"
+    if args.select == "theme26-candidates":
+        missing = [code for code in THEME26_TARGET_CODES if code not in code_to_id]
+        if missing:
+            return (
+                f"tema 26 ausente da tabela themes (faltam {', '.join(missing)}): rode "
+                "antes a migração 034 do data-platform"
+            )
+        unknown = [code for code in extra_codes if code not in code_to_id]
+        if unknown:
+            return f"--extra-codes com códigos inexistentes em themes: {', '.join(unknown)}"
+    return None
+
+
 def main(argv=None) -> int:
     args = build_arg_parser().parse_args(argv)
+
+    theme_error = _theme_args_error(args)
+    if theme_error:
+        print(f"ERRO: {theme_error}", file=sys.stderr)
+        return 1
+    theme_only = args.theme_only
+    term_fields = args.term_fields or DEFAULT_TERM_FIELDS
+    extra_codes = DEFAULT_EXTRA_CODES if args.extra_codes is None else args.extra_codes
 
     if not os.environ.get("DATABASE_URL"):
         print("ERRO: DATABASE_URL nao definida", file=sys.stderr)
@@ -528,8 +1147,38 @@ def main(argv=None) -> int:
         f"cota={daily_quota}  fração={quota_fraction}"
     )
 
+    if theme_only:
+        # Preflight ANTES da seleção (também no --dry-run): a seleção depende da
+        # tabela de auditoria, e a escrita, do contrato dela.
+        audit_error = check_audit_table(args.campaign)
+        if audit_error:
+            print(f"ERRO: {audit_error}", file=sys.stderr)
+            return 1
+        code_to_id = handler._get_code_to_id()
+        taxonomy_error = _theme_taxonomy_error(args, code_to_id, extra_codes)
+        if taxonomy_error:
+            print(f"ERRO: {taxonomy_error}", file=sys.stderr)
+            return 1
+        detail = f"  campanha={args.campaign}"
+        if args.select == "theme-code":
+            detail += f"  theme_code={args.theme_code}"
+        else:
+            detail += (
+                f"  term_fields={term_fields}  extra_codes={','.join(extra_codes) or '(nenhum)'}"
+            )
+        print(f"--theme-only{detail}")
+
     summary_only = args.select == "null-summary"
-    uids = get_window_uids(args.select, args.date_from, args.date_to, args.limit)
+    uids = get_window_uids(
+        args.select,
+        args.date_from,
+        args.date_to,
+        args.limit,
+        theme_code=args.theme_code,
+        campaign=args.campaign,
+        term_fields=term_fields,
+        extra_codes=extra_codes,
+    )
     print(f"selecionados={len(uids)} (limit={args.limit})")
     if not uids:
         print("nada pendente — concluido.")
@@ -549,15 +1198,37 @@ def main(argv=None) -> int:
         return 0
 
     # Aquece os caches do handler antes das threads e confere o modelo em uso.
-    classifier_model = handler._get_classifier().llm_client.model_id
+    classifier = handler._get_classifier()
+    classifier_model = classifier.llm_client.model_id
     if classifier_model != model_id:
         print(
             f"ERRO: classificador usa {classifier_model!r}, esperado {model_id!r}",
             file=sys.stderr,
         )
         return 1
-    if not summary_only:
-        handler._get_code_to_id()  # null-summary não grava tema
+
+    if theme_only:
+        parents = build_theme_parents(classifier.llm_client.taxonomy)
+        if args.select == "theme26-candidates":
+            missing = [code for code in THEME26_TARGET_CODES if code not in parents]
+            if missing:
+                print(
+                    f"ERRO: a taxonomia do classificador não tem o tema 26 (faltam "
+                    f"{', '.join(missing)})",
+                    file=sys.stderr,
+                )
+                return 1
+        process = make_theme_only_process(
+            campaign=args.campaign,
+            source=f"{LLM_SOURCE_PREFIX}{model_id}",
+            code_to_id=code_to_id,
+            parents=parents,
+        )
+    elif summary_only:
+        process = process_one_summary
+    else:
+        handler._get_code_to_id()  # aquece o mapa código→id (process_one grava tema)
+        process = process_one
 
     stats = run_reenrich(
         uids,
@@ -565,10 +1236,15 @@ def main(argv=None) -> int:
         daily_quota=daily_quota,
         quota_fraction=quota_fraction,
         workers=args.workers,
-        process=process_one_summary if summary_only else process_one,
+        process=process,
     )
     if summary_only:
         _summary_only_gaps(missing_sentiment, with_embedding, len(uids))
+    if theme_only:
+        print(
+            "lembrete: sync do Typesense e MERGE do BigQuery a partir da auditoria "
+            f"(campanha {args.campaign})"
+        )
     return 1 if stats["model_unavailable"] else 0
 
 
