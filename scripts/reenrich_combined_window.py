@@ -78,9 +78,10 @@ theme26-candidates, --date-from obrigatório, --date-to opcional, --limit, --wor
   - `--select theme26-candidates`: L1 19, mais artigos em 04 / 05.02.01 / 15.02.03
     (--extra-codes) do MDR ou com termo-chave ("defesa civil", "calamidade",
     "situação de emergência", "estado de emergência", "desastre", com e sem acento:
-    não há `unaccent` no banco). O termo é buscado só no TÍTULO por padrão;
-    `--term-fields title-content` inclui o conteúdo (escopo da D1, decidido em 22/10:
-    1.586 candidatos antes da 034). `--extra-codes ''` deixa só o bloco do 19.
+    não há `unaccent` no banco). O termo é buscado no TÍTULO E no CONTEÚDO por
+    padrão (escopo da D1, decidido em 22/10: 1.586 candidatos antes da 034; o DAG não
+    passa --term-fields); `--term-fields title` restringe ao título. `--extra-codes ''`
+    deixa só o bloco do 19.
 Por artigo:
     old = ids de tema atuais (lidos ANTES da chamada)
     result = classifier.classify_single(article)        # modelo = ENRICHMENT_MODEL_ID
@@ -236,10 +237,13 @@ THEME26_TERMS = (
     "estado de emergencia",
     "desastre",
 )
-# Onde procurar os termos. Padrão: só o título (no conteúdo, "calamidade" pega
-# "calamidade fiscal" e "desastre" pega usos figurados; ~1,4x os candidatos).
+# Onde procurar os termos. Padrão: título E conteúdo (escopo da D1 decidido em 22/10:
+# 1.586 candidatos antes da 034, ~1.377 depois). O DAG enrichment_backfill (DP-2) não
+# passa --term-fields, então o padrão é o que vale na D1. `title` (só o título, ~1,4x
+# menos candidatos: no conteúdo, "calamidade" pega "calamidade fiscal" e "desastre"
+# pega usos figurados) fica para override; a guarda do 26 segura os extras.
 TERM_FIELDS = {"title": ("n.title",), "title-content": ("n.title", "n.content")}
-DEFAULT_TERM_FIELDS = "title"
+DEFAULT_TERM_FIELDS = "title-content"
 
 # Regra da cadeia de tema: o código válido mais profundo pode estar no máximo este
 # número de níveis acima do mais profundo que o LLM pediu (ver resolve_theme_chain).
@@ -1190,7 +1194,7 @@ def build_arg_parser() -> argparse.ArgumentParser:
         choices=tuple(TERM_FIELDS),
         default=None,
         help=f"theme26-candidates: onde buscar os termos (padrão {DEFAULT_TERM_FIELDS}: "
-        "só o título; title-content inclui o conteúdo)",
+        "título e conteúdo; title restringe ao título)",
     )
     ap.add_argument(
         "--extra-codes",

@@ -291,8 +291,9 @@ As seleções de tema implicam o modo só-tema e a campanha `tema26-llm-d1`. As 
 são as do contrato do DAG `enrichment_backfill` (22/10): `--select theme-code
 --theme-code <c>` ou `--select theme26-candidates`, `--date-from` obrigatório,
 `--date-to` opcional, `--limit`, `--workers`, `[--dry-run]` e, no
-`theme26-candidates`, `--term-fields`. `--theme-only` e `--campaign` continuam
-aceitos (o DAG do DP-2 os passa); `--campaign` só aceita `tema26-llm-*`.
+`theme26-candidates`, `--term-fields` (padrão `title-content`). `--theme-only` e
+`--campaign` continuam aceitos por compatibilidade (o DAG do DP-2 não os passa);
+`--campaign` só aceita `tema26-llm-*`.
 
 ```bash
 ENRICHMENT_MODEL_ID=us.anthropic.claude-haiku-4-5-20251001-v1:0 \
@@ -309,9 +310,10 @@ PYTHONPATH=src .venv/bin/python scripts/reenrich_combined_window.py \
     AND (MDR OR termo-chave))) AND NOT EXISTS (auditado ativo na campanha) AND
     janela`. Termos: "defesa civil", "calamidade", "situação/estado de emergência"
     (com e sem acento: não há `unaccent`) e "desastre", por `ILIKE`.
-  - `--term-fields title` (padrão) ou `title-content` (escopo da D1, decidido em
-    22/10). No conteúdo, "calamidade" pega "calamidade fiscal" e "desastre" pega usos
-    figurados: a guarda do 26 (abaixo) impede que esses extras mudem de tema.
+  - `--term-fields title-content` (padrão: escopo da D1, decidido em 22/10; o DAG
+    `enrichment_backfill` não passa `--term-fields`) ou `title` (só o título). No
+    conteúdo, "calamidade" pega "calamidade fiscal" e "desastre" pega usos figurados:
+    a guarda do 26 (abaixo) impede que esses extras mudem de tema.
   - `--extra-codes 04,05.02.01,15.02.03` (padrão); `--extra-codes ''` deixa só o 19.
   - Contagens em produção (21–22/10, antes da 034, SQL real do script):
     `theme-code 19` = 485; `theme26-candidates` = 1.155 só no título e 1.586 com o
