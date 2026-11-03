@@ -12,10 +12,14 @@ só troca a imagem.
 ## Fluxo de `enrich_article(uid)`
 
 1. **Idempotência:** se `news.most_specific_theme_id` já está preenchido → `skipped`.
-   Se, além disso, há resumo e `content_embedding` é nulo, o `dgb.news.enriched`
+   Se é uma **reentrega** da mesma mensagem (`deliveryAttempt > 1` no push) e o
+   artigo tem resumo mas `content_embedding` nulo, o `dgb.news.enriched` da tentativa
    anterior se perdeu: o worker **republica** o evento (`republished: true` no corpo,
-   WARNING `enrichment_republished`). Idempotente: o worker de embeddings pula quem
-   já tem vetor e o sync do Typesense faz upsert.
+   WARNING `enrichment_republished`). Embeddings (pula quem já tem vetor), Typesense
+   (upsert) e federation (`ON CONFLICT DO NOTHING`) são idempotentes; o push worker
+   não é, por isso re-scrapes (mensagens novas, tentativa 1) nunca republicam. O
+   `deliveryAttempt` só vem com dead-letter policy na subscription
+   (`dgb.news.scraped--enrichment`, infra `pubsub.tf`): sem ela, não há republicação.
 2. `fetch_article` → `not_found` se não existe.
 3. **Chamada combinada** (tema + resumo + sentimento) no modelo `ENRICHMENT_MODEL_ID`.
 4. **Falha combinada** (`_error` no resultado ou todos os códigos de tema nulos):
@@ -46,7 +50,7 @@ artigos com tema e resumo, sem embedding e fora do Typesense (26/10, 29/10 e 02/
 | Status | Significado | Publica `enriched`? |
 |---|---|---|
 | `enriched` | tema, resumo e sentimento gravados | sim |
-| `skipped` | já tinha tema (republicação do scraper) | só se tiver resumo e não tiver `content_embedding` (`republished: true`) |
+| `skipped` | já tinha tema (republicação do scraper) | só na reentrega (`deliveryAttempt > 1`) com resumo e sem `content_embedding` (`republished: true`) |
 | `not_found` | uid inexistente em `news` | não |
 | `classification_failed` | chamada combinada falhou (campos `error` e `ner` no corpo) | não |
 | `update_failed` | classificou, mas os códigos de tema não mapearam para `themes` | não |
@@ -82,7 +86,7 @@ nem as chaves; campos novos entram no fim.
 | INFO | `enrichment_ner uid=<uid> status=<ran\|failed\|skipped_already_done> model=<id> [entities=<n>]` | Uma por evento que chega à etapa de NER (métrica de NER por uid). |
 | WARNING | `enrichment_ner uid=<uid> status=skipped_check_failed model=<id> error=<Exceção>` | A consulta de guarda do NER falhou (erro de DB): NER pulado (fail-closed). Não é "já feito": no caminho de sucesso o tema é gravado e o worker não tenta de novo, então recupere com `scripts/backfill_ner_corpus.py`. |
 | ERROR | `enrichment_publish_failed uid=<uid> error=<Exceção>: <msg>` | O `dgb.news.enriched` não foi confirmado pelo Pub/Sub. O `/process` responde 503 e a reentrega republica. |
-| WARNING | `enrichment_republished uid=<uid> reason=embedding_missing` | Artigo já enriquecido (tema + resumo) sem `content_embedding`: o evento anterior se perdeu e foi republicado. Esperado só depois de falha de publicação ou morte de instância. |
+| WARNING | `enrichment_republished uid=<uid> reason=embedding_missing delivery_attempt=<n>` | Reentrega de artigo já enriquecido (tema + resumo) sem `content_embedding`: o evento da tentativa anterior se perdeu e foi republicado. Esperado só depois de falha de publicação ou morte de instância. |
 
 Outras linhas úteis: `Cliente Bedrock inicializado: enrichment=<id> ner=<id>` (cold
 start) e `Result for <uid>: <status>` (`app.py`, por evento).

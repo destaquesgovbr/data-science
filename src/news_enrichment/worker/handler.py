@@ -17,9 +17,9 @@ Linhas de log estáveis (para métricas/alertas baseados em log; ver README.md):
              scripts/backfill_ner_corpus.py)
   - ERROR    enrichment_publish_failed uid=<uid> error=<Exceção>: <msg>
              (dgb.news.enriched não confirmado; o /process responde 503 e o Pub/Sub reentrega)
-  - WARNING  enrichment_republished uid=<uid> reason=embedding_missing
-             (reentrega/republicação do scraped com tema e resumo gravados, mas sem
-             content_embedding: o evento enriched anterior se perdeu)
+  - WARNING  enrichment_republished uid=<uid> reason=embedding_missing delivery_attempt=<n>
+             (reentrega da mesma mensagem scraped com tema e resumo gravados, mas sem
+             content_embedding: o evento enriched da tentativa anterior se perdeu)
 """
 
 import json
@@ -343,26 +343,21 @@ def publish_enriched_event(unique_id: str, most_specific_theme_code: str | None,
     logger.info(f"Published dgb.news.enriched for {unique_id} (message_id={message_id})")
 
 
-def enrich_article(unique_id: str) -> dict[str, Any]:
+def enrich_article(unique_id: str, delivery_attempt: int | None = None) -> dict[str, Any]:
     """
     Full enrichment pipeline for a single article.
+
+    Args:
+        unique_id: ID da notícia.
+        delivery_attempt: `deliveryAttempt` do push do Pub/Sub (None = desconhecido,
+            tratado como primeira entrega).
 
     Returns:
         Dict with status and stats.
     """
     # Idempotency check
     if is_already_enriched(unique_id):
-        # Tema gravado, mas o dgb.news.enriched pode ter se perdido (instância morta
-        # entre o UPDATE e o publish): sem embedding, republica. Falha → propaga (503).
-        pending = enriched_event_pending(unique_id)
-        if pending is None:
-            logger.info(f"Already enriched: {unique_id}")
-            return {"status": "skipped", "reason": "already_enriched"}
-        publish_enriched_event(
-            unique_id, pending["most_specific_theme_code"], pending["has_summary"]
-        )
-        logger.warning("enrichment_republished uid=%s reason=embedding_missing", unique_id)
-        return {"status": "skipped", "reason": "already_enriched", "republished": True}
+        return _skip_already_enriched(unique_id, delivery_attempt)
 
     # Fetch article
     article = fetch_article(unique_id)
@@ -414,6 +409,31 @@ def enrich_article(unique_id: str) -> dict[str, Any]:
     )
 
     return {"status": "enriched", "stats": stats}
+
+
+def _skip_already_enriched(unique_id: str, delivery_attempt: int | None) -> dict[str, Any]:
+    """Artigo já tem tema. Na REENTREGA da mesma mensagem, republica o enriched perdido.
+
+    A tentativa anterior pode ter gravado tema/resumo e morrido (liveness, 503) antes
+    de o dgb.news.enriched ser confirmado. Se ainda não há content_embedding, republica
+    (falha → EnrichedEventPublishError → 503). Só com delivery_attempt > 1: um
+    re-scrape é mensagem nova (tentativa 1) e o push worker não é idempotente; com o
+    worker de embeddings atrasado, republicar a cada re-scrape duplicaria notificações.
+    """
+    if (delivery_attempt or 1) > 1:
+        pending = enriched_event_pending(unique_id)
+        if pending is not None:
+            publish_enriched_event(
+                unique_id, pending["most_specific_theme_code"], pending["has_summary"]
+            )
+            logger.warning(
+                "enrichment_republished uid=%s reason=embedding_missing delivery_attempt=%s",
+                unique_id,
+                delivery_attempt,
+            )
+            return {"status": "skipped", "reason": "already_enriched", "republished": True}
+    logger.info(f"Already enriched: {unique_id}")
+    return {"status": "skipped", "reason": "already_enriched"}
 
 
 def _handle_combined_failure(

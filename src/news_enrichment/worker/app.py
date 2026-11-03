@@ -19,6 +19,7 @@ import json
 import logging
 import os
 from concurrent.futures import ThreadPoolExecutor
+from functools import partial
 
 from fastapi import FastAPI, Request, Response
 
@@ -34,6 +35,15 @@ WORKER_THREADS = int(os.environ.get("ENRICHMENT_WORKER_THREADS", "4"))
 _executor = ThreadPoolExecutor(max_workers=WORKER_THREADS, thread_name_prefix="enrich-worker")
 
 app = FastAPI(title="Enrichment Worker", version="1.0.0")
+
+
+def _delivery_attempt(envelope: dict) -> int | None:
+    """Número da tentativa de entrega (o push manda `deliveryAttempt` com dead-letter policy)."""
+    try:
+        value = int(envelope.get("deliveryAttempt"))
+    except (TypeError, ValueError):
+        return None
+    return value if value >= 1 else None
 
 
 @app.get("/health")
@@ -79,11 +89,14 @@ async def process(request: Request) -> Response:
         return Response(status_code=400, content="Missing unique_id")
 
     trace_id = message.get("attributes", {}).get("trace_id", "")
-    logger.info(f"Processing {unique_id} (trace={trace_id})")
+    delivery_attempt = _delivery_attempt(envelope)
+    logger.info(f"Processing {unique_id} (trace={trace_id}, attempt={delivery_attempt})")
 
     try:
         loop = asyncio.get_running_loop()
-        result = await loop.run_in_executor(_executor, enrich_article, unique_id)
+        result = await loop.run_in_executor(
+            _executor, partial(enrich_article, unique_id, delivery_attempt=delivery_attempt)
+        )
         logger.info(f"Result for {unique_id}: {result['status']}")
         return Response(status_code=200, content=json.dumps(result))
     except EnrichedEventPublishError as e:

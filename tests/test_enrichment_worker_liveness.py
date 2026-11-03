@@ -1,5 +1,5 @@
 """
-Enrichment Worker — liveness e perda do evento dgb.news.enriched (incidentes 26/10, 29/10, 02/11/2026).
+Enrichment Worker — liveness e perda do dgb.news.enriched (incidentes 26/10, 29/10 e 02/11/2026).
 
 Causa raiz: o `/process` era `async def` e chamava `enrich_article` (Bedrock via boto3 +
 psycopg2, síncronos) direto no event loop. Cada instância processava UMA mensagem por vez
@@ -73,7 +73,6 @@ def _reset_publisher():
 
 
 class TestHealthNaoBloqueia:
-
     def test_health_responde_enquanto_process_esta_em_andamento(self):
         """Com uma mensagem em processamento, o /health responde antes dela terminar."""
         started = threading.Event()
@@ -104,9 +103,9 @@ class TestHealthNaoBloqueia:
 
         assert resp.status_code == 200
         assert proc_resp.status_code == 200
-        assert done_at["health"] < done_at["process"], (
-            "o /health só respondeu depois do /process: o event loop está bloqueado"
-        )
+        assert (
+            done_at["health"] < done_at["process"]
+        ), "o /health só respondeu depois do /process: o event loop está bloqueado"
 
     def test_health_nao_usa_o_threadpool(self):
         """Com o threadpool padrão do anyio esgotado, o /health continua respondendo."""
@@ -132,9 +131,9 @@ class TestHealthNaoBloqueia:
         resp = _run(scenario())
 
         assert resp.status_code == 200
-        assert done_at["health"] < done_at["blocker"], (
-            "o /health esperou uma thread livre: depende do pool de trabalho"
-        )
+        assert (
+            done_at["health"] < done_at["blocker"]
+        ), "o /health esperou uma thread livre: depende do pool de trabalho"
 
 
 # =============================================================================
@@ -143,7 +142,6 @@ class TestHealthNaoBloqueia:
 
 
 class TestProcessParalelo:
-
     def test_duas_mensagens_sao_processadas_ao_mesmo_tempo(self):
         """Duas mensagens só passam da barreira se estiverem em execução simultânea."""
         barrier = threading.Barrier(2, timeout=2)
@@ -192,7 +190,6 @@ class TestProcessParalelo:
 
 
 class TestDeliveryAttempt:
-
     def _post(self, envelope):
         async def scenario():
             async with _client() as c:
@@ -226,7 +223,6 @@ class TestDeliveryAttempt:
 
 
 class TestFalhaDePublicacaoNaoFazAck:
-
     def test_falha_de_publicacao_responde_503(self):
         err = handler.EnrichedEventPublishError(f"{_UID}: TimeoutError")
 
@@ -269,7 +265,6 @@ def _publisher_mock(result=None, side_effect=None):
 
 
 class TestPublishEnrichedEventConfirmado:
-
     @patch.dict("os.environ", {"PUBSUB_TOPIC_NEWS_ENRICHED": _TOPIC})
     def test_espera_a_confirmacao_com_timeout(self):
         client, future = _publisher_mock()
@@ -350,7 +345,6 @@ def classification_result():
 
 
 class TestEnrichArticlePublicacao:
-
     @pytest.fixture(autouse=True)
     def _pipeline(self, monkeypatch, sample_article, classification_result):
         classifier = MagicMock()
@@ -500,7 +494,6 @@ class TestEnrichedEventPending:
 
 
 class TestInicializacaoThreadSafe:
-
     def test_classifier_inicializa_uma_vez_com_chamadas_concorrentes(self, monkeypatch):
         calls = {"n": 0}
 
