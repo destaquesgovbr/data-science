@@ -91,7 +91,7 @@ class TestProcessEndpoint:
         mock_enrich.return_value = {"status": "enriched"}
         resp = client.post("/process", json=pubsub_envelope)
         assert resp.status_code == 200
-        mock_enrich.assert_called_once_with("mec-2026-01-01-noticia-1")
+        mock_enrich.assert_called_once_with("mec-2026-01-01-noticia-1", delivery_attempt=None)
 
     def test_missing_data_returns_400(self, client):
         resp = client.post("/process", json={"message": {}})

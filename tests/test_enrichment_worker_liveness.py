@@ -36,15 +36,19 @@ _UID = "mec-2026-11-02-noticia-1"
 _TOPIC = "projects/p/topics/dgb.news.enriched"
 
 
-def _envelope(uid: str = _UID) -> dict:
+def _envelope(uid: str = _UID, delivery_attempt: int | None = None) -> dict:
     data = base64.b64encode(json.dumps({"unique_id": uid}).encode()).decode()
-    return {
+    env = {
         "message": {
             "data": data,
             "attributes": {"trace_id": "t-1", "event_version": "1.0"},
             "messageId": "m-1",
         }
     }
+    if delivery_attempt is not None:
+        # Com dead-letter policy, o push do Pub/Sub manda o número da tentativa.
+        env["deliveryAttempt"] = delivery_attempt
+    return env
 
 
 def _run(coro):
@@ -76,7 +80,7 @@ class TestHealthNaoBloqueia:
         release = threading.Event()
         done_at: dict[str, float] = {}
 
-        def slow_enrich(uid):
+        def slow_enrich(uid, delivery_attempt=None):
             started.set()
             release.wait(timeout=3)
             done_at["process"] = time.monotonic()
@@ -144,7 +148,7 @@ class TestProcessParalelo:
         """Duas mensagens só passam da barreira se estiverem em execução simultânea."""
         barrier = threading.Barrier(2, timeout=2)
 
-        def enrich_with_barrier(uid):
+        def enrich_with_barrier(uid, delivery_attempt=None):
             barrier.wait()
             return {"status": "enriched"}
 
@@ -166,7 +170,7 @@ class TestProcessParalelo:
         """O enrich_article roda numa thread do executor do worker (fora do event loop)."""
         seen: dict[str, str] = {}
 
-        def record_thread(uid):
+        def record_thread(uid, delivery_attempt=None):
             seen["thread"] = threading.current_thread().name
             return {"status": "enriched"}
 
@@ -180,6 +184,40 @@ class TestProcessParalelo:
         assert resp.status_code == 200
         assert isinstance(app_module._executor, ThreadPoolExecutor)
         assert seen["thread"].startswith("enrich-worker")
+
+
+# =============================================================================
+# deliveryAttempt do envelope chega ao handler
+# =============================================================================
+
+
+class TestDeliveryAttempt:
+
+    def _post(self, envelope):
+        async def scenario():
+            async with _client() as c:
+                return await c.post("/process", json=envelope)
+
+        with patch.object(app_module, "enrich_article", return_value={"status": "skipped"}) as m:
+            resp = _run(scenario())
+        return resp, m
+
+    def test_repassa_delivery_attempt_do_envelope(self):
+        resp, m = self._post(_envelope(delivery_attempt=3))
+        assert resp.status_code == 200
+        m.assert_called_once_with(_UID, delivery_attempt=3)
+
+    def test_sem_delivery_attempt_repassa_none(self):
+        resp, m = self._post(_envelope())
+        assert resp.status_code == 200
+        m.assert_called_once_with(_UID, delivery_attempt=None)
+
+    def test_delivery_attempt_invalido_vira_none(self):
+        env = _envelope()
+        env["deliveryAttempt"] = "x"
+        resp, m = self._post(env)
+        assert resp.status_code == 200
+        m.assert_called_once_with(_UID, delivery_attempt=None)
 
 
 # =============================================================================
@@ -344,6 +382,12 @@ class TestEnrichArticlePublicacao:
 
 
 class TestAlreadyEnrichedRepublica:
+    """Republica só na REENTREGA (deliveryAttempt > 1) da mesma mensagem.
+
+    O push worker não é idempotente (web push/Telegram). Um re-scrape é mensagem
+    nova (tentativa 1): se o worker de embeddings estiver atrasado ou fora, republicar
+    a cada re-scrape (~13x/dia) mandaria notificações duplicadas.
+    """
 
     @pytest.fixture(autouse=True)
     def _already(self, monkeypatch):
@@ -357,7 +401,7 @@ class TestAlreadyEnrichedRepublica:
             "enriched_event_pending",
             lambda uid: {"most_specific_theme_code": "05.01.02", "has_summary": True},
         )
-        result = handler.enrich_article(_UID)
+        result = handler.enrich_article(_UID, delivery_attempt=2)
 
         self.publish.assert_called_once_with(_UID, "05.01.02", True)
         assert result["status"] == "skipped"
@@ -366,7 +410,7 @@ class TestAlreadyEnrichedRepublica:
 
     def test_com_embedding_nao_republica(self, monkeypatch):
         monkeypatch.setattr(handler, "enriched_event_pending", lambda uid: None)
-        result = handler.enrich_article(_UID)
+        result = handler.enrich_article(_UID, delivery_attempt=2)
 
         self.publish.assert_not_called()
         assert result == {"status": "skipped", "reason": "already_enriched"}
@@ -379,7 +423,7 @@ class TestAlreadyEnrichedRepublica:
         )
         self.publish.side_effect = handler.EnrichedEventPublishError("x")
         with pytest.raises(handler.EnrichedEventPublishError):
-            handler.enrich_article(_UID)
+            handler.enrich_article(_UID, delivery_attempt=5)
 
     def test_republicacao_loga_linha_estavel(self, monkeypatch, caplog):
         monkeypatch.setattr(
@@ -388,11 +432,25 @@ class TestAlreadyEnrichedRepublica:
             lambda uid: {"most_specific_theme_code": "05.01.02", "has_summary": True},
         )
         with caplog.at_level("WARNING", logger="news_enrichment.worker.handler"):
-            handler.enrich_article(_UID)
+            handler.enrich_article(_UID, delivery_attempt=2)
         assert any(
-            r.getMessage() == f"enrichment_republished uid={_UID} reason=embedding_missing"
+            r.getMessage()
+            == f"enrichment_republished uid={_UID} reason=embedding_missing delivery_attempt=2"
             for r in caplog.records
         )
+
+    @pytest.mark.parametrize("attempt", [None, 1])
+    def test_primeira_entrega_nao_consulta_nem_republica(self, monkeypatch, attempt):
+        """Re-scrape (mensagem nova) de artigo já enriquecido: só pula, sem query extra."""
+        pending = MagicMock(
+            return_value={"most_specific_theme_code": "05.01.02", "has_summary": True}
+        )
+        monkeypatch.setattr(handler, "enriched_event_pending", pending)
+        result = handler.enrich_article(_UID, delivery_attempt=attempt)
+
+        pending.assert_not_called()
+        self.publish.assert_not_called()
+        assert result == {"status": "skipped", "reason": "already_enriched"}
 
 
 class TestEnrichedEventPending:
