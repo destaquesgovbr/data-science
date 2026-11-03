@@ -34,7 +34,9 @@ O `/process` responde **200 (ACK)** em todos esses status, inclusive em exceçã
 tratada (evita retry infinito do Pub/Sub). Payload inválido dá 400. A exceção é a
 publicação: o `publish` do `dgb.news.enriched` espera a confirmação do Pub/Sub
 (`ENRICHED_PUBLISH_TIMEOUT_SECONDS`, default 30) e, se falhar, o `/process` responde
-**503** para o Pub/Sub reentregar; a reentrega cai no passo 1 e republica.
+**503** para o Pub/Sub reentregar; a reentrega cai no passo 1 e republica. Também dá
+503 (`RetryableEnrichmentError`) um erro de banco ao checar, na reentrega, se o
+evento está pendente.
 
 ### Concorrência e liveness
 

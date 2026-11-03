@@ -52,7 +52,11 @@ _init_lock = threading.RLock()
 PUBLISH_TIMEOUT_SECONDS = float(os.environ.get("ENRICHED_PUBLISH_TIMEOUT_SECONDS", "30"))
 
 
-class EnrichedEventPublishError(RuntimeError):
+class RetryableEnrichmentError(RuntimeError):
+    """Falha que NÃO pode virar ACK: o /process responde 503 e o Pub/Sub reentrega."""
+
+
+class EnrichedEventPublishError(RetryableEnrichmentError):
     """dgb.news.enriched não foi confirmado pelo Pub/Sub.
 
     O /process responde 503 (NACK) para o Pub/Sub reentregar; na reentrega, o
@@ -421,7 +425,13 @@ def _skip_already_enriched(unique_id: str, delivery_attempt: int | None) -> dict
     worker de embeddings atrasado, republicar a cada re-scrape duplicaria notificações.
     """
     if (delivery_attempt or 1) > 1:
-        pending = enriched_event_pending(unique_id)
+        try:
+            pending = enriched_event_pending(unique_id)
+        except Exception as e:
+            # "Não deu para checar" não é "nada pendente": NACK para tentar de novo.
+            raise RetryableEnrichmentError(
+                f"{unique_id}: checagem do evento pendente falhou: {type(e).__name__}: {e}"
+            ) from e
         if pending is not None:
             publish_enriched_event(
                 unique_id, pending["most_specific_theme_code"], pending["has_summary"]

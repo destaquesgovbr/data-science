@@ -23,7 +23,7 @@ from functools import partial
 
 from fastapi import FastAPI, Request, Response
 
-from news_enrichment.worker.handler import EnrichedEventPublishError, enrich_article
+from news_enrichment.worker.handler import RetryableEnrichmentError, enrich_article
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(name)s %(levelname)s %(message)s")
 logger = logging.getLogger(__name__)
@@ -66,8 +66,9 @@ async def process(request: Request) -> Response:
       }
     }
 
-    Returns 200 to ACK, 400 for bad requests, 503 when the dgb.news.enriched
-    event could not be published (Pub/Sub redelivers; the handler republishes).
+    Returns 200 to ACK, 400 for bad requests, 503 on RetryableEnrichmentError
+    (e.g. dgb.news.enriched not confirmed; Pub/Sub redelivers and the handler
+    republishes).
     """
     try:
         envelope = await request.json()
@@ -99,12 +100,12 @@ async def process(request: Request) -> Response:
         )
         logger.info(f"Result for {unique_id}: {result['status']}")
         return Response(status_code=200, content=json.dumps(result))
-    except EnrichedEventPublishError as e:
-        # Tema/resumo podem já estar gravados: sem o evento, o artigo fica sem
-        # embedding e fora do Typesense. NACK → o Pub/Sub reentrega e o handler
-        # republica no caminho already_enriched.
-        logger.error(f"Publish failed for {unique_id}, NACK: {e}")
-        return Response(status_code=503, content=f"NACK (publish failed: {e})")
+    except RetryableEnrichmentError as e:
+        # Ex.: publish do enriched não confirmado. Tema/resumo podem já estar gravados:
+        # sem o evento, o artigo fica sem embedding e fora do Typesense. NACK → o
+        # Pub/Sub reentrega e o handler republica no caminho already_enriched.
+        logger.error(f"Retryable failure for {unique_id}, NACK: {e}")
+        return Response(status_code=503, content=f"NACK ({e})")
     except Exception as e:
         logger.error(f"Unhandled error for {unique_id}: {e}", exc_info=True)
         # ACK to avoid infinite retries — reconciliation DAG will catch it
