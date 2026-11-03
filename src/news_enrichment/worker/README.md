@@ -12,6 +12,14 @@ só troca a imagem.
 ## Fluxo de `enrich_article(uid)`
 
 1. **Idempotência:** se `news.most_specific_theme_id` já está preenchido → `skipped`.
+   Se é uma **reentrega** da mesma mensagem (`deliveryAttempt > 1` no push) e o
+   artigo tem resumo mas `content_embedding` nulo, o `dgb.news.enriched` da tentativa
+   anterior se perdeu: o worker **republica** o evento (`republished: true` no corpo,
+   WARNING `enrichment_republished`). Embeddings (pula quem já tem vetor), Typesense
+   (upsert) e federation (`ON CONFLICT DO NOTHING`) são idempotentes; o push worker
+   não é, por isso re-scrapes (mensagens novas, tentativa 1) nunca republicam. O
+   `deliveryAttempt` só vem com dead-letter policy na subscription
+   (`dgb.news.scraped--enrichment`, infra `pubsub.tf`): sem ela, não há republicação.
 2. `fetch_article` → `not_found` se não existe.
 3. **Chamada combinada** (tema + resumo + sentimento) no modelo `ENRICHMENT_MODEL_ID`.
 4. **Falha combinada** (`_error` no resultado ou todos os códigos de tema nulos):
@@ -23,12 +31,28 @@ só troca a imagem.
    (sem publicar).
 
 O `/process` responde **200 (ACK)** em todos esses status, inclusive em exceção não
-tratada (evita retry infinito do Pub/Sub). Só payload inválido dá 400.
+tratada (evita retry infinito do Pub/Sub). Payload inválido dá 400. A exceção é a
+publicação: o `publish` do `dgb.news.enriched` espera a confirmação do Pub/Sub
+(`ENRICHED_PUBLISH_TIMEOUT_SECONDS`, default 30) e, se falhar, o `/process` responde
+**503** para o Pub/Sub reentregar; a reentrega cai no passo 1 e republica. Também dá
+503 (`RetryableEnrichmentError`) um erro de banco ao checar, na reentrega, se o
+evento está pendente.
+
+### Concorrência e liveness
+
+O `enrich_article` é síncrono (boto3 + psycopg2) e roda num `ThreadPoolExecutor`
+dedicado (`ENRICHMENT_WORKER_THREADS`, default 4, alinhado ao
+`max_instance_request_concurrency` do Terraform). O `/health` é `async` e responde no
+event loop, sem depender de thread livre. Até a revisão 00026 o `/process` chamava o
+`enrich_article` direto num endpoint `async`: a instância processava uma mensagem por
+vez, o `/health` não respondia durante rajadas e o liveness matava a instância logo
+depois de gravar tema/resumo, antes de o `publish` (não esperado) sair. Resultado:
+artigos com tema e resumo, sem embedding e fora do Typesense (26/10, 29/10 e 02/11/2026).
 
 | Status | Significado | Publica `enriched`? |
 |---|---|---|
 | `enriched` | tema, resumo e sentimento gravados | sim |
-| `skipped` | já tinha tema (republicação do scraper) | não |
+| `skipped` | já tinha tema (republicação do scraper) | só na reentrega (`deliveryAttempt > 1`) com resumo e sem `content_embedding` (`republished: true`) |
 | `not_found` | uid inexistente em `news` | não |
 | `classification_failed` | chamada combinada falhou (campos `error` e `ner` no corpo) | não |
 | `update_failed` | classificou, mas os códigos de tema não mapearam para `themes` | não |
@@ -63,6 +87,8 @@ nem as chaves; campos novos entram no fim.
 | ERROR | `enrichment_model_env_missing default=<id> (...)` | No cold start, sem `ENRICHMENT_MODEL_ID`/`BEDROCK_MODEL_ID`. |
 | INFO | `enrichment_ner uid=<uid> status=<ran\|failed\|skipped_already_done> model=<id> [entities=<n>]` | Uma por evento que chega à etapa de NER (métrica de NER por uid). |
 | WARNING | `enrichment_ner uid=<uid> status=skipped_check_failed model=<id> error=<Exceção>` | A consulta de guarda do NER falhou (erro de DB): NER pulado (fail-closed). Não é "já feito": no caminho de sucesso o tema é gravado e o worker não tenta de novo, então recupere com `scripts/backfill_ner_corpus.py`. |
+| ERROR | `enrichment_publish_failed uid=<uid> error=<Exceção>: <msg>` | O `dgb.news.enriched` não foi confirmado pelo Pub/Sub. O `/process` responde 503 e a reentrega republica. |
+| WARNING | `enrichment_republished uid=<uid> reason=embedding_missing delivery_attempt=<n>` | Reentrega de artigo já enriquecido (tema + resumo) sem `content_embedding`: o evento da tentativa anterior se perdeu e foi republicado. Esperado só depois de falha de publicação ou morte de instância. |
 
 Outras linhas úteis: `Cliente Bedrock inicializado: enrichment=<id> ner=<id>` (cold
 start) e `Result for <uid>: <status>` (`app.py`, por evento).

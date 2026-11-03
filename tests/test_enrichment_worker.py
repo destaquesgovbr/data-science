@@ -91,7 +91,7 @@ class TestProcessEndpoint:
         mock_enrich.return_value = {"status": "enriched"}
         resp = client.post("/process", json=pubsub_envelope)
         assert resp.status_code == 200
-        mock_enrich.assert_called_once_with("mec-2026-01-01-noticia-1")
+        mock_enrich.assert_called_once_with("mec-2026-01-01-noticia-1", delivery_attempt=None)
 
     def test_missing_data_returns_400(self, client):
         resp = client.post("/process", json={"message": {}})
@@ -211,11 +211,14 @@ class TestEnrichArticle:
             "mec-2026-01-01-noticia-1", "01.02.03", True
         )
 
+    @patch("news_enrichment.worker.handler.publish_enriched_event")
+    @patch("news_enrichment.worker.handler.enriched_event_pending", return_value=None)
     @patch("news_enrichment.worker.handler.is_already_enriched", return_value=True)
-    def test_skips_already_enriched(self, mock_enriched):
+    def test_skips_already_enriched(self, mock_enriched, mock_pending, mock_publish):
         result = enrich_article("test-1")
         assert result["status"] == "skipped"
         assert result["reason"] == "already_enriched"
+        mock_publish.assert_not_called()
 
     @patch("news_enrichment.worker.handler.fetch_article", return_value=None)
     @patch("news_enrichment.worker.handler.is_already_enriched", return_value=False)
@@ -240,6 +243,13 @@ class TestEnrichArticle:
 
 
 class TestPublishEnrichedEvent:
+
+    @pytest.fixture(autouse=True)
+    def _reset_publisher(self):
+        """PublisherClient é singleton do módulo: cada teste cria o seu."""
+        handler._publisher = None
+        yield
+        handler._publisher = None
 
     @patch.dict("os.environ", {"PUBSUB_TOPIC_NEWS_ENRICHED": ""})
     def test_no_publish_without_topic(self):
