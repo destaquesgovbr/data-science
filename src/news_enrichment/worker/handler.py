@@ -15,11 +15,17 @@ Linhas de log estáveis (para métricas/alertas baseados em log; ver README.md):
   - WARNING  enrichment_ner uid=<uid> status=skipped_check_failed model=<id> error=<Exceção>
              (consulta de guarda do NER falhou; NER pulado, recuperar com
              scripts/backfill_ner_corpus.py)
+  - ERROR    enrichment_publish_failed uid=<uid> error=<Exceção>: <msg>
+             (dgb.news.enriched não confirmado; o /process responde 503 e o Pub/Sub reentrega)
+  - WARNING  enrichment_republished uid=<uid> reason=embedding_missing
+             (reentrega/republicação do scraped com tema e resumo gravados, mas sem
+             content_embedding: o evento enriched anterior se perdeu)
 """
 
 import json
 import logging
 import os
+import threading
 import uuid
 from datetime import datetime, timezone
 from typing import Any
@@ -35,9 +41,24 @@ from news_enrichment.taxonomy import build_theme_code_to_id_map, load_taxonomy_f
 
 logger = logging.getLogger(__name__)
 
-# Cached objects (initialized once, reused across requests)
+# Cached objects (initialized once, reused across requests). O app roda o
+# enrich_article em várias threads: a inicialização preguiçosa é protegida por lock.
 _classifier: NewsClassifier | None = None
 _code_to_id: dict[str, int] | None = None
+_publisher = None  # google.cloud.pubsub_v1.PublisherClient (thread-safe, reutilizado)
+_init_lock = threading.RLock()
+
+# Espera máxima pela confirmação do Pub/Sub ao publicar dgb.news.enriched.
+PUBLISH_TIMEOUT_SECONDS = float(os.environ.get("ENRICHED_PUBLISH_TIMEOUT_SECONDS", "30"))
+
+
+class EnrichedEventPublishError(RuntimeError):
+    """dgb.news.enriched não foi confirmado pelo Pub/Sub.
+
+    O /process responde 503 (NACK) para o Pub/Sub reentregar; na reentrega, o
+    caminho already_enriched republica o evento (ver enriched_event_pending).
+    """
+
 
 # Campos de tema da chamada combinada: todos nulos = a classificação falhou.
 _THEME_CODE_FIELDS = (
@@ -46,6 +67,20 @@ _THEME_CODE_FIELDS = (
     "theme_1_level_3_code",
     "most_specific_theme_code",
 )
+
+# Evento enriched "pendente": tema e resumo gravados, mas sem content_embedding.
+# O worker de embeddings só gera o vetor a partir do evento dgb.news.enriched; sem
+# ele, o artigo fica sem embedding e fora do Typesense. Exige resumo como o backfill
+# de embeddings (`--require-summary`): o texto do embedding é título + resumo.
+_ENRICHED_EVENT_PENDING_SQL = """
+    SELECT t.code
+    FROM news n
+    LEFT JOIN themes t ON t.id = n.most_specific_theme_id
+    WHERE n.unique_id = %s
+      AND n.most_specific_theme_id IS NOT NULL
+      AND n.summary IS NOT NULL
+      AND n.content_embedding IS NULL
+"""
 
 # "NER já feito" para o uid: entidades gravadas em news_features OU resposta crua
 # de NER em news_llm_raw (cobre NER que respondeu sem entidades). Índice
@@ -116,9 +151,13 @@ def _resolve_enrichment_model_id() -> str:
 
 
 def _get_classifier() -> NewsClassifier:
-    """Lazy-init classifier with taxonomy from PG."""
+    """Lazy-init classifier with taxonomy from PG (thread-safe)."""
     global _classifier
-    if _classifier is None:
+    if _classifier is not None:
+        return _classifier
+    with _init_lock:
+        if _classifier is not None:
+            return _classifier
         database_url = _get_database_url()
         taxonomy = load_taxonomy_from_postgres(database_url)
         aws_access_key, aws_secret_key, aws_region = _parse_aws_credentials()
@@ -142,12 +181,28 @@ def _get_classifier() -> NewsClassifier:
 
 
 def _get_code_to_id() -> dict[str, int]:
-    """Lazy-init theme code → id mapping."""
+    """Lazy-init theme code → id mapping (thread-safe)."""
     global _code_to_id
-    if _code_to_id is None:
-        _code_to_id = build_theme_code_to_id_map(_get_database_url())
-        logger.info(f"Theme code_to_id loaded: {len(_code_to_id)} entries")
+    if _code_to_id is not None:
+        return _code_to_id
+    with _init_lock:
+        if _code_to_id is None:
+            _code_to_id = build_theme_code_to_id_map(_get_database_url())
+            logger.info(f"Theme code_to_id loaded: {len(_code_to_id)} entries")
     return _code_to_id
+
+
+def _get_publisher():
+    """PublisherClient único por processo (thread-safe; reutiliza canal e batching)."""
+    global _publisher
+    if _publisher is not None:
+        return _publisher
+    with _init_lock:
+        if _publisher is None:
+            from google.cloud import pubsub_v1
+
+            _publisher = pubsub_v1.PublisherClient()
+    return _publisher
 
 
 def fetch_article(unique_id: str) -> dict | None:
@@ -185,6 +240,27 @@ def is_already_enriched(unique_id: str) -> bool:
         )
         row = cursor.fetchone()
         return row is not None and row[0] is not None
+    finally:
+        conn.close()
+
+
+def enriched_event_pending(unique_id: str) -> dict | None:
+    """Dados do evento enriched a republicar se ele se perdeu, senão None.
+
+    Pendente = tema e resumo gravados, mas sem content_embedding (o worker de
+    embeddings nunca recebeu o dgb.news.enriched). Idempotente: depois que o
+    embedding é gravado, deixa de ser pendente; o worker de embeddings e o sync do
+    Typesense também ignoram/regravam eventos repetidos sem efeito colateral.
+    """
+    conn = psycopg2.connect(_get_database_url())
+    try:
+        cursor = conn.cursor()
+        cursor.execute(_ENRICHED_EVENT_PENDING_SQL, (unique_id,))
+        row = cursor.fetchone()
+        cursor.close()
+        if row is None:
+            return None
+        return {"most_specific_theme_code": row[0] or "", "has_summary": True}
     finally:
         conn.close()
 
@@ -233,31 +309,38 @@ def combined_failure_error(result: dict | None) -> str:
 
 
 def publish_enriched_event(unique_id: str, most_specific_theme_code: str | None, has_summary: bool) -> None:
-    """Publish dgb.news.enriched event to Pub/Sub."""
+    """Publica dgb.news.enriched e ESPERA a confirmação do Pub/Sub.
+
+    Levanta EnrichedEventPublishError se o publish falhar ou não for confirmado em
+    PUBLISH_TIMEOUT_SECONDS: o /process responde 503 e o Pub/Sub reentrega. Antes o
+    futuro não era esperado e a falha era só um WARNING; se a instância morria logo
+    depois de gravar tema/resumo, o evento se perdia em silêncio.
+    """
     topic = os.environ.get("PUBSUB_TOPIC_NEWS_ENRICHED")
     if not topic:
         logger.debug("PUBSUB_TOPIC_NEWS_ENRICHED not set — skipping publish")
         return
 
+    message = {
+        "unique_id": unique_id,
+        "enriched_at": datetime.now(timezone.utc).isoformat(),
+        "most_specific_theme_code": most_specific_theme_code or "",
+        "has_summary": has_summary,
+    }
     try:
-        from google.cloud import pubsub_v1
-
-        client = pubsub_v1.PublisherClient()
-        message = {
-            "unique_id": unique_id,
-            "enriched_at": datetime.now(timezone.utc).isoformat(),
-            "most_specific_theme_code": most_specific_theme_code or "",
-            "has_summary": has_summary,
-        }
-        client.publish(
+        future = _get_publisher().publish(
             topic,
             json.dumps(message).encode("utf-8"),
             trace_id=str(uuid.uuid4()),
             event_version="1.0",
         )
-        logger.info(f"Published dgb.news.enriched for {unique_id}")
+        message_id = future.result(timeout=PUBLISH_TIMEOUT_SECONDS)
     except Exception as e:
-        logger.warning(f"Failed to publish enriched event for {unique_id}: {e}")
+        logger.error(
+            "enrichment_publish_failed uid=%s error=%s: %s", unique_id, type(e).__name__, e
+        )
+        raise EnrichedEventPublishError(f"{unique_id}: {type(e).__name__}: {e}") from e
+    logger.info(f"Published dgb.news.enriched for {unique_id} (message_id={message_id})")
 
 
 def enrich_article(unique_id: str) -> dict[str, Any]:
@@ -269,8 +352,17 @@ def enrich_article(unique_id: str) -> dict[str, Any]:
     """
     # Idempotency check
     if is_already_enriched(unique_id):
-        logger.info(f"Already enriched: {unique_id}")
-        return {"status": "skipped", "reason": "already_enriched"}
+        # Tema gravado, mas o dgb.news.enriched pode ter se perdido (instância morta
+        # entre o UPDATE e o publish): sem embedding, republica. Falha → propaga (503).
+        pending = enriched_event_pending(unique_id)
+        if pending is None:
+            logger.info(f"Already enriched: {unique_id}")
+            return {"status": "skipped", "reason": "already_enriched"}
+        publish_enriched_event(
+            unique_id, pending["most_specific_theme_code"], pending["has_summary"]
+        )
+        logger.warning("enrichment_republished uid=%s reason=embedding_missing", unique_id)
+        return {"status": "skipped", "reason": "already_enriched", "republished": True}
 
     # Fetch article
     article = fetch_article(unique_id)
@@ -314,7 +406,7 @@ def enrich_article(unique_id: str) -> dict[str, Any]:
         )
         return {"status": "update_failed", "stats": stats}
 
-    # Publish event
+    # Publish event (espera a confirmação; falha levanta EnrichedEventPublishError → 503)
     publish_enriched_event(
         unique_id,
         result.get("most_specific_theme_code"),

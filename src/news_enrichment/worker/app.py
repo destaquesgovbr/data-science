@@ -4,24 +4,41 @@ Enrichment Worker — FastAPI application.
 Cloud Run service that receives Pub/Sub push messages from
 dgb.news.scraped topic, classifies news via Bedrock, updates
 PostgreSQL, and publishes dgb.news.enriched events.
+
+Concorrência: o `enrich_article` é síncrono (boto3/Bedrock + psycopg2) e roda num
+executor de threads dedicado, nunca no event loop. Antes (até a revisão 00026) o
+`/process` o chamava direto dentro de um endpoint `async`: a instância processava uma
+mensagem por vez e o `/health` ficava sem resposta durante a rajada, até o liveness
+matar a instância (incidentes de 26/10, 29/10 e 02/11/2026). O `/health` é `async` e
+responde no próprio event loop, sem depender de thread livre.
 """
 
+import asyncio
 import base64
 import json
 import logging
+import os
+from concurrent.futures import ThreadPoolExecutor
 
 from fastapi import FastAPI, Request, Response
 
-from news_enrichment.worker.handler import enrich_article
+from news_enrichment.worker.handler import EnrichedEventPublishError, enrich_article
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(name)s %(levelname)s %(message)s")
 logger = logging.getLogger(__name__)
+
+# Threads de trabalho por instância. Deve acompanhar o max_instance_request_concurrency
+# do Cloud Run (infra/terraform/enrichment-worker.tf); requisições além disso esperam
+# no executor sem bloquear o event loop.
+WORKER_THREADS = int(os.environ.get("ENRICHMENT_WORKER_THREADS", "4"))
+_executor = ThreadPoolExecutor(max_workers=WORKER_THREADS, thread_name_prefix="enrich-worker")
 
 app = FastAPI(title="Enrichment Worker", version="1.0.0")
 
 
 @app.get("/health")
-def health() -> dict:
+async def health() -> dict:
+    # `async` de propósito: responde no event loop, sem esperar thread do pool.
     return {"status": "ok"}
 
 
@@ -39,7 +56,8 @@ async def process(request: Request) -> Response:
       }
     }
 
-    Returns 200 to ACK, 400 for bad requests.
+    Returns 200 to ACK, 400 for bad requests, 503 when the dgb.news.enriched
+    event could not be published (Pub/Sub redelivers; the handler republishes).
     """
     try:
         envelope = await request.json()
@@ -64,9 +82,16 @@ async def process(request: Request) -> Response:
     logger.info(f"Processing {unique_id} (trace={trace_id})")
 
     try:
-        result = enrich_article(unique_id)
+        loop = asyncio.get_running_loop()
+        result = await loop.run_in_executor(_executor, enrich_article, unique_id)
         logger.info(f"Result for {unique_id}: {result['status']}")
         return Response(status_code=200, content=json.dumps(result))
+    except EnrichedEventPublishError as e:
+        # Tema/resumo podem já estar gravados: sem o evento, o artigo fica sem
+        # embedding e fora do Typesense. NACK → o Pub/Sub reentrega e o handler
+        # republica no caminho already_enriched.
+        logger.error(f"Publish failed for {unique_id}, NACK: {e}")
+        return Response(status_code=503, content=f"NACK (publish failed: {e})")
     except Exception as e:
         logger.error(f"Unhandled error for {unique_id}: {e}", exc_info=True)
         # ACK to avoid infinite retries — reconciliation DAG will catch it
