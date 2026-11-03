@@ -235,6 +235,21 @@ class TestFalhaDePublicacaoNaoFazAck:
 
         assert resp.status_code == 503
 
+    def test_erro_retentavel_responde_503(self):
+        err = handler.RetryableEnrichmentError(f"{_UID}: OperationalError")
+
+        async def scenario():
+            async with _client() as c:
+                return await c.post("/process", json=_envelope(delivery_attempt=2))
+
+        with patch.object(app_module, "enrich_article", side_effect=err):
+            resp = _run(scenario())
+
+        assert resp.status_code == 503
+
+    def test_erro_de_publicacao_e_retentavel(self):
+        assert issubclass(handler.EnrichedEventPublishError, handler.RetryableEnrichmentError)
+
     def test_outros_erros_continuam_fazendo_ack(self):
         """Comportamento antigo preservado: exceção não tratada qualquer → 200 (ACK)."""
 
@@ -432,6 +447,18 @@ class TestAlreadyEnrichedRepublica:
             == f"enrichment_republished uid={_UID} reason=embedding_missing delivery_attempt=2"
             for r in caplog.records
         )
+
+    def test_erro_de_banco_na_checagem_da_reentrega_nao_faz_ack(self, monkeypatch):
+        """Na reentrega, "não deu para checar" não pode virar ACK (o evento se perderia)."""
+        import psycopg2
+
+        def db_down(uid):
+            raise psycopg2.OperationalError("connection refused")
+
+        monkeypatch.setattr(handler, "enriched_event_pending", db_down)
+        with pytest.raises(handler.RetryableEnrichmentError):
+            handler.enrich_article(_UID, delivery_attempt=2)
+        self.publish.assert_not_called()
 
     @pytest.mark.parametrize("attempt", [None, 1])
     def test_primeira_entrega_nao_consulta_nem_republica(self, monkeypatch, attempt):
